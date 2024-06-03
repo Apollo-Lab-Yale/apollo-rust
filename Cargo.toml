@@ -1,0 +1,24 @@
+[package]
+name = "apollo_rust"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+members = [
+    "crates/apollo_file"
+]
+
+[dependencies]
+
+
+
+[lib]
+name = "optima"
+crate-type = ["cdylib", "rlib"]
+
+[profile.dev]
+opt-level = 3
+
+[profile.release]
+opt-level = 3
+# lto = "thin"
