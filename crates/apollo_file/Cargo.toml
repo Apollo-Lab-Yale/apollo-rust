@@ -4,3 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+walkdir = { version = "2.5.0" }
+dirs =    { version="5.0.1" }
