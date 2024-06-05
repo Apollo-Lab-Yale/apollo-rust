@@ -12,7 +12,7 @@ pub trait ApolloPathBufTrait: Sized {
     fn append_vec(self, v: &Vec<String>) -> Self;
     fn append_path<P: AsRef<Path>>(self, s: P) -> Self;
     fn split_into_strings(&self) -> Vec<String>;
-    fn split_into_path_bufs(&self) -> Vec<PathBuf>;
+    fn split_into_path_bufs(&self) -> Vec<Self>;
     fn walk_directory_and_find_first<P: AsRef<Path>>(self, s: P) -> Self;
     fn walk_directory_and_find_all<P: AsRef<Path>>(self, s: P) -> Vec<Self>;
     fn create_directory(&self);
@@ -21,12 +21,15 @@ pub trait ApolloPathBufTrait: Sized {
     fn delete_all_items_in_directory(&self);
     fn copy_file_to_destination_file_path(&self, destination: &Self);
     fn copy_file_to_destination_directory(&self, destination: &Self);
-    fn extract_last_n_segments(&self, n: usize) -> PathBuf;
+    fn extract_last_n_segments(&self, n: usize) -> Self;
+    fn get_all_items_in_directory(&self, include_directories: bool, include_files: bool, include_hidden_files: bool) -> Vec<Self>;
+    fn get_all_filenames_in_directory(&self, include_hidden_files: bool) -> Vec<String>;
 }
 
 impl ApolloPathBufTrait for PathBuf {
     fn new_from_append(s: &str) -> Self {
-        let p = PathBuf::new();
+        let mut p = PathBuf::new();
+        p.push(std::path::MAIN_SEPARATOR_STR);
         return p.append(s);
     }
     fn new_from_home_dir() -> Self {
@@ -52,11 +55,11 @@ impl ApolloPathBufTrait for PathBuf {
 
         if do_s1 {
             let s1 = s.split("/");
-            out.push("/");
+            // out.push("/");
             s1.for_each(|x| { out.push(x) });
         } else if do_s2 {
             let s2 = s.split(r"\");
-            out.push(r"\");
+            // out.push(r"\");
             s2.for_each(|x| { out.push(x) });
         } else {
             out.push(s);
@@ -72,11 +75,10 @@ impl ApolloPathBufTrait for PathBuf {
         out
     }
     fn append_path<P: AsRef<Path>>(self, s: P) -> Self {
-        let mut out = self.clone();
-
-        out.push(s);
-
-        out
+        let ss = s.as_ref().to_str().expect("error");
+        println!(" >>> {:?}", self);
+        println!(" >> {:?}", ss);
+        return self.append(ss);
     }
     fn split_into_strings(&self) -> Vec<String> {
         let mut out = vec![];
@@ -92,7 +94,7 @@ impl ApolloPathBufTrait for PathBuf {
 
         out
     }
-    fn split_into_path_bufs(&self) -> Vec<PathBuf> {
+    fn split_into_path_bufs(&self) -> Vec<Self> {
         let mut out = vec![];
         let s = self.to_str().expect("error");
 
@@ -159,7 +161,7 @@ impl ApolloPathBufTrait for PathBuf {
 
         self.copy_file_to_destination_file_path(&d);
     }
-    fn extract_last_n_segments(&self, n: usize) -> PathBuf {
+    fn extract_last_n_segments(&self, n: usize) -> Self {
         assert!(n > 0);
 
         let s = self.split_into_path_bufs();
@@ -169,6 +171,44 @@ impl ApolloPathBufTrait for PathBuf {
         for i in 0..n {
             out = out.append_path( &s[s.len() - (n - i)] );
         }
+
+        out
+    }
+    fn get_all_items_in_directory(&self, include_directories: bool, include_files: bool, include_hidden_files: bool) -> Vec<Self> {
+        let mut out = vec![];
+
+        let res = self.read_dir();
+        if let Ok(read_dir) = res {
+            for dir_entry_res in read_dir {
+                if let Ok(dir_entry) = dir_entry_res {
+                    let filename = dir_entry.file_name();
+                    let f = filename.to_str().unwrap().to_string();
+                    if include_directories && dir_entry.path().is_dir() {
+                        out.push(dir_entry.path());
+                    }
+                    else if include_files && dir_entry.path().is_file() {
+                        if include_hidden_files {
+                            out.push(dir_entry.path());
+                        } else {
+                            if !(f.chars().nth(0).unwrap().to_string() == ".") {
+                                out.push(dir_entry.path());
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+
+        out
+    }
+    fn get_all_filenames_in_directory(&self, include_hidden_files: bool) -> Vec<String> {
+        let mut out = vec![];
+        let items = self.get_all_items_in_directory(false, true, include_hidden_files);
+
+        items.iter().for_each(|x| {
+           out.push(x.file_name().expect("error").to_str().expect("error").to_string())
+        });
 
         out
     }
