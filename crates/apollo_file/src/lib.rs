@@ -11,8 +11,8 @@ pub trait ApolloPathBufTrait: Sized {
     fn append(self, s: &str) -> Self;
     fn append_vec(self, v: &Vec<String>) -> Self;
     fn append_path<P: AsRef<Path>>(self, s: P) -> Self;
-    fn split_into_strings(self) -> Vec<String>;
-    fn split_into_path_bufs(self) -> Vec<PathBuf>;
+    fn split_into_strings(&self) -> Vec<String>;
+    fn split_into_path_bufs(&self) -> Vec<PathBuf>;
     fn walk_directory_and_find_first<P: AsRef<Path>>(self, s: P) -> Self;
     fn walk_directory_and_find_all<P: AsRef<Path>>(self, s: P) -> Vec<Self>;
     fn create_directory(&self);
@@ -21,6 +21,7 @@ pub trait ApolloPathBufTrait: Sized {
     fn delete_all_items_in_directory(&self);
     fn copy_file_to_destination_file_path(&self, destination: &Self);
     fn copy_file_to_destination_directory(&self, destination: &Self);
+    fn extract_last_n_segments(&self, n: usize) -> PathBuf;
 }
 
 impl ApolloPathBufTrait for PathBuf {
@@ -77,7 +78,7 @@ impl ApolloPathBufTrait for PathBuf {
 
         out
     }
-    fn split_into_strings(self) -> Vec<String> {
+    fn split_into_strings(&self) -> Vec<String> {
         let mut out = vec![];
         let s = self.to_str().expect("error");
 
@@ -91,7 +92,7 @@ impl ApolloPathBufTrait for PathBuf {
 
         out
     }
-    fn split_into_path_bufs(self) -> Vec<PathBuf> {
+    fn split_into_path_bufs(&self) -> Vec<PathBuf> {
         let mut out = vec![];
         let s = self.to_str().expect("error");
 
@@ -157,5 +158,18 @@ impl ApolloPathBufTrait for PathBuf {
         let d = destination.clone().append(f);
 
         self.copy_file_to_destination_file_path(&d);
+    }
+    fn extract_last_n_segments(&self, n: usize) -> PathBuf {
+        assert!(n > 0);
+
+        let s = self.split_into_path_bufs();
+        assert!(s.len() > n);
+
+        let mut out = PathBuf::new();
+        for i in 0..n {
+            out = out.append_path( &s[s.len() - (n - i)] );
+        }
+
+        out
     }
 }
