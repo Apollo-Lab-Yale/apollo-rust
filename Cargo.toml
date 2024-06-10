@@ -5,7 +5,8 @@ edition = "2021"
 
 [workspace]
 members = [
-    "crates/apollo_file"
+    "crates/apollo_file",
+    "crates/apollo_robotics"
 ]
 
 [dependencies]

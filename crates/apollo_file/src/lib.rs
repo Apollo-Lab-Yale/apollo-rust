@@ -1,6 +1,13 @@
+pub mod traits;
+
 use std::fs;
+use std::fs::{File, OpenOptions};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use walkdir::WalkDir;
+use crate::traits::{ToJsonString, ToRonString, ToTomlString, ToYamlString};
 
 pub trait ApolloPathBufTrait: Sized {
     fn new_from_append(s: &str) -> Self;
@@ -10,6 +17,7 @@ pub trait ApolloPathBufTrait: Sized {
     fn new_from_walk_dir_and_find<P: AsRef<Path>>(s: P) -> Self;
     fn append(self, s: &str) -> Self;
     fn append_vec(self, v: &Vec<String>) -> Self;
+    fn append_without_separator(self, s: &str) -> Self;
     fn append_path<P: AsRef<Path>>(self, s: P) -> Self;
     fn split_into_strings(&self) -> Vec<String>;
     fn split_into_path_bufs(&self) -> Vec<Self>;
@@ -22,8 +30,18 @@ pub trait ApolloPathBufTrait: Sized {
     fn copy_file_to_destination_file_path(&self, destination: &Self);
     fn copy_file_to_destination_directory(&self, destination: &Self);
     fn extract_last_n_segments(&self, n: usize) -> Self;
-    fn get_all_items_in_directory(&self, include_directories: bool, include_files: bool, include_hidden_files: bool) -> Vec<Self>;
+    fn get_all_items_in_directory(&self, include_directories: bool, include_hidden_directories: bool, include_files: bool, include_hidden_files: bool) -> Vec<Self>;
     fn get_all_filenames_in_directory(&self, include_hidden_files: bool) -> Vec<String>;
+    fn read_file_contents_to_string(&self) -> String;
+    fn write_string_to_file(&self, s: &String);
+    fn load_object_from_json_file<T: Serialize + DeserializeOwned>(&self) -> T;
+    fn save_object_to_json_file<T: Serialize + DeserializeOwned>(&self, object: &T);
+    fn load_object_from_toml_file<T: Serialize + DeserializeOwned>(&self) -> T;
+    fn save_object_to_toml_file<T: Serialize + DeserializeOwned>(&self, object: &T);
+    fn load_object_from_ron_file<T: Serialize + DeserializeOwned>(&self) -> T;
+    fn save_object_to_ron_file<T: Serialize + DeserializeOwned>(&self, object: &T);
+    fn load_object_from_yaml_file<T: Serialize + DeserializeOwned>(&self) -> T;
+    fn save_object_to_yaml_file<T: Serialize + DeserializeOwned>(&self, object: &T);
 }
 
 impl ApolloPathBufTrait for PathBuf {
@@ -73,6 +91,12 @@ impl ApolloPathBufTrait for PathBuf {
             out = out.append(s);
         }
         out
+    }
+    fn append_without_separator(self, s: &str) -> Self {
+        let mut ss = self.to_str().expect("error").to_string();
+        ss += s;
+
+        return Self::from(ss)
     }
     fn append_path<P: AsRef<Path>>(self, s: P) -> Self {
         let ss = s.as_ref().to_str().expect("error");
@@ -174,7 +198,7 @@ impl ApolloPathBufTrait for PathBuf {
 
         out
     }
-    fn get_all_items_in_directory(&self, include_directories: bool, include_files: bool, include_hidden_files: bool) -> Vec<Self> {
+    fn get_all_items_in_directory(&self, include_directories: bool, include_hidden_directories: bool, include_files: bool, include_hidden_files: bool) -> Vec<Self> {
         let mut out = vec![];
 
         let res = self.read_dir();
@@ -184,7 +208,13 @@ impl ApolloPathBufTrait for PathBuf {
                     let filename = dir_entry.file_name();
                     let f = filename.to_str().unwrap().to_string();
                     if include_directories && dir_entry.path().is_dir() {
-                        out.push(dir_entry.path());
+                        if include_hidden_directories {
+                            out.push(dir_entry.path());
+                        } else {
+                            if !(f.chars().nth(0).unwrap().to_string() == ".") {
+                                out.push(dir_entry.path());
+                            }
+                        }
                     }
                     else if include_files && dir_entry.path().is_file() {
                         if include_hidden_files {
@@ -204,12 +234,135 @@ impl ApolloPathBufTrait for PathBuf {
     }
     fn get_all_filenames_in_directory(&self, include_hidden_files: bool) -> Vec<String> {
         let mut out = vec![];
-        let items = self.get_all_items_in_directory(false, true, include_hidden_files);
+        let items = self.get_all_items_in_directory(false, false, true, include_hidden_files);
 
         items.iter().for_each(|x| {
            out.push(x.file_name().expect("error").to_str().expect("error").to_string())
         });
 
         out
+    }
+    fn read_file_contents_to_string(&self) -> String {
+        let mut file_res = File::open(self);
+        return match &mut file_res {
+            Ok(f) => {
+                let mut contents = String::new();
+                let res = f.read_to_string(&mut contents);
+                if res.is_err() {
+                    panic!("could not load file with path {:?}.  Error: {:?}", self, res.err());
+                }
+                contents
+            }
+            Err(e) => {
+                panic!("could not load file with path {:?}.  Error: {}", self, e);
+            }
+        }
+    }
+    fn write_string_to_file(&self, s: &String) {
+        let parent_option = self.parent();
+        match parent_option {
+            None => {
+                panic!("Could not get parent of path in save_object_to_file_as_json.");
+            }
+            Some(parent) => {
+                fs::create_dir_all(parent).expect("error");
+            }
+        }
+
+        if self.exists() { fs::remove_file(self).expect("error"); }
+
+        let mut file_res = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(self);
+
+        match &mut file_res {
+            Ok(f) => {
+                f.write(s.as_bytes()).expect("error");
+            }
+            Err(e) => {
+                panic!("could not write string to file.  Error: {:?}", e);
+            }
+        }
+    }
+    fn load_object_from_json_file<T: Serialize + DeserializeOwned>(&self) -> T {
+        assert_eq!(self.extension().unwrap().to_str().unwrap(), "json");
+
+        let json_str = self.read_file_contents_to_string();
+        let o_res = serde_json::from_str(&json_str);
+        return match o_res {
+            Ok(o) => {
+                o
+            }
+            Err(e) => {
+                panic!("could not load object.  Error: {:?}", e);
+            }
+        }
+    }
+    fn save_object_to_json_file<T: Serialize + DeserializeOwned>(&self, object: &T) {
+        assert_eq!(self.extension().unwrap().to_str().unwrap(), "json");
+
+        let s = object.to_json_string();
+        self.write_string_to_file(&s);
+    }
+    fn load_object_from_toml_file<T: Serialize + DeserializeOwned>(&self) -> T {
+        assert_eq!(self.extension().unwrap().to_str().unwrap(), "toml");
+
+        let toml_str = self.read_file_contents_to_string();
+        let o_res = toml::from_str(&toml_str);
+        return match o_res {
+            Ok(o) => {
+                o
+            }
+            Err(e) => {
+                panic!("could not load object.  Error: {:?}", e);
+            }
+        }
+    }
+    fn save_object_to_toml_file<T: Serialize + DeserializeOwned>(&self, object: &T) {
+        assert_eq!(self.extension().unwrap().to_str().unwrap(), "toml");
+
+        let s = object.to_toml_string();
+        self.write_string_to_file(&s);
+    }
+    fn load_object_from_ron_file<T: Serialize + DeserializeOwned>(&self) -> T {
+        assert_eq!(self.extension().unwrap().to_str().unwrap(), "ron");
+
+        let ron_str = self.read_file_contents_to_string();
+        let o_res = ron::from_str(&ron_str);
+        return match o_res {
+            Ok(o) => {
+                o
+            }
+            Err(e) => {
+                panic!("could not load object.  Error: {:?}", e);
+            }
+        }
+    }
+    fn save_object_to_ron_file<T: Serialize + DeserializeOwned>(&self, object: &T) {
+        assert_eq!(self.extension().unwrap().to_str().unwrap(), "ron");
+
+        let s = object.to_ron_string();
+        self.write_string_to_file(&s);
+    }
+    fn load_object_from_yaml_file<T: Serialize + DeserializeOwned>(&self) -> T {
+        assert_eq!(self.extension().unwrap().to_str().unwrap(), "yaml");
+
+        let ron_str = self.read_file_contents_to_string();
+        let o_res = serde_yaml::from_str(&ron_str);
+        return match o_res {
+            Ok(o) => {
+                o
+            }
+            Err(e) => {
+                panic!("could not load object.  Error: {:?}", e);
+            }
+        }
+    }
+    fn save_object_to_yaml_file<T: Serialize + DeserializeOwned>(&self, object: &T) {
+        assert_eq!(self.extension().unwrap().to_str().unwrap(), "yaml");
+
+        let s = object.to_yaml_string();
+        self.write_string_to_file(&s);
     }
 }

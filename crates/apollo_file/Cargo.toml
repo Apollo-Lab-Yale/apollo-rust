@@ -6,3 +6,8 @@ edition = "2021"
 [dependencies]
 walkdir = { version = "2.5.0" }
 dirs =    { version="5.0.1" }
+serde = { version="1.0.203", features = ["derive"] }
+serde_json = { version="1.0.117" }
+ron = { version="0.8.1" }
+toml = { version="0.8.14" }
+serde_yaml = { version = "0.9.34" }
