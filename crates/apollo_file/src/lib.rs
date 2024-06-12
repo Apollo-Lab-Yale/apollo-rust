@@ -1,5 +1,6 @@
 pub mod traits;
 
+use std::fmt::Debug;
 use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
@@ -14,15 +15,15 @@ pub trait ApolloPathBufTrait: Sized {
     fn new_from_home_dir() -> Self;
     fn new_from_documents_dir() -> Self;
     fn new_from_desktop_dir() -> Self;
-    fn new_from_walk_dir_and_find<P: AsRef<Path>>(s: P) -> Self;
+    fn new_from_walk_dir_and_find<P: AsRef<Path> + Debug>(s: P) -> Self;
     fn append(self, s: &str) -> Self;
     fn append_vec(self, v: &Vec<String>) -> Self;
     fn append_without_separator(self, s: &str) -> Self;
     fn append_path<P: AsRef<Path>>(self, s: P) -> Self;
     fn split_into_strings(&self) -> Vec<String>;
     fn split_into_path_bufs(&self) -> Vec<Self>;
-    fn walk_directory_and_find_first<P: AsRef<Path>>(self, s: P) -> Self;
-    fn walk_directory_and_find_all<P: AsRef<Path>>(self, s: P) -> Vec<Self>;
+    fn walk_directory_and_find_first<P: AsRef<Path> + Debug>(self, s: P) -> Self;
+    fn walk_directory_and_find_all<P: AsRef<Path> + Debug>(self, s: P) -> Vec<Self>;
     fn create_directory(&self);
     fn delete_file(&self);
     fn delete_directory(&self);
@@ -35,12 +36,16 @@ pub trait ApolloPathBufTrait: Sized {
     fn read_file_contents_to_string(&self) -> String;
     fn write_string_to_file(&self, s: &String);
     fn load_object_from_json_file<T: Serialize + DeserializeOwned>(&self) -> T;
+    fn load_object_from_json_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String>;
     fn save_object_to_json_file<T: Serialize + DeserializeOwned>(&self, object: &T);
     fn load_object_from_toml_file<T: Serialize + DeserializeOwned>(&self) -> T;
+    fn load_object_from_toml_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String>;
     fn save_object_to_toml_file<T: Serialize + DeserializeOwned>(&self, object: &T);
     fn load_object_from_ron_file<T: Serialize + DeserializeOwned>(&self) -> T;
+    fn load_object_from_ron_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String>;
     fn save_object_to_ron_file<T: Serialize + DeserializeOwned>(&self, object: &T);
     fn load_object_from_yaml_file<T: Serialize + DeserializeOwned>(&self) -> T;
+    fn load_object_from_yaml_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String>;
     fn save_object_to_yaml_file<T: Serialize + DeserializeOwned>(&self, object: &T);
 }
 
@@ -59,7 +64,7 @@ impl ApolloPathBufTrait for PathBuf {
     fn new_from_desktop_dir() -> Self {
         dirs::desktop_dir().unwrap().to_path_buf()
     }
-    fn new_from_walk_dir_and_find<P: AsRef<Path>>(s: P) -> Self {
+    fn new_from_walk_dir_and_find<P: AsRef<Path> + Debug>(s: P) -> Self {
         let p = PathBuf::new_from_home_dir();
         return p.walk_directory_and_find_first(s);
     }
@@ -100,8 +105,6 @@ impl ApolloPathBufTrait for PathBuf {
     }
     fn append_path<P: AsRef<Path>>(self, s: P) -> Self {
         let ss = s.as_ref().to_str().expect("error");
-        println!(" >>> {:?}", self);
-        println!(" >> {:?}", ss);
         return self.append(ss);
     }
     fn split_into_strings(&self) -> Vec<String> {
@@ -132,7 +135,7 @@ impl ApolloPathBufTrait for PathBuf {
 
         out
     }
-    fn walk_directory_and_find_first<P: AsRef<Path>>(self, s: P) -> Self {
+    fn walk_directory_and_find_first<P: AsRef<Path> + Debug>(self, s: P) -> Self {
         for entry_res in WalkDir::new(self) {
             if let Ok(entry) = entry_res {
                 let entry_path = entry.into_path();
@@ -140,9 +143,9 @@ impl ApolloPathBufTrait for PathBuf {
             }
         }
 
-        panic!("could not find");
+        panic!("could not find {:?}", s);
     }
-    fn walk_directory_and_find_all<P: AsRef<Path>>(self, s: P) -> Vec<Self> {
+    fn walk_directory_and_find_all<P: AsRef<Path> + Debug>(self, s: P) -> Vec<Self> {
         let mut out = vec![];
         for entry_res in WalkDir::new(self) {
             if let Ok(entry) = entry_res {
@@ -299,6 +302,20 @@ impl ApolloPathBufTrait for PathBuf {
             }
         }
     }
+    fn load_object_from_json_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String> {
+        assert_eq!(self.extension().unwrap().to_str().unwrap(), "json");
+
+        let json_str = self.read_file_contents_to_string();
+        let o_res = serde_json::from_str(&json_str);
+        return match o_res {
+            Ok(o) => {
+                Ok(o)
+            }
+            Err(e) => {
+                Err(format!("Error loading object from file {:?}.  Error: {:?}", self, e))
+            }
+        }
+    }
     fn save_object_to_json_file<T: Serialize + DeserializeOwned>(&self, object: &T) {
         assert_eq!(self.extension().unwrap().to_str().unwrap(), "json");
 
@@ -316,6 +333,20 @@ impl ApolloPathBufTrait for PathBuf {
             }
             Err(e) => {
                 panic!("could not load object.  Error: {:?}", e);
+            }
+        }
+    }
+    fn load_object_from_toml_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String> {
+        assert_eq!(self.extension().unwrap().to_str().unwrap(), "toml");
+
+        let toml_str = self.read_file_contents_to_string();
+        let o_res = toml::from_str(&toml_str);
+        return match o_res {
+            Ok(o) => {
+                Ok(o)
+            }
+            Err(e) => {
+                Err(format!("Error loading object from file {:?}.  Error: {:?}", self, e))
             }
         }
     }
@@ -339,6 +370,20 @@ impl ApolloPathBufTrait for PathBuf {
             }
         }
     }
+    fn load_object_from_ron_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String> {
+        assert_eq!(self.extension().unwrap().to_str().unwrap(), "ron");
+
+        let ron_str = self.read_file_contents_to_string();
+        let o_res = ron::from_str(&ron_str);
+        return match o_res {
+            Ok(o) => {
+                Ok(o)
+            }
+            Err(e) => {
+                Err(format!("Error loading object from file {:?}.  Error: {:?}", self, e))
+            }
+        }
+    }
     fn save_object_to_ron_file<T: Serialize + DeserializeOwned>(&self, object: &T) {
         assert_eq!(self.extension().unwrap().to_str().unwrap(), "ron");
 
@@ -356,6 +401,20 @@ impl ApolloPathBufTrait for PathBuf {
             }
             Err(e) => {
                 panic!("could not load object.  Error: {:?}", e);
+            }
+        }
+    }
+    fn load_object_from_yaml_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String> {
+        assert_eq!(self.extension().unwrap().to_str().unwrap(), "yaml");
+
+        let ron_str = self.read_file_contents_to_string();
+        let o_res = serde_yaml::from_str(&ron_str);
+        return match o_res {
+            Ok(o) => {
+                Ok(o)
+            }
+            Err(e) => {
+                Err(format!("Error loading object from file {:?}.  Error: {:?}", self, e))
             }
         }
     }
