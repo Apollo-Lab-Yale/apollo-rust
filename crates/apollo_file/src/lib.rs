@@ -47,6 +47,8 @@ pub trait ApolloPathBufTrait: Sized {
     fn load_object_from_yaml_file<T: Serialize + DeserializeOwned>(&self) -> T;
     fn load_object_from_yaml_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String>;
     fn save_object_to_yaml_file<T: Serialize + DeserializeOwned>(&self, object: &T);
+    fn get_file_for_writing(&self) -> File;
+    fn verify_extension(&self, extensions: &Vec<&str>) -> Result<(), String>;
 }
 
 impl ApolloPathBufTrait for PathBuf {
@@ -423,5 +425,28 @@ impl ApolloPathBufTrait for PathBuf {
 
         let s = object.to_yaml_string();
         self.write_string_to_file(&s);
+    }
+    fn get_file_for_writing(&self) -> File {
+        let prefix = self.parent().unwrap();
+        fs::create_dir_all(prefix).unwrap();
+        if self.exists() { fs::remove_file(self).expect("error"); }
+        let file = OpenOptions::new().write(true).create_new(true).open(self).expect("error");
+        file
+    }
+    fn verify_extension(&self, extensions: &Vec<&str>) -> Result<(), String> {
+        let ext_option = self.extension();
+        match ext_option {
+            None => {
+                return Err(format!("Path {:?} does not have one of the following extensions: {:?}", self, extensions))
+            }
+            Some(ext) => {
+                for e in extensions {
+                    if e == &ext {
+                        return Ok(());
+                    }
+                }
+            }
+        }
+        Err(format!("Path {:?} does not have one of the following extensions: {:?}", self, extensions))
     }
 }
