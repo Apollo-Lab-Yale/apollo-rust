@@ -6,15 +6,17 @@ edition = "2021"
 [workspace]
 members = [
     "crates/apollo_file",
+    "crates/apollo_linalg",
+    "crates/apollo_spatial",
     "crates/apollo_robotics"
-]
+, "crates/apollo_lie"]
 
 [dependencies]
 
 
 
 [lib]
-name = "optima"
+name = "apollo_rust"
 crate-type = ["cdylib", "rlib"]
 
 [profile.dev]

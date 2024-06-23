@@ -34,6 +34,7 @@ pub trait ApolloPathBufTrait: Sized {
     fn get_all_items_in_directory(&self, include_directories: bool, include_hidden_directories: bool, include_files: bool, include_hidden_files: bool) -> Vec<Self>;
     fn get_all_filenames_in_directory(&self, include_hidden_files: bool) -> Vec<String>;
     fn read_file_contents_to_string(&self) -> String;
+    fn read_file_contents_to_string_result(&self) -> Result<String, String>;
     fn write_string_to_file(&self, s: &String);
     fn load_object_from_json_file<T: Serialize + DeserializeOwned>(&self) -> T;
     fn load_object_from_json_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String>;
@@ -263,6 +264,22 @@ impl ApolloPathBufTrait for PathBuf {
             }
         }
     }
+    fn read_file_contents_to_string_result(&self) -> Result<String, String> {
+        let mut file_res = File::open(self);
+        return match &mut file_res {
+            Ok(f) => {
+                let mut contents = String::new();
+                let res = f.read_to_string(&mut contents);
+                match res {
+                    Ok(_) => { Ok(contents) }
+                    Err(e) => { Err(format!("could not load file with path {:?}.  Error: {:?}", self, e)) }
+                }
+            }
+            Err(e) => {
+                Err(format!("could not load file with path {:?}.  Error: {:?}", self, e))
+            }
+        }
+    }
     fn write_string_to_file(&self, s: &String) {
         let parent_option = self.parent();
         match parent_option {
@@ -307,7 +324,7 @@ impl ApolloPathBufTrait for PathBuf {
     fn load_object_from_json_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String> {
         assert_eq!(self.extension().unwrap().to_str().unwrap(), "json");
 
-        let json_str = self.read_file_contents_to_string();
+        let json_str = self.read_file_contents_to_string_result()?;
         let o_res = serde_json::from_str(&json_str);
         return match o_res {
             Ok(o) => {
@@ -341,7 +358,7 @@ impl ApolloPathBufTrait for PathBuf {
     fn load_object_from_toml_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String> {
         assert_eq!(self.extension().unwrap().to_str().unwrap(), "toml");
 
-        let toml_str = self.read_file_contents_to_string();
+        let toml_str = self.read_file_contents_to_string_result()?;
         let o_res = toml::from_str(&toml_str);
         return match o_res {
             Ok(o) => {
@@ -375,7 +392,7 @@ impl ApolloPathBufTrait for PathBuf {
     fn load_object_from_ron_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String> {
         assert_eq!(self.extension().unwrap().to_str().unwrap(), "ron");
 
-        let ron_str = self.read_file_contents_to_string();
+        let ron_str = self.read_file_contents_to_string_result()?;
         let o_res = ron::from_str(&ron_str);
         return match o_res {
             Ok(o) => {
@@ -409,7 +426,7 @@ impl ApolloPathBufTrait for PathBuf {
     fn load_object_from_yaml_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String> {
         assert_eq!(self.extension().unwrap().to_str().unwrap(), "yaml");
 
-        let ron_str = self.read_file_contents_to_string();
+        let ron_str = self.read_file_contents_to_string_result()?;
         let o_res = serde_yaml::from_str(&ron_str);
         return match o_res {
             Ok(o) => {
