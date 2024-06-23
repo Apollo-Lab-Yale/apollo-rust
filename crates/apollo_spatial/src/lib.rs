@@ -4,6 +4,7 @@ pub mod matrices;
 pub mod rotation_matrices;
 pub mod quaternions;
 pub mod isometries;
+pub mod translations;
 
 
 
