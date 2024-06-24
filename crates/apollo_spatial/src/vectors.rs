@@ -1,7 +1,8 @@
-use nalgebra::{Translation3, Vector2, Vector3, Vector6};
+use nalgebra::{Translation3, Vector1, Vector2, Vector3, Vector6};
 use rand::Rng;
 use apollo_linalg::{ApolloDMatrixTrait, ApolloDVectorTrait, M, V};
 
+pub type V1 = Vector1<f64>;
 pub type V2 = Vector2<f64>;
 pub type V3 = Vector3<f64>;
 pub type V6 = Vector6<f64>;

@@ -17,6 +17,7 @@ pub trait ApolloIsometry3Trait {
     fn from_slice_scaled_axis(slice: &[f64]) -> Self;
     fn from_slice_euler_angles(slice: &[f64]) -> Self;
     fn from_slice_quaternion(slice: &[f64]) -> Self;
+    fn to_isometry_matrix_3(&self) -> I3M;
 }
 impl ApolloIsometry3Trait for I3 {
     fn new_random_with_range(min: f64, max: f64) -> Self {
@@ -64,6 +65,12 @@ impl ApolloIsometry3Trait for I3 {
 
         Self::from_slices_quaternion(&translation, &quaternion)
     }
+
+    #[inline(always)]
+    fn to_isometry_matrix_3(&self) -> I3M {
+        let new_rot = self.rotation.to_rotation_matrix();
+        I3M::from_parts(self.translation, new_rot)
+    }
 }
 
 
@@ -76,6 +83,7 @@ pub trait ApolloIsometryMatrix3Trait {
     fn from_slice_scaled_axis(slice: &[f64]) -> Self;
     fn from_slice_euler_angles(slice: &[f64]) -> Self;
     fn from_slice_quaternion(slice: &[f64]) -> Self;
+    fn to_isometry_3(&self) -> I3;
 }
 impl ApolloIsometryMatrix3Trait for I3M {
     fn new_random_with_range(min: f64, max: f64) -> Self {
@@ -121,5 +129,11 @@ impl ApolloIsometryMatrix3Trait for I3M {
         let quaternion = [slice[3], slice[4], slice[5], slice[6]];
 
         Self::from_slices_quaternion(&translation, &quaternion)
+    }
+
+    #[inline(always)]
+    fn to_isometry_3(&self) -> I3 {
+        let new_rot = self.rotation.to_unit_quaternion();
+        I3::from_parts(self.translation, new_rot)
     }
 }

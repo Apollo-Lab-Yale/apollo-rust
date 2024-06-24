@@ -5,7 +5,6 @@ use crate::complex_numbers::UC;
 use crate::matrices::{ApolloMatrix2Trait, ApolloMatrix3Trait, M2, M3};
 use crate::quaternions::{ApolloUnitQuaternionTrait, UQ};
 
-
 pub type R2 = Rotation2<f64>;
 pub type R3 = Rotation3<f64>;
 
@@ -72,3 +71,4 @@ impl ApolloRotation3Trait for R3 {
         Self::from(UQ::from_slice_quaternion(slice))
     }
 }
+

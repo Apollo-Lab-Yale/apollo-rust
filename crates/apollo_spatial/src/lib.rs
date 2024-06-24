@@ -3,8 +3,9 @@ pub mod complex_numbers;
 pub mod matrices;
 pub mod rotation_matrices;
 pub mod quaternions;
-pub mod isometries;
+pub mod isometry3;
 pub mod translations;
+pub mod lie;
 
 
 
