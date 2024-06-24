@@ -45,6 +45,14 @@ impl LieAlgebraElement for LieAlgU1 {
     type LieGroupElementType = LieGroupU1;
     type EuclideanSpaceElementType = f64;
 
+    fn from_euclidean_space_element(e: &Self::EuclideanSpaceElementType) -> Self {
+        e.to_lie_alg_u1()
+    }
+
+    fn scale(&self, scalar: f64) -> Self {
+        Self::new(scalar * self.0)
+    }
+
     #[inline(always)]
     fn exp(&self) -> Self::LieGroupElementType {
         let alpha = self.0.im;

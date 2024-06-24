@@ -49,6 +49,14 @@ impl LieAlgebraElement for LieAlgSO2 {
     type LieGroupElementType = LieGroupSO2;
     type EuclideanSpaceElementType = f64;
 
+    fn from_euclidean_space_element(e: &Self::EuclideanSpaceElementType) -> Self {
+        e.to_lie_alg_so2()
+    }
+
+    fn scale(&self, scalar: f64) -> Self {
+        Self::new(scalar * self.0)
+    }
+
     #[inline(always)]
     fn exp(&self) -> Self::LieGroupElementType {
         let a = self.0.m21;
