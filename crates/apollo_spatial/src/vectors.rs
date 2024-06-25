@@ -1,6 +1,7 @@
 use nalgebra::{Translation3, Vector1, Vector2, Vector3, Vector6};
 use rand::Rng;
 use apollo_linalg::{ApolloDMatrixTrait, ApolloDVectorTrait, M, V};
+use crate::translations::{ApolloTranslation3, T3};
 
 pub type V1 = Vector1<f64>;
 pub type V2 = Vector2<f64>;
@@ -47,4 +48,9 @@ impl_apollo_vector_trait!(ApolloVector6Trait, V6, 6);
 
 pub trait ApolloVector3Trait2 {
     fn to_translation(&self) -> Translation3<f64>;
+}
+impl ApolloVector3Trait2 for V3 {
+    fn to_translation(&self) -> Translation3<f64> {
+        T3::from_vector3(self)
+    }
 }
