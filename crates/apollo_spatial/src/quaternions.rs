@@ -5,7 +5,6 @@ use apollo_linalg::{ApolloDVectorTrait, V};
 pub type Q = Quaternion<f64>;
 pub type UQ = UnitQuaternion<f64>;
 
-
 pub trait ApolloQuaternionTrait {
     /// [w x y z] format
     fn from_slice(slice: &[f64]) -> Self;

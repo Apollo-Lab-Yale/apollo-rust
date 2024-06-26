@@ -4,6 +4,7 @@ use crate::lie::so3::{ApolloLieAlgPackSO3Trait, ApolloMatrix3SO3LieTrait, Apollo
 use crate::matrices::M3;
 use crate::vectors::{ApolloVector3Trait2, V3, V6};
 
+
 pub type ISE3 = LieGroupISE3;
 pub type Ise3 = LieAlgISE3;
 
@@ -15,6 +16,7 @@ impl LieGroupISE3 {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct LieAlgISE3 { m: M3, v: V3 }
 impl LieAlgISE3 {
     pub fn new(m: M3, v: V3) -> Self {
