@@ -15,7 +15,6 @@ fn main() {
     }
     println!("{:?}", start.elapsed());
 
-
     let v = V3::new(0.1, 0.2, 0.3);
 
     let ii = v.to_lie_alg_h1();
@@ -25,7 +24,6 @@ fn main() {
         ii.ln();
     }
     println!("{:?}", start.elapsed());
-
 
     let v = V6::new(0.1512,0.2, 0.3, 0.3127, 0.2, 0.1);
     let ii = v.to_pseudo_lie_alg_ise3q();

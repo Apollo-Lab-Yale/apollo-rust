@@ -1,8 +1,10 @@
 use nalgebra::Complex;
+use serde::{Deserialize, Serialize};
 use apollo_lie::{LieAlgebraElement, LieGroupElement};
 use crate::complex_numbers::{C, UC};
+use crate::lie::Rotation2DLieGroupElement;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupU1(pub UC);
 impl LieGroupU1 {
     pub fn new(field0: UC) -> Self {
@@ -10,7 +12,7 @@ impl LieGroupU1 {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieAlgU1(pub C);
 impl LieAlgU1 {
     pub fn new(field0: C) -> Self {
@@ -41,6 +43,7 @@ impl LieGroupElement for LieGroupU1 {
         LieAlgU1::new(C::new(0.0, atan2))
     }
 }
+impl Rotation2DLieGroupElement for LieGroupU1 { }
 impl LieAlgebraElement for LieAlgU1 {
     type LieGroupElementType = LieGroupU1;
     type EuclideanSpaceElementType = f64;

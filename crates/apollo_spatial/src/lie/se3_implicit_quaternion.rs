@@ -1,7 +1,9 @@
+use serde::{Deserialize, Serialize};
 use apollo_lie::{LieAlgebraElement, LieGroupElement};
 use crate::isometry3::I3;
 use crate::lie::h1::{ApolloLieAlgPackH1Trait, ApolloQuaternionH1LieTrait, ApolloUnitQuaternionH1LieTrait};
 use crate::lie::so3::ApolloLieAlgPackSO3Trait;
+use crate::lie::TranslationAndRotation3DLieGroupElement;
 use crate::matrices::M3;
 use crate::quaternions::Q;
 use crate::translations::ApolloTranslation3;
@@ -10,7 +12,7 @@ use crate::vectors::{ApolloVector3Trait2, V3, V6};
 pub type ISE3q = LieGroupISE3q;
 pub type Ise3q = LieAlgISE3q;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupISE3q(pub I3);
 impl LieGroupISE3q {
     pub fn new(field0: I3) -> Self {
@@ -18,7 +20,7 @@ impl LieGroupISE3q {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieAlgISE3q { q: Q, v: V3 }
 impl LieAlgISE3q {
     pub fn new(q: Q, v: V3) -> Self {
@@ -73,6 +75,7 @@ impl LieGroupElement for LieGroupISE3q {
         Ise3q::new(a_quat.0, b)
     }
 }
+impl TranslationAndRotation3DLieGroupElement for LieGroupISE3q { }
 
 impl LieAlgebraElement for LieAlgISE3q {
     type LieGroupElementType = LieGroupISE3q;

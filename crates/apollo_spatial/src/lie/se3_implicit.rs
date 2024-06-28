@@ -1,6 +1,8 @@
+use serde::{Deserialize, Serialize};
 use apollo_lie::{LieAlgebraElement, LieGroupElement};
 use crate::isometry3::I3M;
 use crate::lie::so3::{ApolloLieAlgPackSO3Trait, ApolloMatrix3SO3LieTrait, ApolloRotation3SO3LieTrait};
+use crate::lie::TranslationAndRotation3DLieGroupElement;
 use crate::matrices::M3;
 use crate::vectors::{ApolloVector3Trait2, V3, V6};
 
@@ -8,7 +10,7 @@ use crate::vectors::{ApolloVector3Trait2, V3, V6};
 pub type ISE3 = LieGroupISE3;
 pub type Ise3 = LieAlgISE3;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupISE3(pub I3M);
 impl LieGroupISE3 {
     pub fn new(field0: I3M) -> Self {
@@ -16,7 +18,7 @@ impl LieGroupISE3 {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieAlgISE3 { m: M3, v: V3 }
 impl LieAlgISE3 {
     pub fn new(m: M3, v: V3) -> Self {
@@ -70,6 +72,7 @@ impl LieGroupElement for ISE3 {
         Ise3::new(a_mat.0, b)
     }
 }
+impl TranslationAndRotation3DLieGroupElement for LieGroupISE3 { }
 
 impl LieAlgebraElement for Ise3 {
     type LieGroupElementType = ISE3;

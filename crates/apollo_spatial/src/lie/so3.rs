@@ -1,10 +1,12 @@
 use std::f64::consts::PI;
+use serde::{Deserialize, Serialize};
 use apollo_lie::{LieAlgebraElement, LieGroupElement};
+use crate::lie::Rotation3DLieGroupElement;
 use crate::matrices::{M3};
 use crate::rotation_matrices::{R3};
 use crate::vectors::V3;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupSO3(pub R3);
 impl LieGroupSO3 {
     pub fn new(field0: R3) -> Self {
@@ -12,7 +14,7 @@ impl LieGroupSO3 {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieAlgSO3(pub M3);
 impl LieAlgSO3 {
     pub fn new(field0: M3) -> Self {
@@ -67,6 +69,7 @@ impl LieGroupElement for LieGroupSO3 {
         }
     }
 }
+impl Rotation3DLieGroupElement for LieGroupSO3 { }
 
 impl LieAlgebraElement for LieAlgSO3 {
     type LieGroupElementType = LieGroupSO3;

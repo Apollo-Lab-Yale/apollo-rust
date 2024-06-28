@@ -4,5 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-nalgebra = { version = "0.33.0", features = ["rand"] }
+apollo_robot_preprocessor = { path = "/Users/dannyrakita/Documents/apollo_robot_preprocessor" }
+apollo_spatial = { path = "../apollo_spatial" }
+nalgebra = { version = "0.33.0", features = ["rand", "serde-serialize"] }
 parry3d = { version = "0.15.1" }
+serde = { version="1.0.203", features = ["derive"] }

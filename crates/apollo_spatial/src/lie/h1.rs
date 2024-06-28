@@ -1,8 +1,10 @@
+use serde::{Deserialize, Serialize};
 use apollo_lie::{LieAlgebraElement, LieGroupElement};
+use crate::lie::Rotation3DLieGroupElement;
 use crate::quaternions::{Q, UQ};
 use crate::vectors::V3;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupH1(pub UQ);
 impl LieGroupH1 {
     pub fn new(field0: UQ) -> Self {
@@ -10,7 +12,8 @@ impl LieGroupH1 {
     }
 }
 
-#[derive(Clone, Debug)]
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieAlgH1(pub Q);
 impl LieAlgH1 {
     pub fn new(field0: Q) -> Self {
@@ -43,6 +46,7 @@ impl LieGroupElement for LieGroupH1 {
         }
     }
 }
+impl Rotation3DLieGroupElement for LieGroupH1 { }
 
 impl LieAlgebraElement for LieAlgH1 {
     type LieGroupElementType = LieGroupH1;

@@ -1,8 +1,10 @@
+use serde::{Deserialize, Serialize};
 use apollo_lie::{LieAlgebraElement, LieGroupElement};
+use crate::lie::Rotation2DLieGroupElement;
 use crate::matrices::M2;
 use crate::rotation_matrices::R2;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupSO2(pub R2);
 impl LieGroupSO2 {
     pub fn new(field0: R2) -> Self {
@@ -10,7 +12,7 @@ impl LieGroupSO2 {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieAlgSO2(pub M2);
 impl LieAlgSO2 {
     pub fn new(field0: M2) -> Self {
@@ -45,6 +47,7 @@ impl LieGroupElement for LieGroupSO2 {
         )
     }
 }
+impl Rotation2DLieGroupElement for LieGroupSO2 { }
 impl LieAlgebraElement for LieAlgSO2 {
     type LieGroupElementType = LieGroupSO2;
     type EuclideanSpaceElementType = f64;
