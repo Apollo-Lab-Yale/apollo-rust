@@ -32,6 +32,11 @@ impl LieGroupElement for LieGroupSO2 {
     }
 
     #[inline(always)]
+    fn identity_element() -> Self {
+        Self::new(R2::identity())
+    }
+
+    #[inline(always)]
     fn inverse(&self) -> Self {
         Self::new(self.0.transpose())
     }

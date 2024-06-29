@@ -4,6 +4,7 @@ pub trait LieGroupElement : Sized {
     type LieAlgebraElementType: LieAlgebraElement<LieGroupElementType= Self>;
 
     fn group_operator(&self, other: &Self) -> Self;
+    fn identity_element() -> Self;
     fn inverse(&self) -> Self;
     #[inline(always)]
     fn displacement(&self, other: &Self) -> Self {

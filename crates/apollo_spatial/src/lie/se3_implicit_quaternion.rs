@@ -15,8 +15,14 @@ pub type Ise3q = LieAlgISE3q;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupISE3q(pub I3);
 impl LieGroupISE3q {
+    #[inline(always)]
     pub fn new(field0: I3) -> Self {
         Self(field0)
+    }
+
+    #[inline(always)]
+    pub fn from_exponential_coordinates(exponential_coordinates: &V6) -> Self {
+        return exponential_coordinates.to_lie_alg_ise3q().exp()
     }
 }
 
@@ -42,6 +48,11 @@ impl LieGroupElement for LieGroupISE3q {
     #[inline(always)]
     fn group_operator(&self, other: &Self) -> Self {
         Self::new(self.0 * other.0)
+    }
+
+    #[inline(always)]
+    fn identity_element() -> Self {
+        Self::new(I3::identity())
     }
 
     #[inline(always)]
@@ -144,8 +155,14 @@ impl ApolloLieAlgPackIse3qTrait for V6 {
 
 pub struct PseudoLieGroupISE3q(pub I3);
 impl PseudoLieGroupISE3q {
+    #[inline(always)]
     pub fn new(field0: I3) -> Self {
         Self(field0)
+    }
+
+    #[inline(always)]
+    pub fn from_exponential_coordinates(exponential_coordinates: &V6) -> Self {
+        return exponential_coordinates.to_pseudo_lie_alg_ise3q().exp()
     }
 }
 
@@ -171,6 +188,10 @@ impl LieGroupElement for PseudoLieGroupISE3q {
     #[inline(always)]
     fn group_operator(&self, other: &Self) -> Self {
         Self::new(self.0 * other.0)
+    }
+
+    fn identity_element() -> Self {
+        Self::new(I3::identity())
     }
 
     #[inline(always)]

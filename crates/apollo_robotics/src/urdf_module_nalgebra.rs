@@ -1,4 +1,5 @@
 use apollo_robot_preprocessor::modules::urdf_module::{ApolloURDFAxis, ApolloURDFCollision, ApolloURDFDynamics, ApolloURDFGeometry, ApolloURDFInertia, ApolloURDFInertial, ApolloURDFJoint, ApolloURDFJointLimit, ApolloURDFJointType, ApolloURDFLink, ApolloURDFLinkName, ApolloURDFMass, ApolloURDFMaterial, ApolloURDFMimic, ApolloURDFModule, ApolloURDFPose, ApolloURDFSafetyController, ApolloURDFVisual};
+use apollo_robot_preprocessor::{RobotPreprocessorModule, RobotPreprocessorSingleRobotDirectory};
 use serde::{Deserialize, Serialize};
 use apollo_spatial::isometry3::{ApolloIsometry3Trait, ApolloIsometryMatrix3Trait, I3, I3M};
 use apollo_spatial::lie::se3_implicit::LieGroupISE3;
@@ -14,6 +15,10 @@ pub struct ApolloURDFModuleNalgebra {
     pub materials: Vec<ApolloURDFMaterial>
 }
 impl ApolloURDFModuleNalgebra {
+    pub fn from_robot_directory(s: &RobotPreprocessorSingleRobotDirectory) -> Self {
+        let urdf_module = ApolloURDFModule::load_or_build(s, false).expect("error");
+        Self::from_urdf_module(&urdf_module)
+    }
     pub fn from_urdf_module(urdf_module: &ApolloURDFModule) -> Self {
         Self {
             name: urdf_module.name.clone(),

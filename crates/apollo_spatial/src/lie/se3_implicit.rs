@@ -13,8 +13,14 @@ pub type Ise3 = LieAlgISE3;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupISE3(pub I3M);
 impl LieGroupISE3 {
+    #[inline(always)]
     pub fn new(field0: I3M) -> Self {
         Self(field0)
+    }
+
+    #[inline(always)]
+    pub fn from_exponential_coordinates(exponential_coordinates: &V6) -> Self {
+        return exponential_coordinates.to_lie_alg_ise3().exp()
     }
 }
 
@@ -40,6 +46,11 @@ impl LieGroupElement for ISE3 {
     #[inline(always)]
     fn group_operator(&self, other: &Self) -> Self {
         ISE3::new(self.0*other.0)
+    }
+
+    #[inline(always)]
+    fn identity_element() -> Self {
+        Self::new(I3M::identity())
     }
 
     #[inline(always)]

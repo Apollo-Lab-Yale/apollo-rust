@@ -9,14 +9,21 @@ use crate::vectors::V3;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupSO3(pub R3);
 impl LieGroupSO3 {
+    #[inline(always)]
     pub fn new(field0: R3) -> Self {
         Self(field0)
+    }
+
+    #[inline(always)]
+    pub fn from_exponential_coordinates(exponential_coordinates: &V3) -> Self {
+        exponential_coordinates.to_lie_alg_so3().exp()
     }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieAlgSO3(pub M3);
 impl LieAlgSO3 {
+    #[inline(always)]
     pub fn new(field0: M3) -> Self {
         assert_eq!(field0.m11, 0.0);
         assert_eq!(field0.m22, 0.0);
@@ -36,6 +43,10 @@ impl LieGroupElement for LieGroupSO3 {
     #[inline(always)]
     fn group_operator(&self, other: &Self) -> Self {
         Self::new(self.0 * other.0)
+    }
+
+    fn identity_element() -> Self {
+        Self::new(R3::identity())
     }
 
     #[inline(always)]

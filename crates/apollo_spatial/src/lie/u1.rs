@@ -30,6 +30,10 @@ impl LieGroupElement for LieGroupU1 {
         LieGroupU1::new(self.0 * other.0)
     }
 
+    fn identity_element() -> Self {
+        Self::new(UC::identity())
+    }
+
     #[inline(always)]
     fn inverse(&self) -> Self {
         LieGroupU1::new(self.0.conjugate())

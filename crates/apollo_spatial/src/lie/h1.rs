@@ -7,8 +7,13 @@ use crate::vectors::V3;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupH1(pub UQ);
 impl LieGroupH1 {
+    #[inline(always)]
     pub fn new(field0: UQ) -> Self {
         Self(field0)
+    }
+    #[inline(always)]
+    pub fn from_exponential_coordinates(exponential_coordinates: &V3) -> Self {
+        return exponential_coordinates.to_lie_alg_h1().exp();
     }
 }
 
@@ -16,6 +21,7 @@ impl LieGroupH1 {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieAlgH1(pub Q);
 impl LieAlgH1 {
+    #[inline(always)]
     pub fn new(field0: Q) -> Self {
         Self(field0)
     }
@@ -27,6 +33,11 @@ impl LieGroupElement for LieGroupH1 {
     #[inline(always)]
     fn group_operator(&self, other: &Self) -> Self {
         Self::new(self.0*other.0)
+    }
+
+    #[inline(always)]
+    fn identity_element() -> Self {
+        Self::new(UQ::identity())
     }
 
     #[inline(always)]
