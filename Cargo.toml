@@ -8,8 +8,8 @@ members = [
     "crates/apollo_file",
     "crates/apollo_linalg",
     "crates/apollo_spatial",
-    "crates/apollo_robotics"
-, "crates/apollo_lie"]
+    "crates/apollo_lie"
+]
 
 [dependencies]
 

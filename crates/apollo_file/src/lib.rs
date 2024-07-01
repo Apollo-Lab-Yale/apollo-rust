@@ -49,6 +49,7 @@ pub trait ApolloPathBufTrait: Sized {
     fn load_object_from_yaml_file_result<T: Serialize + DeserializeOwned>(&self) -> Result<T, String>;
     fn save_object_to_yaml_file<T: Serialize + DeserializeOwned>(&self, object: &T);
     fn get_file_for_writing(&self) -> File;
+    fn get_file_for_reading(&self) -> File;
     fn verify_extension(&self, extensions: &Vec<&str>) -> Result<(), String>;
 }
 
@@ -450,6 +451,12 @@ impl ApolloPathBufTrait for PathBuf {
         let file = OpenOptions::new().write(true).create_new(true).open(self).expect("error");
         file
     }
+
+    fn get_file_for_reading(&self) -> File {
+        let file = OpenOptions::new().read(true).open(self).expect("error");
+        file
+    }
+
     fn verify_extension(&self, extensions: &Vec<&str>) -> Result<(), String> {
         let ext_option = self.extension();
         match ext_option {
