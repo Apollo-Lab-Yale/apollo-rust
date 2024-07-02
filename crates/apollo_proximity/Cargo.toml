@@ -1,0 +1,8 @@
+[package]
+name = "apollo_proximity"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+apollo_spatial = { path = "../apollo_spatial" }
+parry3d-f64 = { version = "0.16.1", features = ["serde-serialize"] }

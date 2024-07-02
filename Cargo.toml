@@ -9,7 +9,7 @@ members = [
     "crates/apollo_linalg",
     "crates/apollo_spatial",
     "crates/apollo_lie"
-]
+, "crates/apollo_proximity"]
 
 [dependencies]
 
