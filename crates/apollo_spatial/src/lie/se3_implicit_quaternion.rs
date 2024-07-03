@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use apollo_lie::{LieAlgebraElement, LieGroupElement};
-use crate::isometry3::I3;
+use crate::isometry3::{ApolloIsometry3Trait, I3};
 use crate::lie::h1::{ApolloLieAlgPackH1Trait, ApolloQuaternionH1LieTrait, ApolloUnitQuaternionH1LieTrait};
 use crate::lie::so3::ApolloLieAlgPackSO3Trait;
 use crate::lie::TranslationAndRotation3DLieGroupElement;
@@ -18,6 +18,13 @@ impl LieGroupISE3q {
     #[inline(always)]
     pub fn new(field0: I3) -> Self {
         Self(field0)
+    }
+
+    #[inline(always)]
+    pub fn identity() -> Self { Self::new(I3::identity()) }
+
+    pub fn new_random() -> Self {
+        Self::new(I3::new_random_with_range(-3.0, 3.0))
     }
 
     #[inline(always)]
