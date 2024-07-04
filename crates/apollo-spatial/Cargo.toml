@@ -1,11 +1,11 @@
 [package]
-name = "apollo_spatial"
+name = "apollo-spatial"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-apollo_linalg = { path="../apollo_linalg" }
-apollo_lie = { path="../apollo_lie" }
+apollo-linalg = { path= "../apollo-linalg" }
+apollo-lie = { path= "../apollo-lie" }
 nalgebra = { version = "0.33.0", features = ["rand", "serde-serialize"] }
 rand = { version="0.9.0-alpha.1" }
 serde = { version="1.0.203", features = ["derive"] }

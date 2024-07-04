@@ -1,5 +1,5 @@
 [package]
-name = "apollo_file"
+name = "apollo-file"
 version = "0.1.0"
 edition = "2021"
 

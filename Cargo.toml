@@ -1,15 +1,16 @@
 [package]
-name = "apollo_rust"
+name = "apollo-rust"
 version = "0.1.0"
 edition = "2021"
 
 [workspace]
 members = [
-    "crates/apollo_file",
-    "crates/apollo_linalg",
-    "crates/apollo_spatial",
-    "crates/apollo_lie"
-, "crates/apollo_proximity"]
+    "crates/apollo-file",
+    "crates/apollo-linalg",
+    "crates/apollo-spatial",
+    "crates/apollo-lie",
+    "crates/apollo-proximity"
+]
 
 [dependencies]
 
