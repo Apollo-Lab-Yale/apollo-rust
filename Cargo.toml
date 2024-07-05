@@ -9,7 +9,8 @@ members = [
     "crates/apollo-linalg",
     "crates/apollo-spatial",
     "crates/apollo-lie",
-    "crates/apollo-proximity"
+    "crates/apollo-proximity",
+    "crates/apollo-file-py"
 ]
 
 [dependencies]

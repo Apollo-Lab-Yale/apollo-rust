@@ -23,6 +23,7 @@ pub trait ApolloPathBufTrait: Sized {
     fn split_into_strings(&self) -> Vec<String>;
     fn split_into_path_bufs(&self) -> Vec<Self>;
     fn walk_directory_and_find_first<P: AsRef<Path> + Debug>(self, s: P) -> Self;
+    fn walk_directory_and_find_first_result<P: AsRef<Path> + Debug>(self, s: P) -> Result<Self, String>;
     fn walk_directory_and_find_all<P: AsRef<Path> + Debug>(self, s: P) -> Vec<Self>;
     fn create_directory(&self);
     fn delete_file(&self);
@@ -148,6 +149,16 @@ impl ApolloPathBufTrait for PathBuf {
         }
 
         panic!("could not find {:?}", s);
+    }
+    fn walk_directory_and_find_first_result<P: AsRef<Path> + Debug>(self, s: P) -> Result<Self, String> {
+        for entry_res in WalkDir::new(self) {
+            if let Ok(entry) = entry_res {
+                let entry_path = entry.into_path();
+                if entry_path.ends_with(&s) { return Ok(entry_path); }
+            }
+        }
+
+        Err(format!("could not find {:?}", s))
     }
     fn walk_directory_and_find_all<P: AsRef<Path> + Debug>(self, s: P) -> Vec<Self> {
         let mut out = vec![];
@@ -451,7 +462,6 @@ impl ApolloPathBufTrait for PathBuf {
         let file = OpenOptions::new().write(true).create_new(true).open(self).expect("error");
         file
     }
-
     fn get_file_for_reading(&self) -> File {
         let file = OpenOptions::new().read(true).open(self).expect("error");
         file
