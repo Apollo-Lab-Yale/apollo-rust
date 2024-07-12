@@ -52,6 +52,7 @@ pub trait ApolloPathBufTrait: Sized {
     fn get_file_for_writing(&self) -> File;
     fn get_file_for_reading(&self) -> File;
     fn verify_extension(&self, extensions: &Vec<&str>) -> Result<(), String>;
+    fn get_a_to_b_path(&self, b: &PathBuf) -> PathBuf;
 }
 
 impl ApolloPathBufTrait for PathBuf {
@@ -482,5 +483,16 @@ impl ApolloPathBufTrait for PathBuf {
             }
         }
         Err(format!("Path {:?} does not have one of the following extensions: {:?}", self, extensions))
+    }
+    fn get_a_to_b_path(&self, b: &PathBuf) -> PathBuf {
+        let mut out = self.clone();
+
+        let s = self.split_into_path_bufs();
+        let l = s.len();
+        for _ in 0..l-1 {
+            out = out.clone().append("..");
+        }
+
+        return out.append_path(b);
     }
 }
