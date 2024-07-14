@@ -1,5 +1,5 @@
 [package]
-name = "apollo-rust-core"
+name = "apollo-rust"
 version = "0.1.0"
 edition = "2021"
 
@@ -18,7 +18,7 @@ members = [
 
 
 [lib]
-name = "apollo_rust_core"
+name = "apollo_rust"
 crate-type = ["cdylib", "rlib"]
 
 [profile.dev]
