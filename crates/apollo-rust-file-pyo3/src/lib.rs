@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use pyo3::prelude::*;
-use apollo_file::ApolloPathBufTrait;
+use apollo_rust_file::ApolloPathBufTrait;
 
 #[pyclass]
 pub struct PathBufPy {
@@ -34,6 +34,13 @@ impl PathBufPy {
     pub fn new_from_desktop_dir() -> Self {
         Self {
             pathbuf: PathBuf::new_from_desktop_dir(),
+        }
+    }
+
+    #[staticmethod]
+    pub fn new_from_default_apollo_robots_dir() -> Self {
+        Self {
+            pathbuf: PathBuf::new_from_default_apollo_robots_dir()
         }
     }
 

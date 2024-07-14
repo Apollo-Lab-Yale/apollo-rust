@@ -1,9 +1,0 @@
-[package]
-name = "apollo-rust-robotModulesBuilder"
-version = "0.0.1"
-edition = "2021"
-
-[dependencies]
-apollo-rust-robotModules = { path = "../apollo-rust-robotModules" }
-apollo-rust-robotModulesLoader = { path = "../apollo-rust-robotModulesLoader" }
-apollo-rust-robotics-core = { path = "../apollo-rust-robotics-core" }

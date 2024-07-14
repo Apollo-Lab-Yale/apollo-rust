@@ -1,0 +1,23 @@
+[package]
+name = "apollo-rust-robot-modules-builder"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+apollo-rust-robot-modules = { path = "../apollo-rust-robot-modules" }
+apollo-rust-robotics-core = { path = "../apollo-rust-robotics-core" }
+apollo-rust-file = { path = "../apollo-rust-file" }
+apollo-rust-spatial = { path = "../apollo-rust-spatial" }
+apollo-rust-lie = { path = "../apollo-rust-lie" }
+apollo-rust-linalg = { path = "../apollo-rust-linalg" }
+serde = { version="1.0.204", features = ["derive"] }
+serde_json = { version="1.0.120" }
+pbr = { version="1.1.1" }
+nalgebra = { version="0.33.0", features=["serde-serialize", "rand"] }
+dae-parser = { version="0.10.0" }
+stl_io = { version="0.7.0" }
+parry3d-f64 = { version= "0.16.1" }
+base64 = "0.21.7"
+gltf = "1.4.1"
+gltf-json = "1.4.1"
+obj-rs = { version="0.7.1" }
