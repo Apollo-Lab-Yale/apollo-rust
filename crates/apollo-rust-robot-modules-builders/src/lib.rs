@@ -27,6 +27,9 @@ impl RobotPreprocessorRobotsDirectory {
             directory
         }
     }
+    pub fn new_default() -> Self {
+        Self::new(PathBuf::new_from_default_apollo_robots_dir())
+    }
     pub fn directory(&self) -> &PathBuf {
         &self.directory
     }
