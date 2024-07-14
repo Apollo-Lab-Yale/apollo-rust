@@ -18,6 +18,7 @@ use crate::modules_runtime::urdf_nalgebra_module::URDFNalgebraModuleBuilders;
 
 pub mod modules_runtime;
 
+
 #[derive(Clone)]
 pub struct Robot {
     urdf_module: ApolloURDFNalgebraModule,
@@ -142,5 +143,24 @@ impl Robot {
     pub fn self_contact_from_state(&self, state: &V, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool, margin: f64) -> Vec<((usize, usize), Option<Contact>)> {
         let link_poses = self.fk(state);
         self.self_contact(&link_poses, link_shape_mode, link_shape_rep, early_stop, margin)
+    }
+}
+
+
+pub trait ToRobot {
+    fn to_robot(&self) -> Robot;
+}
+impl ToRobot for RobotPreprocessorSingleRobotDirectory {
+    fn to_robot(&self) -> Robot {
+        Robot::new_from_single_robot_directory(self)
+    }
+}
+
+pub trait ToRobotFromName {
+    fn to_robot(&self, robot_name: &str) -> Robot;
+}
+impl ToRobotFromName for RobotPreprocessorRobotsDirectory {
+    fn to_robot(&self, robot_name: &str) -> Robot {
+        Robot::new_from_root(self, robot_name)
     }
 }
