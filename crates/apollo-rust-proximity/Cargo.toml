@@ -1,11 +1,11 @@
 [package]
-name = "apollo-proximity"
-version = "0.1.0"
+name = "apollo-rust-proximity"
+version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-apollo-spatial = { path = "../apollo-rust-spatial" }
-apollo-lie = { path = "../apollo-rust-lie" }
+apollo-rust-spatial = { path = "../apollo-rust-spatial" }
+apollo-rust-lie = { path = "../apollo-rust-lie" }
 parry3d-f64 = { version = "0.16.1", features = ["serde-serialize"] }
 nalgebra = { version = "0.33.0", features = ["rand", "serde-serialize"] }
 serde = { version = "1.0.203", features = ["derive"] }

@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use apollo_lie::{LieAlgebraElement, LieGroupElement};
+use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
 use crate::lie::Rotation3DLieGroupElement;
 use crate::quaternions::{Q, UQ};
 use crate::vectors::V3;

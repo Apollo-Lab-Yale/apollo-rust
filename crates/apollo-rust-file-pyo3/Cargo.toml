@@ -1,13 +1,13 @@
 [package]
-name = "apollo-file-py"
+name = "apollo-rust-file-pyo3"
 version = "0.0.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "apollo_file_py"
+name = "apollo_rust_file_pyo3"
 crate-type = ["cdylib"]
 
 [dependencies]
-apollo-file = { path = "../apollo-rust-file" }
+apollo-rust-file = { path = "../apollo-rust-file" }
 pyo3 = "0.22.0"

@@ -10,9 +10,9 @@ members = [
     "crates/apollo-rust-spatial",
     "crates/apollo-rust-lie",
     "crates/apollo-rust-proximity",
-    "crates/apollo-rust-file-pyo3"
-]
-
+    "crates/apollo-rust-file-pyo3",
+    "crates/apollo-rust-bevy"
+, "crates/apollo-rust-robotModules", "crates/apollo-rust-robotModulesBuilder", "crates/apollo-rust-robotModulesLoader", "crates/apollo-rust-robotics-core", "crates/apollo-rust-robotics"]
 [dependencies]
 
 

@@ -1,5 +1,5 @@
 use nalgebra::{Quaternion, UnitQuaternion, Vector3};
-use apollo_linalg::{ApolloDVectorTrait, V};
+use apollo_rust_linalg::{ApolloDVectorTrait, V};
 
 
 pub type Q = Quaternion<f64>;

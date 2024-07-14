@@ -1,0 +1,7 @@
+[package]
+name = "apollo-rust-bevy"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+apollo-rust-robotics = { path = "../apollo-rust-robotics" }

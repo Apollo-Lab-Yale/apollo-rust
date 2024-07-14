@@ -1,5 +1,5 @@
 use nalgebra::{Matrix2, Matrix3, Matrix4};
-use apollo_linalg::{ApolloDMatrixTrait, M};
+use apollo_rust_linalg::{ApolloDMatrixTrait, M};
 
 pub type M2 = Matrix2<f64>;
 pub type M3 = Matrix3<f64>;

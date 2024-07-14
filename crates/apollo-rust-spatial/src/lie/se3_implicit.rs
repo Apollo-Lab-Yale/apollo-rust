@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use apollo_lie::{LieAlgebraElement, LieGroupElement};
+use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
 use crate::isometry3::I3M;
 use crate::lie::so3::{ApolloLieAlgPackSO3Trait, ApolloMatrix3SO3LieTrait, ApolloRotation3SO3LieTrait};
 use crate::lie::TranslationAndRotation3DLieGroupElement;

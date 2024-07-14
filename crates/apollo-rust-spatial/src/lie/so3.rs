@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 use serde::{Deserialize, Serialize};
-use apollo_lie::{LieAlgebraElement, LieGroupElement};
+use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
 use crate::lie::Rotation3DLieGroupElement;
 use crate::matrices::{M3};
 use crate::rotation_matrices::{R3};

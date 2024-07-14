@@ -1,6 +1,6 @@
 use nalgebra::{Rotation2, Rotation3, Vector1};
 use rand::Rng;
-use apollo_linalg::M;
+use apollo_rust_linalg::M;
 use crate::complex_numbers::UC;
 use crate::matrices::{ApolloMatrix2Trait, ApolloMatrix3Trait, M2, M3};
 use crate::quaternions::{ApolloUnitQuaternionTrait, UQ};

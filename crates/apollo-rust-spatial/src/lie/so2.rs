@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use apollo_lie::{LieAlgebraElement, LieGroupElement};
+use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
 use crate::lie::Rotation2DLieGroupElement;
 use crate::matrices::M2;
 use crate::rotation_matrices::R2;

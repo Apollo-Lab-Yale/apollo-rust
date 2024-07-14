@@ -1,4 +1,4 @@
-use apollo_lie::LieGroupElement;
+use apollo_rust_lie::LieGroupElement;
 
 pub mod u1;
 pub mod so2;

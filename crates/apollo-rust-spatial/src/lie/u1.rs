@@ -1,6 +1,6 @@
 use nalgebra::Complex;
 use serde::{Deserialize, Serialize};
-use apollo_lie::{LieAlgebraElement, LieGroupElement};
+use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
 use crate::complex_numbers::{C, UC};
 use crate::lie::Rotation2DLieGroupElement;
 

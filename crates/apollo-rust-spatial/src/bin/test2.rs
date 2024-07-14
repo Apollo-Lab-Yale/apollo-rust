@@ -1,4 +1,4 @@
-use apollo_spatial::quaternions::UQ;
+use apollo_rust_spatial::quaternions::UQ;
 
 fn main() {
     let q = UQ::from_euler_angles(1.9,2.,-1.5);
