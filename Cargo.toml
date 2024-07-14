@@ -5,12 +5,12 @@ edition = "2021"
 
 [workspace]
 members = [
-    "crates/apollo-file",
-    "crates/apollo-linalg",
-    "crates/apollo-spatial",
-    "crates/apollo-lie",
-    "crates/apollo-proximity",
-    "crates/apollo-file-py"
+    "crates/apollo-rust-file",
+    "crates/apollo-rust-linalg",
+    "crates/apollo-rust-spatial",
+    "crates/apollo-rust-lie",
+    "crates/apollo-rust-proximity",
+    "crates/apollo-rust-file-pyo3"
 ]
 
 [dependencies]

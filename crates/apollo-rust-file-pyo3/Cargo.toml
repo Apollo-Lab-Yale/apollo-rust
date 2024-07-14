@@ -9,5 +9,5 @@ name = "apollo_file_py"
 crate-type = ["cdylib"]
 
 [dependencies]
-apollo-file = { path = "../apollo-file" }
+apollo-file = { path = "../apollo-rust-file" }
 pyo3 = "0.22.0"
