@@ -1,1 +1,2 @@
 pub mod robot_kinematics_functions;
+pub mod robot_proximity_functions;

@@ -11,3 +11,5 @@ apollo-rust-lie = { path = "../apollo-rust-lie" }
 apollo-rust-linalg = { path = "../apollo-rust-linalg" }
 apollo-rust-proximity = { path = "../apollo-rust-proximity" }
 serde = { version="1.0.204", features = ["derive"] }
+nalgebra = { version = "0.33.0", features = ["rand", "serde-serialize"] }
+parry3d-f64 = { version = "0.16.1", features = ["serde-serialize"] }

@@ -5,11 +5,15 @@ use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_robot_modules::chain_module::ApolloChainModule;
 use apollo_rust_robot_modules::connections_module::ApolloConnectionsModule;
 use apollo_rust_robot_modules::dof_module::ApolloDOFModule;
+use apollo_rust_robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
+use apollo_rust_robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
+use apollo_rust_robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
+use apollo_rust_robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 use apollo_rust_robot_modules::urdf_module::{ApolloURDFAxis, ApolloURDFDynamics, ApolloURDFJoint, ApolloURDFJointLimit, ApolloURDFJointType, ApolloURDFLink, ApolloURDFModule, ApolloURDFPose, ApolloURDFSafetyController};
 use crate::utils::progress_bar::ProgressBarWrapper;
 
 pub mod utils;
-mod modules;
+pub mod modules;
 
 #[derive(Clone, Debug)]
 pub struct RobotPreprocessorRobotsDirectory {
@@ -68,10 +72,10 @@ impl RobotPreprocessorSingleRobotDirectory {
         ApolloDOFModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloChainModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloConnectionsModule::load_or_build(self, force_build_on_all).expect("error");
-        // ApolloOriginalMeshesModule::load_or_build(self, force_build_on_all).expect("error");
-        // ApolloPlainMeshesModule::load_or_build(self, force_build_on_all).expect("error");
-        // ApolloConvexHullMeshesModule::load_or_build(self, force_build_on_all).expect("error");
-        // ApolloConvexDecompositionMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloOriginalMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloPlainMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloConvexHullMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloConvexDecompositionMeshesModule::load_or_build(self, force_build_on_all).expect("error");
     }
 
     pub fn robot_name(&self) -> &str {
