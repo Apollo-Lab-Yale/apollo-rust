@@ -1,5 +1,5 @@
 [package]
-name = "apollo-rust-robot-modules-builder"
+name = "apollo-rust-robot-modules-builders"
 version = "0.0.1"
 edition = "2021"
 
@@ -21,3 +21,4 @@ base64 = "0.21.7"
 gltf = "1.4.1"
 gltf-json = "1.4.1"
 obj-rs = { version="0.7.1" }
+urdf-rs = { version="0.8.0" }

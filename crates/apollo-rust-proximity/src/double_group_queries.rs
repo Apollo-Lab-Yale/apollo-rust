@@ -2,7 +2,7 @@
 use nalgebra::DMatrix;
 use parry3d_f64::query::{Contact, contact, distance, intersection_test};
 use parry3d_f64::shape::Shape;
-use apollo_spatial::lie::se3_implicit_quaternion::ISE3q;
+use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::offset_shape::OffsetShape;
 
 macro_rules! create_double_group_query {

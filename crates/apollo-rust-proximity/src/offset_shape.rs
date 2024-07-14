@@ -1,10 +1,10 @@
 use std::borrow::Cow;
 use parry3d_f64::na::UnitQuaternion;
 use parry3d_f64::shape::{Ball, Cuboid, Shape};
-use apollo_spatial::isometry3::I3;
-use apollo_spatial::lie::se3_implicit_quaternion::ISE3q;
-use apollo_spatial::vectors::ApolloVector3Trait2;
-use apollo_lie::LieGroupElement;
+use apollo_rust_spatial::isometry3::I3;
+use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
+use apollo_rust_spatial::vectors::ApolloVector3Trait2;
+use apollo_rust_lie::LieGroupElement;
 
 pub struct OffsetShape {
     shape: Box<dyn Shape>,

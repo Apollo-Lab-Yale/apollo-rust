@@ -13,7 +13,7 @@ members = [
     "crates/apollo-rust-file-pyo3",
     "crates/apollo-rust-bevy",
     "crates/apollo-rust-robot-modules",
-    "crates/apollo-rust-robot-modules-builder",
+    "crates/apollo-rust-robot-modules-builders",
     "crates/apollo-rust-robotics-core",
     "crates/apollo-rust-robotics"]
 [dependencies]
