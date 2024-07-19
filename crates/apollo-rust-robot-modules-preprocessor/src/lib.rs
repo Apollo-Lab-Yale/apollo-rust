@@ -6,8 +6,9 @@ use apollo_rust_robot_modules::bounds_module::ApolloBoundsModule;
 use apollo_rust_robot_modules::chain_module::ApolloChainModule;
 use apollo_rust_robot_modules::connections_module::ApolloConnectionsModule;
 use apollo_rust_robot_modules::dof_module::ApolloDOFModule;
-use apollo_rust_robot_modules::link_shapes_distance_statistics_module::ApolloLinkShapesDistanceStatisticsModule;
-use apollo_rust_robot_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
+use apollo_rust_robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::ApolloLinkShapesDistanceStatisticsModule;
+use apollo_rust_robot_modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
+use apollo_rust_robot_modules::link_shapes_modules::link_shapes_simple_skips_module::ApolloLinkShapesSimpleSkipsModule;
 use apollo_rust_robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
 use apollo_rust_robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
@@ -35,6 +36,7 @@ impl RobotPreprocessorSingleRobotDirectoryTrait for RobotPreprocessorSingleRobot
         ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloBoundsModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesDistanceStatisticsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesSimpleSkipsModule::load_or_build(self, force_build_on_all).expect("error");
     }
 }
 

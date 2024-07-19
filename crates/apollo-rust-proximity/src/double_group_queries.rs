@@ -8,7 +8,7 @@ use crate::offset_shape::OffsetShape;
 macro_rules! create_double_group_query {
     ($func_name: ident, $output_type: ty, $query_func_code: expr, $push_code: expr, $early_stop_code: expr, $extra_args: ty) => {
 
-        pub fn $func_name(group_a: &Vec<OffsetShape>, poses_a: &Vec<ISE3q>, group_b: &Vec<OffsetShape>, poses_b: &Vec<ISE3q>, skip_symmetrical_entries: bool, skips: &Option<DMatrix<bool>>, early_stop: bool, extra_args: $extra_args) -> Vec<((usize, usize), $output_type)> {
+        pub fn $func_name(group_a: &Vec<OffsetShape>, poses_a: &Vec<ISE3q>, group_b: &Vec<OffsetShape>, poses_b: &Vec<ISE3q>, skip_symmetrical_entries: bool, skips: Option<&DMatrix<bool>>, early_stop: bool, extra_args: $extra_args) -> Vec<((usize, usize), $output_type)> {
             assert_eq!(group_a.len(), poses_a.len());
             assert_eq!(group_b.len(), poses_b.len());
 

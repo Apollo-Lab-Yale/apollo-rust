@@ -7,6 +7,5 @@ pub mod chain_module;
 pub mod mesh_modules;
 pub mod dof_module;
 pub mod connections_module;
-pub mod link_shapes_max_distance_from_origin_module;
-pub mod link_shapes_distance_statistics_module;
 pub mod bounds_module;
+pub mod link_shapes_modules;

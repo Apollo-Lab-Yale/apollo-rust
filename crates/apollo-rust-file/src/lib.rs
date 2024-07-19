@@ -29,6 +29,7 @@ pub trait ApolloPathBufTrait: Sized {
     fn create_directory(&self);
     fn delete_file(&self);
     fn delete_directory(&self);
+    fn delete_directory_result(&self) -> Result<(), String>;
     fn delete_all_items_in_directory(&self);
     fn copy_file_to_destination_file_path(&self, destination: &Self);
     fn copy_file_to_destination_directory(&self, destination: &Self);
@@ -186,6 +187,13 @@ impl ApolloPathBufTrait for PathBuf {
     }
     fn delete_directory(&self) {
         fs::remove_dir_all(self).expect("could not delete directory");
+    }
+    fn delete_directory_result(&self) -> Result<(), String> {
+        let res = fs::remove_dir_all(self);
+        return match res {
+            Ok(_) => { Ok(()) }
+            Err(e) => { Err(e.to_string()) }
+        }
     }
     fn delete_all_items_in_directory(&self) {
         self.delete_directory();

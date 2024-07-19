@@ -1,4 +1,4 @@
-use apollo_rust_robot_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
+use apollo_rust_robot_modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
 use apollo_rust_robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
 use apollo_rust_robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_module::ApolloLinkShapesModule;
@@ -8,7 +8,7 @@ use crate::utils::progress_bar::ProgressBarWrapper;
 
 impl RobotPreprocessorModule for ApolloLinkShapesMaxDistanceFromOriginModule {
     fn relative_file_path_str_from_robot_sub_dir_to_module_dir() -> String {
-        "link_shape_max_distance_from_origin_module".to_string()
+        "link_shapes_modules/link_shapes_max_distance_from_origin_module".to_string()
     }
 
     fn current_version() -> String {

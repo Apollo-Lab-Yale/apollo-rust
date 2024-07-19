@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use nalgebra::{DMatrix, DVector};
 use rand::Rng;
 
@@ -277,4 +278,15 @@ impl FundamentalSubspaces {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+pub fn dmatrix_from_2dvec<T: Clone + PartialEq + Debug + 'static>(v: &Vec<Vec<T>>) -> DMatrix<T> {
+    let v = v.clone();
+
+    let rows = v.len();
+    let cols = v[0].len();
+
+    let data: Vec<T> = v.into_iter().flatten().collect();
+
+    DMatrix::from_vec(rows, cols, data).transpose()
+}
 

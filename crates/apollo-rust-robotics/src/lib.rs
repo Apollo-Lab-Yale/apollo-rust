@@ -4,8 +4,9 @@ use apollo_rust_robot_modules::bounds_module::ApolloBoundsModule;
 use apollo_rust_robot_modules::chain_module::ApolloChainModule;
 use apollo_rust_robot_modules::connections_module::ApolloConnectionsModule;
 use apollo_rust_robot_modules::dof_module::ApolloDOFModule;
-use apollo_rust_robot_modules::link_shapes_distance_statistics_module::ApolloLinkShapesDistanceStatisticsModule;
-use apollo_rust_robot_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
+use apollo_rust_robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::ApolloLinkShapesDistanceStatisticsModule;
+use apollo_rust_robot_modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
+use apollo_rust_robot_modules::link_shapes_modules::link_shapes_simple_skips_module::ApolloLinkShapesSimpleSkipsModule;
 use apollo_rust_robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
 use apollo_rust_robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
@@ -17,6 +18,7 @@ use apollo_rust_robotics_core::modules_runtime::urdf_nalgebra_module::ApolloURDF
 use apollo_rust_robotics_core::robot_functions::robot_kinematics_functions::RobotKinematicsFunctions;
 use apollo_rust_robotics_core::robot_functions::robot_proximity_functions::RobotProximityFunctions;
 use apollo_rust_robotics_core::{RobotPreprocessorRobotsDirectory, RobotPreprocessorSingleRobotDirectory};
+use apollo_rust_robotics_core::modules_runtime::link_shapes_simple_skips_nalgebra_module::ApolloLinkShapesSimpleSkipsNalgebraModule;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 
 
@@ -33,6 +35,7 @@ pub struct Robot {
     link_shapes_module: ApolloLinkShapesModule,
     link_shapes_max_distance_from_origin_module: ApolloLinkShapesMaxDistanceFromOriginModule,
     link_shapes_distance_statistics_module: ApolloLinkShapesDistanceStatisticsModule,
+    link_shapes_simple_skips_nalgebra_module: ApolloLinkShapesSimpleSkipsNalgebraModule,
     bounds_module: ApolloBoundsModule
 }
 impl Robot {
@@ -54,6 +57,8 @@ impl Robot {
         let link_shapes_module = ApolloLinkShapesModule::from_mesh_modules(&s, &convex_hull_meshes_module, &convex_decomposition_meshes_module);
         let link_shapes_max_distance_from_origin_module = ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(&s, false).expect("error");
         let link_shapes_distance_statistics_module = ApolloLinkShapesDistanceStatisticsModule::load_or_build(&s, false).expect("error");
+        let link_shapes_simple_skips_module = ApolloLinkShapesSimpleSkipsModule::load_or_build(&s, false).expect("error");
+        let link_shapes_simple_skips_nalgebra_module = ApolloLinkShapesSimpleSkipsNalgebraModule::from_link_shapes_simple_skips_module(&link_shapes_simple_skips_module);
         let bounds_module = ApolloBoundsModule::load_or_build(&s, false).expect("error");
 
         Self {
@@ -68,6 +73,7 @@ impl Robot {
             link_shapes_module,
             link_shapes_max_distance_from_origin_module,
             link_shapes_distance_statistics_module,
+            link_shapes_simple_skips_nalgebra_module,
             bounds_module,
         }
     }
@@ -128,6 +134,11 @@ impl Robot {
     }
 
     #[inline(always)]
+    pub fn link_shapes_simple_skips_nalgebra_module(&self) -> &ApolloLinkShapesSimpleSkipsNalgebraModule {
+        &self.link_shapes_simple_skips_nalgebra_module
+    }
+
+    #[inline(always)]
     pub fn bounds_module(&self) -> &ApolloBoundsModule {
         &self.bounds_module
     }
@@ -144,7 +155,8 @@ impl Robot {
     }
 
     pub fn self_intersect(&self, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool) -> Vec<((usize, usize), bool)> {
-        RobotProximityFunctions::self_intersect(self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, &None, early_stop)
+        let skips = self.link_shapes_simple_skips_nalgebra_module().get_skips(link_shape_mode, link_shape_rep);
+        RobotProximityFunctions::self_intersect(self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, Some(skips), early_stop)
     }
 
     pub fn self_intersect_from_state(&self, state: &V, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool) -> Vec<((usize, usize), bool)> {
@@ -153,7 +165,8 @@ impl Robot {
     }
 
     pub fn self_distance(&self, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool) -> Vec<((usize, usize), f64)> {
-        RobotProximityFunctions::self_distance(self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, &None, early_stop)
+        let skips = self.link_shapes_simple_skips_nalgebra_module().get_skips(link_shape_mode, link_shape_rep);
+        RobotProximityFunctions::self_distance(self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, Some(skips), early_stop)
     }
 
     pub fn self_distance_from_state(&self, state: &V, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool) -> Vec<((usize, usize), f64)> {
@@ -162,7 +175,8 @@ impl Robot {
     }
 
     pub fn self_contact(&self, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool, margin: f64) -> Vec<((usize, usize), Option<Contact>)> {
-        RobotProximityFunctions::self_contact(self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, &None, early_stop, margin)
+        let skips = self.link_shapes_simple_skips_nalgebra_module().get_skips(link_shape_mode, link_shape_rep);
+        RobotProximityFunctions::self_contact(self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, Some(skips), early_stop, margin)
     }
 
     pub fn self_contact_from_state(&self, state: &V, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool, margin: f64) -> Vec<((usize, usize), Option<Contact>)> {

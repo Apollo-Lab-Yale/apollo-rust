@@ -2,7 +2,7 @@ use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_robot_modules::bounds_module::ApolloBoundsModule;
 use apollo_rust_robot_modules::chain_module::ApolloChainModule;
 use apollo_rust_robot_modules::dof_module::ApolloDOFModule;
-use apollo_rust_robot_modules::link_shapes_distance_statistics_module::{ApolloLinkShapesDistanceStatisticsModule, LinkShapesDistanceStatistics};
+use apollo_rust_robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::{ApolloLinkShapesDistanceStatisticsModule, LinkShapesDistanceStatistics};
 use apollo_rust_robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
 use apollo_rust_robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_robot_modules::urdf_module::ApolloURDFModule;
@@ -17,7 +17,7 @@ use crate::utils::progress_bar::ProgressBarWrapper;
 
 impl RobotPreprocessorModule for ApolloLinkShapesDistanceStatisticsModule {
     fn relative_file_path_str_from_robot_sub_dir_to_module_dir() -> String {
-        "link_shapes_distance_statistics_module".to_string()
+        "link_shapes_modules/link_shapes_distance_statistics_module".to_string()
     }
 
     fn current_version() -> String {
@@ -65,7 +65,7 @@ impl RobotPreprocessorModule for ApolloLinkShapesDistanceStatisticsModule {
                 for _ in 0..num_samples {
                     let sample = V::new(&bounds_module.sample_random_state());
                     let fk_res = RobotKinematicsFunctions::fk(&sample, &urdf_nalgebra_module, &chain_module, &dof_module);
-                    let res = RobotProximityFunctions::self_contact(&link_shapes_module, &fk_res, *link_shape_mode, *link_shape_rep, &None, false, 1000000.0);
+                    let res = RobotProximityFunctions::self_contact(&link_shapes_module, &fk_res, *link_shape_mode, *link_shape_rep, None, false, 1000000.0);
 
                     res.iter().for_each(|((i, j), c)| {
                         let dis = c.unwrap().dist;

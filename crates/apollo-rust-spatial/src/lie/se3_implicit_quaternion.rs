@@ -12,7 +12,7 @@ use crate::vectors::{ApolloVector3Trait2, V3, V6};
 pub type ISE3q = LieGroupISE3q;
 pub type Ise3q = LieAlgISE3q;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 pub struct LieGroupISE3q(pub I3);
 impl LieGroupISE3q {
     #[inline(always)]
@@ -30,6 +30,11 @@ impl LieGroupISE3q {
     #[inline(always)]
     pub fn from_exponential_coordinates(exponential_coordinates: &V6) -> Self {
         return exponential_coordinates.to_lie_alg_ise3q().exp()
+    }
+
+    #[inline(always)]
+    pub fn map_point(&self, point: &V3) -> V3 {
+        self.0 * point
     }
 }
 
