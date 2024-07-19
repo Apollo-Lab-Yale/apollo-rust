@@ -1,4 +1,3 @@
-use std::io::sink;
 use nalgebra::DMatrix;
 use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
 use apollo_rust_spatial::lie::h1::ApolloUnitQuaternionH1LieTrait;
@@ -54,8 +53,12 @@ pub struct Proxima1CacheElement {
 impl Default for Proxima1CacheElement {
     fn default() -> Self {
         Self {
+            pose_a_j: Default::default(),
+            pose_b_j: Default::default(),
+            closest_point_a_j: Default::default(),
+            closest_point_b_j: Default::default(),
             raw_distance_j: -100000.0,
-            ..Default::default()
+            disp_between_a_and_b_j: Default::default(),
         }
     }
 }
@@ -104,13 +107,11 @@ pub fn proxima1_get_all_approximate_distances_and_bounds(cache: &Proxima1Cache, 
                 }
             }
 
-            let pose_a = &poses_a[i];
-            let pose_b = &poses_b[j];
             let max_distance_from_origin_a = max_distances_from_origin[i];
             let max_distance_from_origin_b = max_distances_from_origin[j];
             let cache_element = &cache.elements[(i,j)];
 
-            let res = proxima1_approximate_distance_and_bounds(interpolation, cache_element, pose_a, pose_b, max_distance_from_origin_a, max_distance_from_origin_b);
+            let res = proxima1_approximate_distance_and_bounds(interpolation, cache_element, pa, pb, max_distance_from_origin_a, max_distance_from_origin_b);
             out.push(ProximaOutput {
                 shape_indices: (i, j),
                 approximate_raw_distance: res.0,
