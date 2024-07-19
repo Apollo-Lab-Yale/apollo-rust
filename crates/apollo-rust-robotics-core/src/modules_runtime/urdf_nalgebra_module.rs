@@ -13,6 +13,16 @@ pub struct ApolloURDFNalgebraModule {
     pub joints: Vec<ApolloURDFJointNalgebra>,
     pub materials: Vec<ApolloURDFMaterial>
 }
+impl ApolloURDFNalgebraModule {
+    pub fn from_urdf_module(urdf_module: &ApolloURDFModule) -> Self {
+        Self {
+            name: urdf_module.name.clone(),
+            links: urdf_module.links.iter().map(|x| ApolloURDFLinkNalgebra::from_apollo_urdf_link(x)).collect(),
+            joints: urdf_module.joints.iter().map(|x| ApolloURDFJointNalgebra::from_apollo_urdf_joint(x)).collect(),
+            materials: urdf_module.materials.clone(),
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ApolloURDFLinkNalgebra {

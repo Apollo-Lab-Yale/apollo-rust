@@ -1,4 +1,4 @@
-use apollo_linalg::{ApolloDMatrixTrait, M};
+use apollo_rust_linalg::{ApolloDMatrixTrait, M};
 
 fn main() {
     let m = M::zeros(3, 2);

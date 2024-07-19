@@ -1,6 +1,7 @@
 use std::borrow::Cow;
+use nalgebra::Point3;
 use parry3d_f64::na::UnitQuaternion;
-use parry3d_f64::shape::{Ball, Cuboid, Shape};
+use parry3d_f64::shape::{Ball, Cuboid, Shape, TypedShape};
 use apollo_rust_spatial::isometry3::I3;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use apollo_rust_spatial::vectors::ApolloVector3Trait2;
@@ -35,6 +36,44 @@ impl OffsetShape {
                 Cow::Owned( offset.group_operator(variable_transform) )
             }
         }
+    }
+
+    pub fn calculate_max_dis_from_origin_to_point_on_shape(&self) -> f64 {
+        let ts = self.shape.as_typed_shape();
+
+        let num_subdivisions = 50;
+        let (points, _) = match ts {
+            TypedShape::Ball(shape) => { shape.to_trimesh(num_subdivisions, num_subdivisions) }
+            TypedShape::Cuboid(shape) => { shape.to_trimesh() }
+            TypedShape::Capsule(shape) => { shape.to_trimesh(num_subdivisions, num_subdivisions) }
+            TypedShape::TriMesh(shape) => {
+                let points = shape.vertices();
+                let out_points: Vec<Point3<f64>> = points.iter().map(|x| Point3::new(x[0], x[1], x[2])).collect();
+                (out_points, vec![])
+            }
+            TypedShape::ConvexPolyhedron(shape) => { shape.to_trimesh() }
+            TypedShape::Cylinder(shape) => { shape.to_trimesh(num_subdivisions) }
+            TypedShape::Cone(shape) => { shape.to_trimesh(num_subdivisions) }
+            _ => { panic!("shape type unsupported"); }
+        };
+
+        let transformed_points = match &self.offset {
+            None => { points.clone() }
+            Some(offset) => {
+                points.iter().map(|x| {
+                    offset.0 * x
+                }).collect()
+            }
+        };
+
+        let mut max = 0.0;
+        transformed_points.iter().for_each(|x| {
+            let norm = x.coords.norm();
+            if norm > max { max = norm; }
+        });
+
+
+        return max;
     }
 }
 impl Clone for OffsetShape {

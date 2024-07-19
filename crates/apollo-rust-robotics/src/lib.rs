@@ -1,22 +1,23 @@
 use parry3d_f64::query::Contact;
 use apollo_rust_linalg::V;
+use apollo_rust_robot_modules::bounds_module::ApolloBoundsModule;
 use apollo_rust_robot_modules::chain_module::ApolloChainModule;
 use apollo_rust_robot_modules::connections_module::ApolloConnectionsModule;
 use apollo_rust_robot_modules::dof_module::ApolloDOFModule;
+use apollo_rust_robot_modules::link_shapes_distance_statistics_module::ApolloLinkShapesDistanceStatisticsModule;
+use apollo_rust_robot_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
 use apollo_rust_robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
 use apollo_rust_robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
 use apollo_rust_robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
-use apollo_rust_robot_modules_builders::{RobotPreprocessorModule, RobotPreprocessorRobotsDirectory, RobotPreprocessorSingleRobotDirectory};
+use apollo_rust_robot_modules::urdf_module::ApolloURDFModule;
+use apollo_rust_robot_modules_preprocessor::RobotPreprocessorModule;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_module::{ApolloLinkShapesModule, LinkShapeMode, LinkShapeRep};
 use apollo_rust_robotics_core::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModule;
 use apollo_rust_robotics_core::robot_functions::robot_kinematics_functions::RobotKinematicsFunctions;
 use apollo_rust_robotics_core::robot_functions::robot_proximity_functions::RobotProximityFunctions;
+use apollo_rust_robotics_core::{RobotPreprocessorRobotsDirectory, RobotPreprocessorSingleRobotDirectory};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
-use crate::modules_runtime::link_shapes_module::LinkShapesModuleBuilders;
-use crate::modules_runtime::urdf_nalgebra_module::URDFNalgebraModuleBuilders;
-
-pub mod modules_runtime;
 
 
 #[derive(Clone)]
@@ -29,7 +30,10 @@ pub struct Robot {
     plain_meshes_module: ApolloPlainMeshesModule,
     convex_hull_meshes_module: ApolloConvexHullMeshesModule,
     convex_decomposition_meshes_module: ApolloConvexDecompositionMeshesModule,
-    link_shapes_module: ApolloLinkShapesModule
+    link_shapes_module: ApolloLinkShapesModule,
+    link_shapes_max_distance_from_origin_module: ApolloLinkShapesMaxDistanceFromOriginModule,
+    link_shapes_distance_statistics_module: ApolloLinkShapesDistanceStatisticsModule,
+    bounds_module: ApolloBoundsModule
 }
 impl Robot {
     pub fn new_from_root(root: &RobotPreprocessorRobotsDirectory, robot_name: &str) -> Self {
@@ -39,7 +43,7 @@ impl Robot {
     }
 
     pub fn new_from_single_robot_directory(s: &RobotPreprocessorSingleRobotDirectory) -> Self {
-        let urdf_module = ApolloURDFNalgebraModule::from_robot_directory(&s);
+        let urdf_module = ApolloURDFNalgebraModule::from_urdf_module(&ApolloURDFModule::load_or_build(&s, false).expect("error"));
         let chain_module = ApolloChainModule::load_or_build(&s, false).expect("error");
         let dof_module = ApolloDOFModule::load_or_build(&s, false).expect("error");
         let connections_module = ApolloConnectionsModule::load_or_build(&s, false).expect("error");
@@ -47,7 +51,10 @@ impl Robot {
         let plain_meshes_module = ApolloPlainMeshesModule::load_or_build(&s, false).expect("error");
         let convex_hull_meshes_module = ApolloConvexHullMeshesModule::load_or_build(&s, false).expect("error");
         let convex_decomposition_meshes_module = ApolloConvexDecompositionMeshesModule::load_or_build(&s, false).expect("error");
-        let link_shapes_module = ApolloLinkShapesModule::from_robot_directory(&s);
+        let link_shapes_module = ApolloLinkShapesModule::from_mesh_modules(&s, &convex_hull_meshes_module, &convex_decomposition_meshes_module);
+        let link_shapes_max_distance_from_origin_module = ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(&s, false).expect("error");
+        let link_shapes_distance_statistics_module = ApolloLinkShapesDistanceStatisticsModule::load_or_build(&s, false).expect("error");
+        let bounds_module = ApolloBoundsModule::load_or_build(&s, false).expect("error");
 
         Self {
             urdf_module,
@@ -59,6 +66,9 @@ impl Robot {
             convex_hull_meshes_module,
             convex_decomposition_meshes_module,
             link_shapes_module,
+            link_shapes_max_distance_from_origin_module,
+            link_shapes_distance_statistics_module,
+            bounds_module,
         }
     }
 
@@ -105,6 +115,21 @@ impl Robot {
     #[inline(always)]
     pub fn link_shapes_module(&self) -> &ApolloLinkShapesModule {
         &self.link_shapes_module
+    }
+
+    #[inline(always)]
+    pub fn link_shapes_max_distance_from_origin_module(&self) -> &ApolloLinkShapesMaxDistanceFromOriginModule {
+        &self.link_shapes_max_distance_from_origin_module
+    }
+
+    #[inline(always)]
+    pub fn link_shapes_distance_statistics_module(&self) -> &ApolloLinkShapesDistanceStatisticsModule {
+        &self.link_shapes_distance_statistics_module
+    }
+
+    #[inline(always)]
+    pub fn bounds_module(&self) -> &ApolloBoundsModule {
+        &self.bounds_module
     }
 }
 impl Robot {

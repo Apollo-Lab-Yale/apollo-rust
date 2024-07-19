@@ -8,7 +8,6 @@ pub struct PathBufPy {
 }
 #[pymethods]
 impl PathBufPy {
-
     #[new]
     pub fn new() -> Self {
         PathBufPy {
@@ -156,7 +155,7 @@ impl PathBufPy {
 }
 
 #[pymodule]
-fn apollo_file_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn apollo_rust_file_pyo3(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PathBufPy>()?;
     Ok(())
 }
