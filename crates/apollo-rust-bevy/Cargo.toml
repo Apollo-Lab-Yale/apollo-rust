@@ -5,3 +5,9 @@ edition = "2021"
 
 [dependencies]
 apollo-rust-robotics = { path = "../apollo-rust-robotics" }
+apollo-rust-robotics-core = { path = "../apollo-rust-robotics-core" }
+apollo-rust-spatial = { path = "../apollo-rust-spatial" }
+apollo-rust-lie = { path = "../apollo-rust-lie" }
+apollo-rust-proximity = { path = "../apollo-rust-proximity" }
+bevy = { version = "0.14.0", features = ["dynamic_linking"] }
+bevy_egui = { version = "0.28.0" }
