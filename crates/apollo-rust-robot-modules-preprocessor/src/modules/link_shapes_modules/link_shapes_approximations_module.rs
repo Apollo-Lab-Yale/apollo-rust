@@ -13,7 +13,7 @@ impl RobotPreprocessorModule for ApolloLinkShapesApproximationsModule {
     }
 
     fn current_version() -> String {
-        "0.0.1".to_string()
+        "0.0.2".to_string()
     }
 
     fn build_raw(s: &RobotPreprocessorSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
@@ -27,6 +27,7 @@ impl RobotPreprocessorModule for ApolloLinkShapesApproximationsModule {
             match i {
                 None => {
                     full_obbs.push(None);
+                    full_bounding_spheres.push(None);
                 }
                 Some(i) => {
                     let full_obb = &link_shapes_module.full_obbs[*i];

@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use nalgebra::Point3;
 use parry3d_f64::na::UnitQuaternion;
+use parry3d_f64::query::{Contact, contact, distance, intersection_test};
 use parry3d_f64::shape::{Ball, Cuboid, Shape, TypedShape};
 use apollo_rust_spatial::isometry3::I3;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
@@ -74,6 +75,18 @@ impl OffsetShape {
 
 
         return max;
+    }
+
+    pub fn intersect(&self, self_pose: &ISE3q, other: &OffsetShape, other_pose: &ISE3q) -> bool {
+        intersection_test(&self.get_transform(self_pose).0, &**self.shape(), &other.get_transform(other_pose).0, &**other.shape()).expect("error")
+    }
+
+    pub fn distance(&self, self_pose: &ISE3q, other: &OffsetShape, other_pose: &ISE3q) -> f64 {
+        distance(&self.get_transform(self_pose).0, &**self.shape(), &other.get_transform(other_pose).0, &**other.shape()).expect("error")
+    }
+
+    pub fn contact(&self, self_pose: &ISE3q, other: &OffsetShape, other_pose: &ISE3q, prediction: f64) -> Option<Contact> {
+        contact(&self.get_transform(self_pose).0, &**self.shape(), &other.get_transform(other_pose).0, &**other.shape(), prediction).expect("error")
     }
 }
 impl Clone for OffsetShape {

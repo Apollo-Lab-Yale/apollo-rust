@@ -175,7 +175,6 @@ pub fn proxima1(cache: &mut Proxima1Cache,
                 skips: Option<&DMatrix<bool>>,
                 average_distances: Option<&DMatrix<f64>>,
                 frozen: bool) -> (f64, usize) {
-
     let start = Instant::now();
 
     let mut proxima_outputs = proxima1_get_all_approximate_distances_and_bounds(cache, poses_a, poses_b, max_distances_from_origin_a, max_distances_from_origin_b, 0.0, query_mode, skips, average_distances, cutoff_distance);
