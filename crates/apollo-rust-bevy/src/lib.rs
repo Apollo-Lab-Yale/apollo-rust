@@ -16,7 +16,7 @@ impl ApolloBevyTrait for App {
         let mut out = App::from(self);
 
         out
-            .insert_resource(ClearColor(Color::srgb(0.45, 0.45, 0.5)))
+            .insert_resource(ClearColor(Color::srgb(0.9, 0.9, 0.92)))
             .insert_resource(Msaa::default())
             .add_plugins(DefaultPlugins
                 .set(WindowPlugin {
