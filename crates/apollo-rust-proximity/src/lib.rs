@@ -24,6 +24,10 @@ pub trait ToProximityValue {
     fn to_proximity_value(&self, p_norm: f64) -> f64;
 }
 
+pub trait ToIntersectionResult {
+    fn to_intersection_result(&self) -> bool;
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Copy)]
 pub enum DistanceMode {
     RawDistance,

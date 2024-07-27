@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::borrow::Cow;
 use nalgebra::DMatrix;
 use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
 use apollo_rust_spatial::lie::h1::ApolloUnitQuaternionH1LieTrait;
@@ -6,8 +6,7 @@ use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use apollo_rust_spatial::vectors::V3;
 use crate::double_group_queries::{DoubleGroupQueryMode, pairwise_group_query_contact};
 use crate::offset_shape::OffsetShape;
-use crate::proxima::proxima_core::{get_sorted_indices_of_maximum_possible_loss_function_error, ProximaBudget, ProximaOutput, ToAverageDistancesProximaOutput};
-use crate::{DistanceMode, ProximityLossFunction, ToProximityValue};
+use crate::proxima::proxima_core::{ProximaCacheTrait, ProximaTrait};
 
 #[derive(Clone, Debug)]
 pub struct Proxima1Cache {
@@ -45,6 +44,29 @@ impl Proxima1Cache {
         }
     }
 }
+impl ProximaCacheTrait<Proxima1CacheElement> for Proxima1Cache {
+    fn elements(&self) -> &DMatrix<Proxima1CacheElement> {
+        &self.elements
+    }
+
+    fn elements_mut(&mut self) -> &mut DMatrix<Proxima1CacheElement> {
+        &mut self.elements
+    }
+
+    fn update_element_with_ground_truth(&mut self, i: usize, j: usize, sa: &OffsetShape, pa: &ISE3q, sb: &OffsetShape, pb: &ISE3q) -> f64 {
+        let element = &mut self.elements[(i, j)];
+        let contact = sa.contact(pa, sb, pb, f64::INFINITY).unwrap();
+
+        element.pose_a_j = pa.clone();
+        element.pose_b_j = pb.clone();
+        element.raw_distance_j = contact.dist;
+        element.disp_between_a_and_b_j = pa.displacement(pb);
+        element.closest_point_a_j = contact.point1.coords.xyz();
+        element.closest_point_a_j = contact.point2.coords.xyz();
+
+        contact.dist
+    }
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Proxima1CacheElement {
@@ -68,229 +90,59 @@ impl Default for Proxima1CacheElement {
     }
 }
 
-#[inline]
-pub fn proxima1_lower_bound(cache_element: &Proxima1CacheElement, pose_a_k: &ISE3q, pose_b_k: &ISE3q, max_distance_from_origin_a: f64, max_distance_from_origin_b: f64) -> f64 {
-    let d = cache_element.disp_between_a_and_b_j.displacement(&pose_a_k.displacement(&pose_b_k));
-    let delta_m = d.0.translation.vector.norm();
-    let delta_r = d.0.rotation.to_lie_group_h1().ln().vee().norm();
-
-    let h = max_distance_from_origin_a.max(max_distance_from_origin_b);
-    let psi = f64::sqrt(2.0 * h * h * (1.0 - f64::cos(delta_r)));
-
-    return cache_element.raw_distance_j - delta_m - psi;
+#[derive(Clone, Debug)]
+pub struct Proxima1 {
+    pub max_distances_from_origin_a: Vec<f64>,
+    pub max_distances_from_origin_b: Vec<f64>,
+    pub interpolation: f64
 }
+impl ProximaTrait for Proxima1 {
+    type CacheType = Proxima1Cache;
+    type CacheElementType = Proxima1CacheElement;
+    type ExtraArgs = Proxima1ExtraArgs;
 
-#[inline]
-pub fn proxima1_upper_bound(cache_element: &Proxima1CacheElement, pose_a_k: &ISE3q, pose_b_k: &ISE3q) -> f64 {
-    let closest_point_a_k = pose_a_k.map_point(&cache_element.pose_a_j.inverse().map_point(&cache_element.closest_point_a_j));
-    let closest_point_b_k = pose_b_k.map_point(&cache_element.pose_b_j.inverse().map_point(&cache_element.closest_point_b_j));
-
-    return (&closest_point_a_k - &closest_point_b_k).norm()
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/// interpolation from 0 to 1 returns an approximation distance of lower bound for 0 and upper bound for 1
-#[inline]
-pub fn proxima1_approximate_distance_and_bounds(interpolation: f64, cache_element: &Proxima1CacheElement, pose_a_k: &ISE3q, pose_b_k: &ISE3q, max_distance_from_origin_a: f64, max_distance_from_origin_b: f64, cutoff_distance: f64) -> Option<(f64, f64, f64)> {
-    let lower_bound = proxima1_lower_bound(cache_element, pose_a_k, pose_b_k, max_distance_from_origin_a, max_distance_from_origin_b);
-    if lower_bound > cutoff_distance { return None; }
-    let upper_bound = proxima1_upper_bound(cache_element, pose_a_k, pose_b_k);
-
-    let approximation_distance = (1.0 - interpolation) * lower_bound + interpolation * upper_bound;
-
-    Some((approximation_distance, lower_bound, upper_bound))
-}
-
-pub fn proxima1_get_all_approximate_distances_and_bounds_f(out: &mut Vec<ProximaOutput>, cache: &Proxima1Cache, i: usize, pa: &ISE3q, j: usize, pb: &ISE3q, max_distances_from_origin_a: &Vec<f64>, max_distances_from_origin_b: &Vec<f64>, skips: Option<&DMatrix<bool>>, interpolation: f64, cutoff_distance: f64) -> bool {
-    match skips {
-        None => {  }
-        Some(skips) => {
-            if skips[(i,j)] { return false; }
-        }
+    fn get_extra_args(&self, i: usize, j: usize) -> Cow<Self::ExtraArgs> {
+        Cow::Owned( Proxima1ExtraArgs {
+            max_distance_from_origin_a: self.max_distances_from_origin_a[i],
+            max_distance_from_origin_b: self.max_distances_from_origin_b[j],
+            interpolation: self.interpolation,
+        } )
     }
 
-    let max_distance_from_origin_a = max_distances_from_origin_a[i];
-    let max_distance_from_origin_b = max_distances_from_origin_b[j];
-    let cache_element = &cache.elements[(i,j)];
+    fn approximate_distance_and_bounds(cache_element: &Self::CacheElementType, pose_a_k: &ISE3q, pose_b_k: &ISE3q, cutoff_distance: f64, extra_args: &Self::ExtraArgs) -> Option<(f64, f64, f64)> {
+        let lower_bound = Self::distance_lower_bound(cache_element, pose_a_k, pose_b_k, extra_args.max_distance_from_origin_a, extra_args.max_distance_from_origin_b);
+        if lower_bound > cutoff_distance { return None; }
+        let upper_bound = Self::distance_upper_bound(cache_element, pose_a_k, pose_b_k);
 
-    let res = proxima1_approximate_distance_and_bounds(interpolation, cache_element, pa, pb, max_distance_from_origin_a, max_distance_from_origin_b, cutoff_distance);
-    return match res {
-        None => { false }
-        Some(res) => {
-            out.push(ProximaOutput {
-                shape_indices: (i, j),
-                distance_mode: DistanceMode::RawDistance,
-                approximate_distance: res.0,
-                lower_bound_distance: res.1,
-                upper_bound_distance: res.2,
-            });
-            true
-        }
+        let approximation_distance = (1.0 - extra_args.interpolation) * lower_bound + extra_args.interpolation * upper_bound;
+
+        Some((approximation_distance, lower_bound, upper_bound))
+    }
+}
+impl Proxima1 {
+    pub fn distance_lower_bound(cache_element: &Proxima1CacheElement, pose_a_k: &ISE3q, pose_b_k: &ISE3q, max_distance_from_origin_a: f64, max_distance_from_origin_b: f64) -> f64 {
+
+        let d = cache_element.disp_between_a_and_b_j.displacement(&pose_a_k.displacement(&pose_b_k));
+        let delta_m = d.0.translation.vector.norm();
+        let delta_r = d.0.rotation.to_lie_group_h1().ln().vee().norm();
+
+        let h = max_distance_from_origin_a.max(max_distance_from_origin_b);
+        let psi = f64::sqrt(2.0 * h * h * (1.0 - f64::cos(delta_r)));
+
+        return cache_element.raw_distance_j - delta_m - psi;
+    }
+
+    pub fn distance_upper_bound(cache_element: &Proxima1CacheElement, pose_a_k: &ISE3q, pose_b_k: &ISE3q) -> f64 {
+        let closest_point_a_k = pose_a_k.map_point(&cache_element.pose_a_j.inverse().map_point(&cache_element.closest_point_a_j));
+        let closest_point_b_k = pose_b_k.map_point(&cache_element.pose_b_j.inverse().map_point(&cache_element.closest_point_b_j));
+
+        return (&closest_point_a_k - &closest_point_b_k).norm()
     }
 }
 
-pub fn proxima1_get_all_approximate_distances_and_bounds(cache: &Proxima1Cache, poses_a: &Vec<ISE3q>, poses_b: &Vec<ISE3q>, max_distances_from_origin_a: &Vec<f64>, max_distances_from_origin_b: &Vec<f64>, interpolation: f64, query_mode: &DoubleGroupQueryMode, skips: Option<&DMatrix<bool>>, average_distances: Option<&DMatrix<f64>>, cutoff_distance: f64) -> Vec<ProximaOutput> {
-    let mut out = vec![];
-
-    match query_mode {
-        DoubleGroupQueryMode::AllPossiblePairs => {
-            for (i, pa) in poses_a.iter().enumerate() {
-                for (j, pb) in poses_b.iter().enumerate() {
-                    proxima1_get_all_approximate_distances_and_bounds_f(&mut out, cache, i, pa, j, pb, max_distances_from_origin_a, max_distances_from_origin_b, skips, interpolation, cutoff_distance);
-                }
-            }
-        }
-        DoubleGroupQueryMode::SkipSymmetricalPairs => {
-            for (i, pa) in poses_a.iter().enumerate() {
-                'l: for (j, pb) in poses_b.iter().enumerate() {
-                    if i >= j { continue 'l; }
-                    proxima1_get_all_approximate_distances_and_bounds_f(&mut out, cache, i, pa, j, pb, max_distances_from_origin_a, max_distances_from_origin_b, skips, interpolation, cutoff_distance);
-                }
-            }
-        }
-        DoubleGroupQueryMode::SubsetOfPairs(v) => {
-            for (i,j) in v {
-                let pa = &poses_a[*i];
-                let pb = &poses_b[*j];
-                proxima1_get_all_approximate_distances_and_bounds_f(&mut out, cache, *i, pa, *j, pb, max_distances_from_origin_a, max_distances_from_origin_b, skips, interpolation, cutoff_distance);
-            }
-        }
-    }
-
-    match average_distances {
-        None => {  }
-        Some(average_distances) => { out = out.to_average_distances(average_distances); }
-    }
-
-    out
+#[derive(Clone, Debug)]
+pub struct Proxima1ExtraArgs {
+    pub max_distance_from_origin_a: f64,
+    pub max_distance_from_origin_b: f64,
+    pub interpolation: f64
 }
-
-pub fn proxima1(cache: &mut Proxima1Cache,
-                budget: &ProximaBudget,
-                group_a: &Vec<OffsetShape>,
-                poses_a: &Vec<ISE3q>,
-                group_b: &Vec<OffsetShape>,
-                poses_b: &Vec<ISE3q>,
-                query_mode: &DoubleGroupQueryMode,
-                loss_function: &ProximityLossFunction,
-                p_norm: f64,
-                cutoff_distance: f64,
-                max_distances_from_origin_a: &Vec<f64>,
-                max_distances_from_origin_b: &Vec<f64>,
-                skips: Option<&DMatrix<bool>>,
-                average_distances: Option<&DMatrix<f64>>,
-                frozen: bool) -> (f64, usize) {
-    let start = Instant::now();
-    let proxima_outputs = proxima1_get_all_approximate_distances_and_bounds(cache, poses_a, poses_b, max_distances_from_origin_a, max_distances_from_origin_b, 0.0, query_mode, skips, average_distances, cutoff_distance);
-    proxima1_lite(&proxima_outputs, start, cache, budget, group_a, poses_a, group_b, poses_b, loss_function, p_norm, average_distances, frozen)
-}
-
-pub fn proxima1_lite(proxima_outputs: &Vec<ProximaOutput>,
-                     start: Instant,
-                     cache: &mut Proxima1Cache,
-                     budget: &ProximaBudget,
-                     group_a: &Vec<OffsetShape>,
-                     poses_a: &Vec<ISE3q>,
-                     group_b: &Vec<OffsetShape>,
-                     poses_b: &Vec<ISE3q>,
-                     loss_function: &ProximityLossFunction,
-                     p_norm: f64,
-                     average_distances: Option<&DMatrix<f64>>,
-                     frozen: bool) -> (f64, usize) {
-    if frozen { return ( proxima_outputs.to_proximity_value(p_norm), 0 ) }
-
-    let mut proxima_outputs = proxima_outputs.clone();
-
-    let sorted_idxs = get_sorted_indices_of_maximum_possible_loss_function_error(&proxima_outputs, &loss_function);
-
-    let mut num_ground_truth_checks = 0;
-    let mut proximity_value = proxima_outputs.to_proximity_value(p_norm);
-
-    'l: for k in 0..sorted_idxs.len() {
-        match budget {
-            ProximaBudget::TimeBudget(b) => {
-                if start.elapsed() > *b { break 'l; }
-            }
-            ProximaBudget::AccuracyBudget(b) => {
-                if proximity_value < *b { break 'l; }
-            }
-        }
-
-        let idx = sorted_idxs[k];
-        let proxima_output = &mut proxima_outputs[idx];
-        let (i, j) = proxima_output.shape_indices;
-        let sa = &group_a[i];
-        let sb = &group_b[j];
-        let pa = &poses_a[i];
-        let pb = &poses_b[j];
-
-        let contact = sa.contact(pa, sb, pb, f64::INFINITY).unwrap();
-
-        let element = &mut cache.elements[(i, j)];
-        element.pose_a_j = pa.clone();
-        element.pose_b_j = pb.clone();
-        element.raw_distance_j = contact.dist;
-        element.disp_between_a_and_b_j = pa.displacement(pb);
-        element.closest_point_a_j = contact.point1.coords.xyz();
-        element.closest_point_a_j = contact.point2.coords.xyz();
-
-        let mut new_distance = contact.dist;
-        match average_distances {
-            None => { }
-            Some(average_distances) => { new_distance /= average_distances[(i,j)].max(0.00001) }
-        }
-
-        proxima_output.approximate_distance = new_distance;
-        proxima_output.lower_bound_distance = new_distance;
-        proxima_output.upper_bound_distance = new_distance;
-
-        num_ground_truth_checks += 1;
-        proximity_value = proxima_outputs.to_proximity_value(p_norm);
-    }
-
-    return (proximity_value, num_ground_truth_checks);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-pub fn proxima1_get_all_approximate_distances_and_bounds_for_intersection(cache: &Proxima1Cache, poses_a: &Vec<ISE3q>, poses_b: &Vec<ISE3q>, max_distances_from_origin_a: &Vec<f64>, max_distances_from_origin_b: &Vec<f64>, interpolation: f64, query_mode: &DoubleGroupQueryMode, skips: Option<&DMatrix<bool>>, average_distances: Option<&DMatrix<f64>>) -> Option<Vec<ProximaOutput>> {
-    let mut out = vec![];
-
-    match query_mode {
-        DoubleGroupQueryMode::AllPossiblePairs => {
-            for (i, pa) in poses_a.iter().enumerate() {
-                for (j, pb) in poses_b.iter().enumerate() {
-                    let res = proxima1_get_all_approximate_distances_and_bounds_f(&mut out, cache, i, pa, j, pb, max_distances_from_origin_a, max_distances_from_origin_b, skips, interpolation, 0.0);
-                    if res { let last = out.last().unwrap().upper_bound_distance; if last <= 0.0 { return None; } }
-                }
-            }
-        }
-        DoubleGroupQueryMode::SkipSymmetricalPairs => {
-            for (i, pa) in poses_a.iter().enumerate() {
-                'l: for (j, pb) in poses_b.iter().enumerate() {
-                    if i >= j { continue 'l; }
-                    let res = proxima1_get_all_approximate_distances_and_bounds_f(&mut out, cache, i, pa, j, pb, max_distances_from_origin_a, max_distances_from_origin_b, skips, interpolation, 0.0);
-                    if res { let last = out.last().unwrap().upper_bound_distance; if last <= 0.0 { return None; } }
-                }
-            }
-        }
-        DoubleGroupQueryMode::SubsetOfPairs(v) => {
-            for (i,j) in v {
-                let pa = &poses_a[*i];
-                let pb = &poses_b[*j];
-                let res = proxima1_get_all_approximate_distances_and_bounds_f(&mut out, cache, *i, pa, *j, pb, max_distances_from_origin_a, max_distances_from_origin_b, skips, interpolation, 0.0);
-                if res { let last = out.last().unwrap().upper_bound_distance; if last <= 0.0 { return None; } }
-            }
-        }
-    }
-
-    match average_distances {
-        None => {  }
-        Some(average_distances) => { out = out.to_average_distances(average_distances); }
-    }
-
-    Some(out)
-}
-
-

@@ -20,10 +20,14 @@ use apollo_rust_robotics_core::robot_functions::robot_proximity_functions::Robot
 use apollo_rust_robotics_core::{RobotPreprocessorRobotsDirectory, RobotPreprocessorSingleRobotDirectory};
 use apollo_rust_robotics_core::modules_runtime::link_shapes_simple_skips_nalgebra_module::ApolloLinkShapesSimpleSkipsNalgebraModule;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
-
+pub use apollo_rust_robot_modules_preprocessor::modules::mesh_modules::plain_meshes_module::*;
+pub use apollo_rust_robot_modules_preprocessor::modules::mesh_modules::original_meshes_module::*;
+pub use apollo_rust_robot_modules_preprocessor::modules::mesh_modules::convex_hull_meshes_module::*;
+pub use apollo_rust_robot_modules_preprocessor::modules::mesh_modules::convex_decomposition_meshes_module::*;
 
 #[derive(Clone)]
 pub struct Robot {
+    single_robot_directory: RobotPreprocessorSingleRobotDirectory,
     urdf_module: ApolloURDFNalgebraModule,
     chain_module: ApolloChainModule,
     dof_module: ApolloDOFModule,
@@ -62,6 +66,7 @@ impl Robot {
         let bounds_module = ApolloBoundsModule::load_or_build(&s, false).expect("error");
 
         Self {
+            single_robot_directory: s.clone(),
             urdf_module,
             chain_module,
             dof_module,
@@ -76,6 +81,11 @@ impl Robot {
             link_shapes_simple_skips_nalgebra_module,
             bounds_module,
         }
+    }
+
+    #[inline(always)]
+    pub fn single_robot_directory(&self) -> &RobotPreprocessorSingleRobotDirectory {
+        &self.single_robot_directory
     }
 
     #[inline(always)]

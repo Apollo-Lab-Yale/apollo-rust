@@ -16,6 +16,7 @@ pub trait ApolloPathBufTrait: Sized {
     fn new_from_documents_dir() -> Self;
     fn new_from_desktop_dir() -> Self;
     fn new_from_default_apollo_robots_dir() -> Self;
+    fn new_from_default_apollo_bevy_assets_dir() -> Self;
     fn new_from_walk_dir_and_find<P: AsRef<Path> + Debug>(s: P) -> Self;
     fn append(self, s: &str) -> Self;
     fn append_vec(self, v: &Vec<String>) -> Self;
@@ -76,6 +77,9 @@ impl ApolloPathBufTrait for PathBuf {
         let out = Self::new_from_documents_dir().append("apollo-robots-dir/robots");
         assert!(out.exists(), "default apollo robots dir path {:?} does not exist.", out);
         out
+    }
+    fn new_from_default_apollo_bevy_assets_dir() -> Self {
+        PathBuf::new_from_documents_dir().append("apollo-rust/crates/apollo-rust-bevy/assets")
     }
     fn new_from_walk_dir_and_find<P: AsRef<Path> + Debug>(s: P) -> Self {
         let p = PathBuf::new_from_home_dir();
