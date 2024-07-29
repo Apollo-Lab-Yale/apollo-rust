@@ -8,6 +8,20 @@ use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_robot_modules::ResourcesSingleRobotDirectory;
 use crate::ResourcesSubDirectoryTrait;
 
+pub trait VecOfPathBufOptionsToVecOfVecTrait {
+    fn to_vec_of_vec_path_bufs(&self) -> Vec<Vec<PathBuf>>;
+}
+impl VecOfPathBufOptionsToVecOfVecTrait for Vec<Option<PathBuf>> {
+    fn to_vec_of_vec_path_bufs(&self) -> Vec<Vec<PathBuf>> {
+        self.iter().map(|x| {
+            match x {
+                None => { vec![] }
+                Some(y) => { vec![y.clone()] }
+            }
+        }).collect()
+    }
+}
+
 pub fn recover_full_paths_from_relative_paths(s: &ResourcesSingleRobotDirectory, paths: &Vec<Option<PathBuf>>) -> Vec<Option<PathBuf>> {
     let root = s.root_directory().clone();
 

@@ -8,6 +8,11 @@ pub struct ApolloURDFModule {
     pub joints: Vec<ApolloURDFJoint>,
     pub materials: Vec<ApolloURDFMaterial>
 }
+impl ApolloURDFModule {
+    pub fn link_has_mesh(&self, link_idx: usize) -> bool {
+        return !self.links[link_idx].visual.is_empty()
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct ApolloURDFLink {

@@ -35,6 +35,7 @@ impl ApolloQuaternionTrait for Q {
 
 pub trait ApolloUnitQuaternionTrait {
     fn new_random() -> Self;
+    fn new_random_with_range(min: f64, max: f64) -> Self;
     fn from_slice_quaternion(slice: &[f64]) -> Self;
     fn from_slice_euler_angles(euler_angles: &[f64]) -> Self;
     fn from_slice_scaled_axis(scaled_axis: &[f64]) -> Self;
@@ -42,6 +43,11 @@ pub trait ApolloUnitQuaternionTrait {
 impl ApolloUnitQuaternionTrait for UQ {
     fn new_random() -> Self {
         let v = V::new_random_with_range(3, -1.0, 1.0);
+        Self::from_euler_angles(v[0], v[1], v[2])
+    }
+
+    fn new_random_with_range(min: f64, max: f64) -> Self {
+        let v = V::new_random_with_range(3, min, max);
         Self::from_euler_angles(v[0], v[1], v[2])
     }
 

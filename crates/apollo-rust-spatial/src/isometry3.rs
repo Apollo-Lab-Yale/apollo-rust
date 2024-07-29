@@ -19,11 +19,12 @@ pub trait ApolloIsometry3Trait {
     fn from_slice_quaternion(slice: &[f64]) -> Self;
     fn to_isometry_matrix_3(&self) -> I3M;
     fn is_identity(&self) -> bool;
+    fn add_tiny_bit_of_noise(&self) -> Self;
 }
 impl ApolloIsometry3Trait for I3 {
     fn new_random_with_range(min: f64, max: f64) -> Self {
         let t = T3::new_random_with_range(min, max);
-        let uq = UQ::new_random();
+        let uq = UQ::new_random_with_range(min, max);
         Self::from_parts(t, uq)
     }
 
@@ -76,6 +77,12 @@ impl ApolloIsometry3Trait for I3 {
     #[inline(always)]
     fn is_identity(&self) -> bool {
         return self.translation.vector.is_identity(0.0000001) && self.rotation == UQ::identity()
+    }
+
+    #[inline(always)]
+    fn add_tiny_bit_of_noise(&self) -> Self {
+        let r = Self::new_random_with_range(-0.00005, 0.00005);
+        return self * r;
     }
 }
 

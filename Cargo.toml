@@ -22,7 +22,6 @@ members = [
 [dependencies]
 
 
-
 [lib]
 name = "apollo_rust"
 crate-type = ["cdylib", "rlib"]

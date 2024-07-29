@@ -36,6 +36,11 @@ impl LieGroupISE3q {
     pub fn map_point(&self, point: &V3) -> V3 {
         self.0 * point
     }
+
+    #[inline(always)]
+    pub fn add_tiny_bit_of_noise(&self) -> Self {
+        Self::new(self.0.add_tiny_bit_of_noise())
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

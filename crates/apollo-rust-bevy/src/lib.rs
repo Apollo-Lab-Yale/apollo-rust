@@ -2,6 +2,7 @@ pub mod apollo_bevy_utils;
 
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
+use bevy_obj::ObjPlugin;
 use crate::apollo_bevy_utils::camera::CameraSystems;
 use crate::apollo_bevy_utils::viewport_visuals::ViewportVisualsActions;
 
@@ -28,7 +29,8 @@ impl ApolloBevyTrait for App {
                     ..Default::default()
                 })
             )
-            .add_plugins(EguiPlugin);
+            .add_plugins(EguiPlugin)
+            .add_plugins(ObjPlugin);
 
         out
     }

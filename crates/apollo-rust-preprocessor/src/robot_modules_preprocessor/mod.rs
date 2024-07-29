@@ -338,6 +338,7 @@ pub enum AttachmentPoint {
     World,
     Link { robot_idx: usize, link_name: String }
 }
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AdjustedRobot {
     name: String,
