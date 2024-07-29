@@ -1,0 +1,8 @@
+[package]
+name = "apollo-rust-environments-core"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+apollo-rust-file = { path = "../apollo-rust-file" }
+apollo-rust-preprocessor = { path = "../apollo-rust-preprocessor" }

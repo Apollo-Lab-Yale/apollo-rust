@@ -6,8 +6,8 @@ use apollo_rust_mesh_utils::trimesh::ToTriMesh;
 use apollo_rust_proximity::offset_shape::{OffsetShape, to_offset_shape_bounding_sphere, to_offset_shape_obb};
 use apollo_rust_robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
 use apollo_rust_robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
+use apollo_rust_robot_modules::{ResourcesRobotsDirectory, ResourcesSingleRobotDirectory};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
-use crate::{RobotPreprocessorRobotsDirectory, RobotPreprocessorSingleRobotDirectory};
 
 /// initialized in apollo-rust-robotics
 #[derive(Clone)]
@@ -24,8 +24,8 @@ pub struct ApolloLinkShapesModule {
     pub link_idx_to_decomposition_shape_idxs: Vec<Vec<usize>>
 }
 impl ApolloLinkShapesModule {
-    pub fn from_mesh_modules(s: &RobotPreprocessorSingleRobotDirectory, convex_hull_meshes_module: &ApolloConvexHullMeshesModule, convex_decomposition_meshes_module: &ApolloConvexDecompositionMeshesModule) -> Self {
-        let root = RobotPreprocessorRobotsDirectory::new(s.robots_directory.clone());
+    pub fn from_mesh_modules(s: &ResourcesSingleRobotDirectory, convex_hull_meshes_module: &ApolloConvexHullMeshesModule, convex_decomposition_meshes_module: &ApolloConvexDecompositionMeshesModule) -> Self {
+        let root = ResourcesRobotsDirectory { directory: s.robots_directory.clone() };
         let mut full_convex_hulls = vec![];
         let mut full_obbs = vec![];
         let mut full_bounding_spheres = vec![];
@@ -41,7 +41,7 @@ impl ApolloLinkShapesModule {
         let mut count = 0;
         convex_hull_meshes_module.stl_link_mesh_relative_paths.iter().enumerate().for_each(|(link_idx, x)| {
             if let Some(path_buf) = x {
-                let full_path = root.directory().clone().append_path(path_buf);
+                let full_path = root.directory.clone().append_path(path_buf);
                 let tm = load_stl_file(&full_path).expect("error").to_trimesh();
                 let points: Vec<Point<f64>> = tm.points().iter().map(|x| Point::new(x[0], x[1], x[2])).collect();
                 let cp = ConvexPolyhedron::from_convex_hull(&points).expect("error");
@@ -65,7 +65,7 @@ impl ApolloLinkShapesModule {
         convex_decomposition_meshes_module.stl_link_mesh_relative_paths.iter().enumerate().for_each(|(link_idx, x)| {
             let mut curr = vec![];
             x.iter().enumerate().for_each(|(link_sub_idx, path_buf)| {
-                let full_path = root.directory().clone().append_path(path_buf);
+                let full_path = root.directory.clone().append_path(path_buf);
                 let tm = load_stl_file(&full_path).expect("error").to_trimesh();
                 let points: Vec<Point<f64>> = tm.points().iter().map(|x| Point::new(x[0], x[1], x[2])).collect();
                 let cp = ConvexPolyhedron::from_convex_hull(&points).expect("error");

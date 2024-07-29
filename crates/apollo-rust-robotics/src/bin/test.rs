@@ -1,7 +1,7 @@
-use apollo_rust_robot_modules_preprocessor::RobotPreprocessorRobotsDirectoryTrait;
-use apollo_rust_robotics_core::RobotPreprocessorRobotsDirectory;
+use apollo_rust_preprocessor::{ResourcesRootDirectoryPreprocessorTrait, ResourcesRootDirectoryTrait};
+use apollo_rust_robot_modules::ResourcesRobotsDirectory;
 
 fn main() {
-    let r = RobotPreprocessorRobotsDirectory::new_default();
+    let r = ResourcesRobotsDirectory::new_default();
     r.preprocess_all(false);
 }

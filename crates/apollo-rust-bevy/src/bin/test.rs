@@ -6,7 +6,7 @@ use apollo_rust_bevy::ApolloBevyTrait;
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_robotics::ToRobotFromName;
-use apollo_rust_robotics_core::RobotPreprocessorRobotsDirectory;
+use apollo_rust_robotics_core::ResourcesRobotsDirectory;
 
 fn main () {
     let mut app = App::new()
@@ -15,7 +15,7 @@ fn main () {
         .apollo_bevy_starter_lights()
         .apollo_bevy_robotics_scene_visuals_start();
 
-    let robot = RobotPreprocessorRobotsDirectory::new_default().to_robot("ur5");
+    let robot = ResourcesRobotsDirectory::new_default().to_robot("ur5");
     let path_to_assets = PathBuf::new_from_default_apollo_bevy_assets_dir();
     app.add_systems(Startup, move |mut commands: Commands, asset_server: Res<AssetServer>| {
         spawn_robot_meshes(0, &robot, &V::new(&[0.0; 6]), &path_to_assets, &mut commands, &asset_server);
