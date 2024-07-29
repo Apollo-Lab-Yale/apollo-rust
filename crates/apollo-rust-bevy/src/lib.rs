@@ -2,6 +2,7 @@ pub mod apollo_bevy_utils;
 
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
+use bevy_mod_outline::{AsyncSceneInheritOutlinePlugin, AutoGenerateOutlineNormalsPlugin, OutlinePlugin};
 use bevy_obj::ObjPlugin;
 use crate::apollo_bevy_utils::camera::CameraSystems;
 use crate::apollo_bevy_utils::viewport_visuals::ViewportVisualsActions;
@@ -30,7 +31,8 @@ impl ApolloBevyTrait for App {
                 })
             )
             .add_plugins(EguiPlugin)
-            .add_plugins(ObjPlugin);
+            .add_plugins(ObjPlugin)
+            .add_plugins((OutlinePlugin, AutoGenerateOutlineNormalsPlugin, AsyncSceneInheritOutlinePlugin));
 
         out
     }
@@ -61,6 +63,7 @@ impl ApolloBevyTrait for App {
         out.add_systems(Startup, |mut commands: Commands| {
             commands.spawn(PointLightBundle {
                 point_light: PointLight {
+                    shadows_enabled: true,
                     ..default()
                 },
                 transform: Transform::from_xyz(4.0, 4.0, 4.0),
@@ -68,6 +71,7 @@ impl ApolloBevyTrait for App {
             });
             commands.spawn(PointLightBundle {
                 point_light: PointLight {
+                    shadows_enabled: true,
                     ..default()
                 },
                 transform: Transform::from_xyz(1.0, 2.0, -4.0),

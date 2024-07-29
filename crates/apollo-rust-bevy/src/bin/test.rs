@@ -19,11 +19,11 @@ fn main () {
         .apollo_bevy_starter_lights()
         .apollo_bevy_robotics_scene_visuals_start();
 
-    let robot = ResourcesRobotsDirectory::new_default().to_robot("tester");
+    let robot = ResourcesRobotsDirectory::new_default().to_robot("ur5");
     let path_to_assets = PathBuf::new_from_default_apollo_bevy_assets_dir();
     app.add_systems(Startup, move |mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<StandardMaterial>>| {
-        spawn_robot_meshes(0, RobotMeshesRepresentation::ConvexDecomposition, MeshType::OBJ, &robot, &V::new(&[0.0; 2]), &path_to_assets, &mut commands, &asset_server, &mut materials);
-        spawn_robot_meshes(0, RobotMeshesRepresentation::Plain, MeshType::GLB, &robot, &V::new(&[0.0; 2]), &path_to_assets, &mut commands, &asset_server, &mut materials);
+        spawn_robot_meshes(0, RobotMeshesRepresentation::ConvexHull, MeshType::OBJ, &robot, &V::new(&[0.0; 6]), &path_to_assets, &mut commands, &asset_server, &mut materials);
+        // spawn_robot_meshes(0, RobotMeshesRepresentation::Plain, MeshType::GLB, &robot, &V::new(&[0.0; 6]), &path_to_assets, &mut commands, &asset_server, &mut materials);
     });
 
     app.run();
