@@ -6,3 +6,4 @@ pub mod gltf;
 pub mod robotics;
 pub mod obj;
 pub mod meshes;
+mod materials;

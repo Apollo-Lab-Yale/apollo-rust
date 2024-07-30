@@ -3,7 +3,7 @@ use bevy::gltf::GltfAssetLabel;
 use bevy::prelude::{AssetServer, Color, Commands, Component, Entity, Res, Transform};
 use bevy::scene::SceneBundle;
 use bevy::utils::default;
-use bevy_mod_outline::{AsyncSceneInheritOutline, OutlineBundle, OutlineVolume};
+use bevy_mod_outline::{AsyncSceneInheritOutline, OutlineBundle, OutlineMode, OutlineVolume};
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::apollo_bevy_utils::transform::TransformUtils;
@@ -22,10 +22,11 @@ pub fn spawn_gltf(file_path_relative_to_assets: PathBuf, pose: Option<&ISE3q>, c
 
     res.insert(OutlineBundle {
         outline: OutlineVolume {
-            visible: false,
-            width: 0.5,
+            visible: true,
+            width: 1.0,
             colour: Color::srgb(0.,0.,0.),
         },
+        mode: OutlineMode::RealVertex,
         ..default()
     }).insert(AsyncSceneInheritOutline);
 

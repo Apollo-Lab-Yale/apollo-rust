@@ -2,9 +2,10 @@ use std::path::PathBuf;
 use bevy::asset::{Assets, AssetServer};
 use bevy::color::Color;
 use bevy::pbr::StandardMaterial;
-use bevy::prelude::{Commands, Component, Entity, Res, ResMut};
+use bevy::prelude::{Commands, Component, DetectChanges, Entity, Query, Res, ResMut, Resource, Transform};
+use bevy_egui::egui::{Slider, Ui};
 use apollo_rust_file::ApolloPathBufTrait;
-use apollo_rust_linalg::V;
+use apollo_rust_linalg::{V};
 use apollo_rust_preprocessor::robot_modules_preprocessor::modules::mesh_modules::convex_decomposition_meshes_module::ConvexDecompositionMeshesModuleGetFullPaths;
 use apollo_rust_preprocessor::robot_modules_preprocessor::modules::mesh_modules::convex_hull_meshes_module::ConvexHullMeshesModuleGetFullPaths;
 use apollo_rust_preprocessor::robot_modules_preprocessor::modules::mesh_modules::plain_meshes_module::PlainMeshesModuleGetFullPaths;
@@ -14,6 +15,7 @@ use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::apollo_bevy_utils::gltf::spawn_gltf;
 use crate::apollo_bevy_utils::meshes::MeshType;
 use crate::apollo_bevy_utils::obj::spawn_obj;
+use crate::apollo_bevy_utils::transform::TransformUtils;
 
 pub fn spawn_robot_meshes_generic(robot_instance_idx: usize,
                                   mesh_type: MeshType,
@@ -33,7 +35,7 @@ pub fn spawn_robot_meshes_generic(robot_instance_idx: usize,
 
             let entity = match mesh_type {
                 MeshType::GLB => { spawn_gltf(path.clone(), Some(pose), commands, asset_server) }
-                MeshType::OBJ => { spawn_obj(path.clone(), Color::srgba(0.3, 0.3, 0.3, 0.5), Some(pose), commands, asset_server, materials) }
+                MeshType::OBJ => { spawn_obj(path.clone(), Color::srgba(0.45, 0.45, 0.5, 1.0), Some(pose), commands, asset_server, materials) }
             };
 
             tmp.push(entity.clone());
@@ -86,6 +88,45 @@ pub fn spawn_robot_meshes(robot_instance_idx: usize,
     }
 
     res
+}
+
+pub fn pose_robot(robot_instance_idx: usize, robot: &Robot, state: &V, query: &mut Query<(&mut Transform, &RobotLinkMesh)>) {
+    let fk_res = robot.fk(state);
+    query.iter_mut().for_each(|(mut x, y)| {
+        if y.robot_instance_idx == robot_instance_idx {
+            let link_idx = y.link_idx;
+            *x = TransformUtils::util_convert_pose_to_y_up_bevy_transform(&fk_res[link_idx]);
+        }
+    });
+}
+
+pub fn robot_sliders_egui(robot_instance_idx: usize, robot: &Robot, ui: &mut Ui, robot_states: &mut ResMut<RobotStates>) {
+    let dof_module = robot.dof_module();
+    let bounds_module = robot.bounds_module();
+    let num_dofs = dof_module.num_dofs;
+
+    let robot_state = robot_states.states.get_mut(robot_instance_idx).expect("error");
+
+    for dof_idx in 0..num_dofs {
+        let bounds = bounds_module.bounds[dof_idx];
+        ui.horizontal(|ui| {
+            ui.label(format!("{}: ", dof_idx));
+            ui.add(Slider::new(&mut robot_state[dof_idx], bounds.0..=bounds.1));
+        });
+    }
+}
+
+pub fn robot_state_updater_loop(robot: &Robot, query: &mut Query<(&mut Transform, &RobotLinkMesh)>, robot_states: &Res<RobotStates>) {
+    if robot_states.is_changed() {
+        robot_states.states.iter().enumerate().for_each(|(i, x)| {
+            pose_robot(i, robot, x, query);
+        });
+    }
+}
+
+#[derive(Resource)]
+pub struct RobotStates {
+    pub states: Vec<V>
 }
 
 #[derive(Clone, Debug, Copy)]

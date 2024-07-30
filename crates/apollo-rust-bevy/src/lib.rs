@@ -63,7 +63,6 @@ impl ApolloBevyTrait for App {
         out.add_systems(Startup, |mut commands: Commands| {
             commands.spawn(PointLightBundle {
                 point_light: PointLight {
-                    shadows_enabled: true,
                     ..default()
                 },
                 transform: Transform::from_xyz(4.0, 4.0, 4.0),
@@ -71,7 +70,6 @@ impl ApolloBevyTrait for App {
             });
             commands.spawn(PointLightBundle {
                 point_light: PointLight {
-                    shadows_enabled: true,
                     ..default()
                 },
                 transform: Transform::from_xyz(1.0, 2.0, -4.0),
