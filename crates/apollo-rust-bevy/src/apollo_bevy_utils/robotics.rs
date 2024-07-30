@@ -35,7 +35,7 @@ pub fn spawn_robot_meshes_generic(robot_instance_idx: usize,
 
             let entity = match mesh_type {
                 MeshType::GLB => { spawn_gltf(path.clone(), Some(pose), commands, asset_server) }
-                MeshType::OBJ => { spawn_obj(path.clone(), Color::srgba(0.45, 0.45, 0.5, 1.0), Some(pose), commands, asset_server, materials) }
+                MeshType::OBJ => { spawn_obj(path.clone(), Color::srgba(0.6, 0.6, 0.62, 1.0), Some(pose), commands, asset_server, materials) }
             };
 
             tmp.push(entity.clone());

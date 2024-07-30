@@ -23,17 +23,17 @@ fn main () {
         .apollo_bevy_starter_lights()
         .apollo_bevy_robotics_scene_visuals_start();
 
-    app.insert_resource(RobotStates { states: vec![V::new(&[0.0; 7])] });
+    app.insert_resource(RobotStates { states: vec![V::new(&[0.0; 6])] });
 
-    let robot = Arc::new(ResourcesRobotsDirectory::new_default().to_robot("xarm7"));
+    let robot = Arc::new(ResourcesRobotsDirectory::new_default().to_robot("ur5"));
     let robot1 = robot.clone();
     let robot2 = robot.clone();
     let robot3 = robot.clone();
 
     let path_to_assets = PathBuf::new_from_default_apollo_bevy_assets_dir();
     app.add_systems(Startup,  move |mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<StandardMaterial>>| {
-        spawn_robot_meshes(0, RobotMeshesRepresentation::ConvexHull, MeshType::OBJ, &robot, &V::new(&[0.0; 7]), &path_to_assets, &mut commands, &asset_server, &mut materials);
-        spawn_robot_meshes(0, RobotMeshesRepresentation::ConvexDecomposition, MeshType::GLB, &robot1, &V::new(&[0.0; 7]), &path_to_assets, &mut commands, &asset_server, &mut materials);
+        spawn_robot_meshes(0, RobotMeshesRepresentation::Plain, MeshType::OBJ, &robot1, &V::new(&[0.0; 6]), &path_to_assets, &mut commands, &asset_server, &mut materials);
+        // spawn_robot_meshes(0, RobotMeshesRepresentation::ConvexDecomposition, MeshType::GLB, &robot1, &V::new(&[0.0; 7]), &path_to_assets, &mut commands, &asset_server, &mut materials);
     });
 
     app.add_systems(Update, move |mut query: Query<(&mut Transform, &RobotLinkMesh)>, robot_states: Res<RobotStates>| {
@@ -46,7 +46,7 @@ fn main () {
             if ui.ui_contains_pointer() { println!("yep"); }
         });
 
-        SidePanel::new(Side::Left, "").show(egui_contexts.ctx_mut(), |ui| {
+        SidePanel::new(Side::Left, "").show(egui_contexts.ctx_mut(), |_ui| {
 
         });
     });
