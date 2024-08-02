@@ -14,3 +14,4 @@ gltf-json = "1.4.1"
 obj-rs = { version="0.7.1" }
 base64 = "0.22.1"
 serde_json = { version="1.0.120" }
+serde = { version = "1.0.204", features = ["derive"] }

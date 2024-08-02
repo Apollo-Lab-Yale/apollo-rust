@@ -12,13 +12,24 @@ use gltf_json::accessor::ComponentType::{F32, U32};
 use gltf_json::accessor::GenericComponentType;
 use gltf_json::validation::{Checked, USize64};
 use parry3d_f64::math::Point;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 pub trait ToTriMesh {
     fn to_trimesh(&self) -> TriMesh;
 }
+impl ToTriMesh for Vec<TriMesh> {
+    fn to_trimesh(&self) -> TriMesh {
+        let mut out = TriMesh::new_empty();
 
-#[derive(Clone, Debug)]
+        self.iter().for_each(|x| out.extend(x));
+
+        out
+    }
+}
+
+/// TriMesh points are assumed to have origin of (0,0,0)
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TriMesh {
     pub points: Vec<[f64;3]>,
     pub indices: Vec<[usize;3]>,
@@ -217,10 +228,10 @@ impl TriMesh {
             ..Default::default()
         };
 
-        let json_string = json::serialize::to_string(&document).expect("Failed to serialize glTF document");
+        let json_string = json::serialize::to_string(&document).expect("Failed to serialize GLB document");
 
         let mut file = path.get_file_for_writing();
-        write!(file, "{}", json_string).expect("Failed to write glTF file");
+        write!(file, "{}", json_string).expect("Failed to write GLB file");
     }
     pub fn to_triangles(&self) -> Vec<[[f64; 3]; 3]> {
         let mut triangles = vec![];
@@ -300,6 +311,15 @@ pub trait SaveToOBJ {
 impl<M: ToTriMesh> SaveToOBJ for M {
     fn save_to_obj(&self, path: &PathBuf) {
         self.to_trimesh().save_to_obj(path);
+    }
+}
+
+pub trait SaveToGLB {
+    fn save_to_glb(&self, path: &PathBuf);
+}
+impl<M: ToTriMesh> SaveToGLB for M {
+    fn save_to_glb(&self, path: &PathBuf) {
+        self.to_trimesh().save_to_glb(path);
     }
 }
 
