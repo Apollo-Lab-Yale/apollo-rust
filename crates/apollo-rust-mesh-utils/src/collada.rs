@@ -40,7 +40,6 @@ impl ToTriMesh for Document {
 
         if meter != 1.0 {
             out_trimesh.points.iter_mut().for_each(|x| {
-                // *x = x.o3dvec_scalar_mul(meter);
                 x.iter_mut().for_each(|y| *y *= meter);
             })
         }
@@ -127,6 +126,7 @@ fn get_trimesh_from_collada_node(node: &Node, curr_transforms: &Vec<Transform>, 
 
     trimesh
 }
+
 fn transform_points(points: &mut Vec<[f64; 3]>, transforms: &Vec<Transform>) {
     transforms.iter().for_each(|t| {
         match t {
@@ -181,3 +181,8 @@ fn transform_points(points: &mut Vec<[f64; 3]>, transforms: &Vec<Transform>) {
         }
     });
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+

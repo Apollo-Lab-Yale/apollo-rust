@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use apollo_rust_file::ApolloPathBufTrait;
 use nalgebra::{Vector3};
 use parry3d_f64::transformation::convex_hull;
@@ -12,8 +12,7 @@ use gltf_json::accessor::ComponentType::{F32, U32};
 use gltf_json::accessor::GenericComponentType;
 use gltf_json::validation::{Checked, USize64};
 use parry3d_f64::math::Point;
-use serde_json::{json};
-use crate::gltf::calculate_min_max;
+use serde_json::json;
 
 pub trait ToTriMesh {
     fn to_trimesh(&self) -> TriMesh;
@@ -306,3 +305,20 @@ impl<M: ToTriMesh> SaveToOBJ for M {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+pub fn calculate_min_max(points: &[f32]) -> (Vec<f64>, Vec<f64>) {
+    let mut min = vec![f64::INFINITY; 3];
+    let mut max = vec![f64::NEG_INFINITY; 3];
+
+    for chunk in points.chunks(3) {
+        for i in 0..3 {
+            if (chunk[i] as f64) < min[i] {
+                min[i] = chunk[i] as f64;
+            }
+            if (chunk[i] as f64) > max[i] {
+                max[i] = chunk[i] as f64;
+            }
+        }
+    }
+
+    (min, max)
+}
