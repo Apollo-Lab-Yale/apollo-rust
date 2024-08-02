@@ -4,6 +4,7 @@ use apollo_rust_robot_modules::mesh_modules::original_meshes_module::ApolloOrigi
 use apollo_rust_robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 use crate::{create_generic_build_from_adjusted_robot2, create_generic_build_from_combined_robot2, create_generic_build_raw, PreprocessorModule, ResourcesSubDirectoryTrait};
 use apollo_rust_mesh_utils::collada::load_dae_file;
+use apollo_rust_mesh_utils::gltf::load_gltf_file;
 use apollo_rust_mesh_utils::obj::load_obj_file;
 use crate::utils::progress_bar::ProgressBarWrapper;
 use apollo_rust_mesh_utils::stl::load_stl_file;
@@ -69,6 +70,8 @@ impl PlainMeshesModuleBuilders for ApolloPlainMeshesModule {
                             Some(load_dae_file(&full_path).expect("error").to_trimesh())
                         } else if ext == "obj" || ext == "OBJ" {
                             Some(load_obj_file(&full_path).expect("error").to_trimesh())
+                        } else if ext == "glb" || ext == "GLB" || ext == "gltf" || ext == "GLTF" {
+                            Some(load_gltf_file(&full_path).expect("error").to_trimesh())
                         } else {
                             None
                         };
