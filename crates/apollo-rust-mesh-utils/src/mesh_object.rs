@@ -7,13 +7,15 @@ use gltf_json::accessor::GenericComponentType;
 use gltf_json::validation::{Checked, USize64};
 use serde_json::json;
 use apollo_rust_file::ApolloPathBufTrait;
-use crate::trimesh::{calculate_min_max, TriMesh};
+use crate::trimesh::{calculate_min_max, ToTriMesh, TriMesh};
 use std::io::Write;
 use gltf_json::scene::UnitQuaternion;
 use nalgebra::Isometry3;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MeshObject {
+    /// the different trimeshes here are for parts of the mesh with different materials
     pub local_space_trimeshes: Vec<TriMesh>,
     pub offset_from_parent: Isometry3<f64>,
     pub scale: [f64; 3],
@@ -184,34 +186,10 @@ impl MeshObject {
 
         let mut file = path.get_file_for_writing();
         write!(file, "{}", json_string).expect("Failed to write GLB file");
-
-
     }
 
-    pub fn save_to_stl(&self, path: &PathBuf) {
-        assert_eq!(self.local_space_trimeshes.len(), 1);
-        assert_eq!(self.offset_from_parent.translation.x, 0.0);
-        assert_eq!(self.offset_from_parent.translation.y, 0.0);
-        assert_eq!(self.offset_from_parent.translation.z, 0.0);
-        assert_eq!(self.offset_from_parent.rotation.w, 1.0);
-        assert_eq!(self.offset_from_parent.rotation.i, 0.0);
-        assert_eq!(self.offset_from_parent.rotation.j, 0.0);
-        assert_eq!(self.offset_from_parent.rotation.k, 0.0);
-
-        self.local_space_trimeshes[0].save_to_stl(path);
-    }
-
-    pub fn save_to_obj(&self, path: &PathBuf) {
-        assert_eq!(self.local_space_trimeshes.len(), 1);
-        assert_eq!(self.offset_from_parent.translation.x, 0.0);
-        assert_eq!(self.offset_from_parent.translation.y, 0.0);
-        assert_eq!(self.offset_from_parent.translation.z, 0.0);
-        assert_eq!(self.offset_from_parent.rotation.w, 1.0);
-        assert_eq!(self.offset_from_parent.rotation.i, 0.0);
-        assert_eq!(self.offset_from_parent.rotation.j, 0.0);
-        assert_eq!(self.offset_from_parent.rotation.k, 0.0);
-
-        self.local_space_trimeshes[0].save_to_obj(path);
+    pub fn to_combined_local_space_trimesh(&self) -> TriMesh {
+        self.local_space_trimeshes.to_trimesh()
     }
 }
 
@@ -369,7 +347,7 @@ pub fn save_to_glb(&self, path: &PathBuf) {
 }
 */
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ExtraInfo {
     None,
     GLB {
