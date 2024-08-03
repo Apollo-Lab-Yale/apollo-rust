@@ -187,6 +187,32 @@ impl MeshObject {
 
 
     }
+
+    pub fn save_to_stl(&self, path: &PathBuf) {
+        assert_eq!(self.local_space_trimeshes.len(), 1);
+        assert_eq!(self.offset_from_parent.translation.x, 0.0);
+        assert_eq!(self.offset_from_parent.translation.y, 0.0);
+        assert_eq!(self.offset_from_parent.translation.z, 0.0);
+        assert_eq!(self.offset_from_parent.rotation.w, 1.0);
+        assert_eq!(self.offset_from_parent.rotation.i, 0.0);
+        assert_eq!(self.offset_from_parent.rotation.j, 0.0);
+        assert_eq!(self.offset_from_parent.rotation.k, 0.0);
+
+        self.local_space_trimeshes[0].save_to_stl(path);
+    }
+
+    pub fn save_to_obj(&self, path: &PathBuf) {
+        assert_eq!(self.local_space_trimeshes.len(), 1);
+        assert_eq!(self.offset_from_parent.translation.x, 0.0);
+        assert_eq!(self.offset_from_parent.translation.y, 0.0);
+        assert_eq!(self.offset_from_parent.translation.z, 0.0);
+        assert_eq!(self.offset_from_parent.rotation.w, 1.0);
+        assert_eq!(self.offset_from_parent.rotation.i, 0.0);
+        assert_eq!(self.offset_from_parent.rotation.j, 0.0);
+        assert_eq!(self.offset_from_parent.rotation.k, 0.0);
+
+        self.local_space_trimeshes[0].save_to_obj(path);
+    }
 }
 
 /*
@@ -342,7 +368,6 @@ pub fn save_to_glb(&self, path: &PathBuf) {
     write!(file, "{}", json_string).expect("Failed to write GLB file");
 }
 */
-
 
 #[derive(Clone, Debug)]
 pub enum ExtraInfo {

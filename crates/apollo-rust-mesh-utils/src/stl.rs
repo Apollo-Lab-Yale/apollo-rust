@@ -1,7 +1,10 @@
 use std::fs::File;
 use std::path::PathBuf;
+use nalgebra::Isometry3;
 use apollo_rust_file::ApolloPathBufTrait;
 use stl_io::IndexedMesh;
+use crate::mesh_object::{ExtraInfo, MeshObject};
+use crate::mesh_object_scene::{MeshObjectNode, MeshObjectScene, ToMeshObjectScene};
 use crate::trimesh::{ToTriMesh, TriMesh};
 
 impl ToTriMesh for IndexedMesh {
@@ -19,6 +22,23 @@ impl ToTriMesh for IndexedMesh {
         });
 
         TriMesh { points, indices }
+    }
+}
+
+impl ToMeshObjectScene for IndexedMesh {
+    fn to_mesh_object_scene(&self) -> MeshObjectScene {
+        MeshObjectScene {
+            nodes: vec![MeshObjectNode {
+                name: "".to_string(),
+                parent_node: None,
+                local_space_mesh_object: MeshObject {
+                    local_space_trimeshes: vec![self.to_trimesh()],
+                    offset_from_parent: Isometry3::identity(),
+                    scale: [1.,1.,1.],
+                    extra_info: ExtraInfo::None,
+                },
+            }],
+        }
     }
 }
 

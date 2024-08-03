@@ -3,6 +3,8 @@ use std::str::FromStr;
 use apollo_rust_file::ApolloPathBufTrait;
 use dae_parser::{ArrayElement, Document, Geometry, LocalMap, Node, Primitive, Semantic, Source, Transform, Vertices};
 use nalgebra::{Isometry3, Matrix3, Matrix4, Rotation3, Unit, UnitQuaternion, Vector3};
+use crate::mesh_object::{ExtraInfo, MeshObject};
+use crate::mesh_object_scene::{MeshObjectNode, MeshObjectScene, ToMeshObjectScene};
 use crate::trimesh::{ToTriMesh, TriMesh};
 
 impl ToTriMesh for Document {
@@ -45,6 +47,23 @@ impl ToTriMesh for Document {
         }
 
         out_trimesh
+    }
+}
+
+impl ToMeshObjectScene for Document {
+    fn to_mesh_object_scene(&self) -> MeshObjectScene {
+        MeshObjectScene {
+            nodes: vec![MeshObjectNode {
+                name: "".to_string(),
+                parent_node: None,
+                local_space_mesh_object: MeshObject {
+                    local_space_trimeshes: vec![self.to_trimesh()],
+                    offset_from_parent: Isometry3::identity(),
+                    scale: [1.,1.,1.],
+                    extra_info: ExtraInfo::None,
+                },
+            }],
+        }
     }
 }
 

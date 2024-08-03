@@ -1,7 +1,10 @@
 use std::io::BufReader;
 use std::path::PathBuf;
+use nalgebra::Isometry3;
 use apollo_rust_file::ApolloPathBufTrait;
 use obj::{Obj, load_obj};
+use crate::mesh_object::{ExtraInfo, MeshObject};
+use crate::mesh_object_scene::{MeshObjectNode, MeshObjectScene, ToMeshObjectScene};
 use crate::trimesh::{ToTriMesh, TriMesh};
 
 impl ToTriMesh for Obj {
@@ -21,6 +24,23 @@ impl ToTriMesh for Obj {
         }
 
         TriMesh { points, indices }
+    }
+}
+
+impl ToMeshObjectScene for Obj {
+    fn to_mesh_object_scene(&self) -> MeshObjectScene {
+        MeshObjectScene {
+            nodes: vec![MeshObjectNode {
+                name: "".to_string(),
+                parent_node: None,
+                local_space_mesh_object: MeshObject {
+                    local_space_trimeshes: vec![self.to_trimesh()],
+                    offset_from_parent: Isometry3::identity(),
+                    scale: [1.,1.,1.],
+                    extra_info: ExtraInfo::None,
+                },
+            }],
+        }
     }
 }
 
