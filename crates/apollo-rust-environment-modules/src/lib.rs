@@ -1,5 +1,5 @@
 pub mod environment_description_module;
-mod environment_link_simulation_modes_module;
+pub mod environment_link_simulation_modes_module;
 
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};

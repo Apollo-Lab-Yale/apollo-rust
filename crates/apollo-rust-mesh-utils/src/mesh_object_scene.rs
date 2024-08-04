@@ -13,6 +13,12 @@ impl MeshObjectScene {
     pub fn to_mesh_objects(&self) -> Vec<MeshObject> {
         self.nodes.iter().map(|x| { x.local_space_mesh_object.clone() }).collect()
     }
+
+    pub fn print_all_mesh_object_names(&self) {
+        self.nodes.iter().enumerate().for_each(|(i, x)| {
+            println!("{}: {:?}", i, x.name);
+        });
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
