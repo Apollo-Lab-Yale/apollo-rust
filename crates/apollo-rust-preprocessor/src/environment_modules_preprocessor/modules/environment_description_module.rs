@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use apollo_rust_environment_modules::environment_description_module::{ApolloEnvironmentDescriptionModule, EnvironmentLinkSimulationMode};
 use apollo_rust_environment_modules::{ResourcesEnvironmentsDirectory, ResourcesSingleEnvironmentDirectory};
 use apollo_rust_file::ApolloPathBufTrait;
@@ -30,6 +29,8 @@ impl EnvironmentDescriptionModuleBuilders for ApolloEnvironmentDescriptionModule
             visual: vec![],
             collision: vec![],
         });
+        link_scales.push([1.,1.,1.]);
+        link_simulation_modes.push(EnvironmentLinkSimulationMode::Passive);
         
         environment_creator.actions.iter().for_each(|action| {
             match action {
@@ -51,10 +52,15 @@ impl EnvironmentDescriptionModuleBuilders for ApolloEnvironmentDescriptionModule
                     });
                     let scales_clone: Vec<[f64; 3]> = description_module.link_scales.iter().map(|x| [x[0] * scale[0], x[1] * scale[1], x[2] * scale[2]]).collect();
 
-                    description_module.urdf_module.links.iter().for_each(|x| { if x.name != "world_environment_origin" { links.push(x.clone()); } });
+                    description_module.urdf_module.links.iter().enumerate().for_each(|(i, x)| {
+                        if x.name != "world_environment_origin" {
+                            links.push(x.clone());
+                            link_scales.push(scales_clone[i]);
+                            link_simulation_modes.push(description_module.link_simulation_modes[i].clone());
+                        }
+                    });
                     joints.extend(joints_clone);
-                    link_scales.extend(scales_clone);
-                    link_simulation_modes.extend(description_module.link_simulation_modes);
+
                 }
                 EnvironmentCreatorAction::AddSingleObjectFromStlFile { object_name, parent_object, base_offset, scale, .. } => {
                     let (link, joint) = get_link_and_joint_from_single_mesh_file(object_name, parent_object, base_offset);
@@ -77,11 +83,11 @@ impl EnvironmentDescriptionModuleBuilders for ApolloEnvironmentDescriptionModule
                     link_scales.push(scale.clone());
                     link_simulation_modes.push(EnvironmentLinkSimulationMode::Active);
                 }
-                EnvironmentCreatorAction::AddSceneFromGlbFile { fp, parent_object, transform, scale } => {
+                EnvironmentCreatorAction::AddSceneFromGlbFile { scene_name, fp, parent_object, transform, scale } => {
                     fp.verify_extension(&vec!["glb", "GLB", "gltf", "GLTF"]).expect("error");
 
-                    let filename = fp.file_name().unwrap().to_str().unwrap().to_string();
-                    let target = s.directory.clone().append("mesh_modules/glb_scenes").append(&filename);
+                    // let filename = fp.file_name().unwrap().to_str().unwrap().to_string();
+                    let target = s.directory.clone().append("mesh_modules/glb_scenes").append(scene_name).append("scene.glb");
                     let mesh_object_scene = if target.exists() {
                         load_gltf_file(&target).expect("error").to_mesh_object_scene()
                     } else {
@@ -196,7 +202,7 @@ impl EnvironmentDescriptionModuleBuilders for ApolloEnvironmentDescriptionModule
                 joints,
                 materials: vec![],
             },
-            link_scales: vec![],
+            link_scales,
             link_simulation_modes
         })
     }
@@ -258,7 +264,7 @@ impl PreprocessorModule for ApolloEnvironmentDescriptionModule {
     }
 
     fn build_raw(s: &Self::SubDirectoryType, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
-        let environment_creator_module = PathBuf::new().append_path(&s.directory).append("creator_module").append("module.json");
+        let environment_creator_module = s.directory.clone().append("creator_module").append("module.json");
         let creator = environment_creator_module.load_object_from_json_file_result::<ApolloEnvironmentCreator>().expect("environment must have creator module");
 
         progress_bar.done_preset();

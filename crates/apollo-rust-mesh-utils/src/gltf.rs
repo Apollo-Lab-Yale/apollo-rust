@@ -16,7 +16,12 @@ use crate::trimesh_scene::{ToTrimeshScene, TrimeshNode, TrimeshScene};
 impl ToTriMesh for GltfInfo {
     fn to_trimesh(&self) -> TriMesh {
         let trimesh_scene = self.to_trimesh_scene();
-        trimesh_scene.to_resolved_trimeshes().to_trimesh()
+        // trimesh_scene.to_resolved_trimeshes().to_trimesh()
+        let mut out = TriMesh::new_empty();
+        trimesh_scene.nodes.iter().for_each(|x| {
+            out.extend(&x.local_space_trimesh);
+        });
+        out
     }
 }
 
@@ -30,11 +35,12 @@ impl ToTrimeshScene for GltfInfo {
             let mut node_stack = vec![];
             scene.nodes().for_each(|node| node_stack.push( (node, None::<String>)));
 
+            let mut count = 0;
             while !node_stack.is_empty() {
                 let (node, parent_name) = node_stack.pop().unwrap();
 
                 let name = match node.name() {
-                    None => { todo!() }
+                    None => { format!("object_{}", count) }
                     Some(s) => { s.to_string() }
                 };
                 let ( xyz, q, scale ) = node.transform().decomposed();
@@ -57,7 +63,11 @@ impl ToTrimeshScene for GltfInfo {
                     }
 
                     let mut i = Vec::new();
-                    if let Some(gltf::mesh::util::ReadIndices::U16(gltf::accessor::Iter::Standard(iter))) = reader.read_indices(){
+                    if let Some(gltf::mesh::util::ReadIndices::U16(gltf::accessor::Iter::Standard(iter))) = reader.read_indices() {
+                        for v in iter{
+                            i.push(v as usize);
+                        }
+                    } else if let Some(gltf::mesh::util::ReadIndices::U32(gltf::accessor::Iter::Standard(iter))) = reader.read_indices() {
                         for v in iter{
                             i.push(v as usize);
                         }
@@ -66,7 +76,6 @@ impl ToTrimeshScene for GltfInfo {
                     i.chunks(3).for_each(|a| {
                         indices.push(  [a[0], a[1], a[2]] );
                     });
-
                 });
 
                 out.nodes.push(TrimeshNode {
@@ -89,6 +98,8 @@ impl ToTrimeshScene for GltfInfo {
                         Some(_) => { node_stack.push( (child, Some(name.clone())) ) }
                     }
                 });
+
+                count += 1;
             }
         });
 

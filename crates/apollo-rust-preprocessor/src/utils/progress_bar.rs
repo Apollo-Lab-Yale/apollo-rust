@@ -3,16 +3,16 @@ use pbr::{ProgressBar, Units};
 
 pub struct ProgressBarWrapper {
     pbr: ProgressBar<Stdout>,
-    robot_name: String,
+    name: String,
     module_name: String,
     maximum: Option<usize>,
     curr_count: usize
 }
 impl ProgressBarWrapper {
-    pub fn new(robot_name: &str, module_name: &str) -> Self {
+    pub fn new(name: &str, module_name: &str) -> Self {
         Self {
             pbr: get_default_progress_bar(100),
-            robot_name: robot_name.to_string(),
+            name: name.to_string(),
             module_name: module_name.to_string(),
             maximum: None,
             curr_count: 0,
@@ -46,11 +46,11 @@ impl ProgressBarWrapper {
     }
     /// percent done is out of 100.0
     pub fn update_with_percentage_preset(&mut self, percent_done: f64) {
-        let message = format!("Building module.  Robot name: {:?}, Module name: {:?}: ", self.robot_name, self.module_name);
+        let message = format!("Building module.  Name: {:?}, Module name: {:?}: ", self.name, self.module_name);
         self.update_with_percentage(&message, percent_done);
     }
     pub fn done_preset(&mut self) {
-        let message = format!("Module complete!  Robot name: {:?}, Module name: {:?}", self.robot_name, self.module_name);
+        let message = format!("Module complete!  Name: {:?}, Module name: {:?}", self.name, self.module_name);
         self.done(&message);
     }
 }

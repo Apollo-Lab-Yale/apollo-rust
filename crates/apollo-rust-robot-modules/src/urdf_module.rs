@@ -215,7 +215,7 @@ impl ApolloURDFAxis {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ApolloURDFJointLimit {
     pub lower: f64,
     pub upper: f64,
@@ -233,6 +233,16 @@ impl ApolloURDFJointLimit {
     }
     pub fn new(lower: f64, upper: f64, effort: f64, velocity: f64) -> Self {
         Self { lower, upper, effort, velocity }
+    }
+}
+impl Default for ApolloURDFJointLimit {
+    fn default() -> Self {
+        Self {
+            lower: -3.14,
+            upper: 3.14,
+            effort: 0.0,
+            velocity: 0.0,
+        }
     }
 }
 
@@ -329,7 +339,7 @@ impl ApolloURDFMass {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ApolloURDFInertia {
     pub ixx: f64,
     pub ixy: f64,
@@ -347,6 +357,18 @@ impl ApolloURDFInertia {
             iyy: inertia.iyy,
             iyz: inertia.iyz,
             izz: inertia.izz,
+        }
+    }
+}
+impl Default for ApolloURDFInertia {
+    fn default() -> Self {
+        Self {
+            ixx: 1.0,
+            ixy: 0.0,
+            ixz: 0.0,
+            iyy: 1.0,
+            iyz: 0.0,
+            izz: 1.0,
         }
     }
 }
