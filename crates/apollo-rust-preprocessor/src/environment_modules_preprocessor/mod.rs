@@ -2,8 +2,8 @@ pub mod modules;
 
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
-use apollo_rust_environment_modules::environment_link_simulation_modes_module::EnvironmentLinkSimulationMode;
 use apollo_rust_environment_modules::{ResourcesEnvironmentsDirectory, ResourcesSingleEnvironmentDirectory};
+use apollo_rust_environment_modules::environment_description_module::EnvironmentLinkSimulationMode;
 use apollo_rust_robot_modules::urdf_module::{ApolloURDFAxis, ApolloURDFJointLimit, ApolloURDFJointType};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::{ResourcesRootDirectoryPreprocessorTrait, ResourcesRootDirectoryTrait, ResourcesSubDirectoryPreprocessorTrait, ResourcesSubDirectoryTrait};

@@ -1,10 +1,10 @@
 use std::path::PathBuf;
-use apollo_rust_environment_modules::environment_description_module::ApolloEnvironmentDescriptionModule;
+use apollo_rust_environment_modules::environment_description_module::{ApolloEnvironmentDescriptionModule, EnvironmentLinkSimulationMode};
 use apollo_rust_environment_modules::{ResourcesEnvironmentsDirectory, ResourcesSingleEnvironmentDirectory};
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_lie::LieGroupElement;
 use apollo_rust_mesh_utils::gltf::load_gltf_file;
-use apollo_rust_mesh_utils::mesh_object_scene::{MeshObjectScene, ToMeshObjectScene};
+use apollo_rust_mesh_utils::mesh_object_scene::{ToMeshObjectScene};
 use apollo_rust_robot_modules::urdf_module::{ApolloURDFJoint, ApolloURDFJointType, ApolloURDFLink, ApolloURDFLinkName, ApolloURDFModule, ApolloURDFPose};
 use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, I3};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
@@ -22,6 +22,7 @@ impl EnvironmentDescriptionModuleBuilders for ApolloEnvironmentDescriptionModule
         let mut links = vec![];
         let mut joints = vec![];
         let mut link_scales = vec![];
+        let mut link_simulation_modes = vec![];
 
         links.push(ApolloURDFLink {
             name: "world_environment_origin".to_string(),
@@ -53,24 +54,28 @@ impl EnvironmentDescriptionModuleBuilders for ApolloEnvironmentDescriptionModule
                     description_module.urdf_module.links.iter().for_each(|x| { if x.name != "world_environment_origin" { links.push(x.clone()); } });
                     joints.extend(joints_clone);
                     link_scales.extend(scales_clone);
+                    link_simulation_modes.extend(description_module.link_simulation_modes);
                 }
                 EnvironmentCreatorAction::AddSingleObjectFromStlFile { object_name, parent_object, base_offset, scale, .. } => {
                     let (link, joint) = get_link_and_joint_from_single_mesh_file(object_name, parent_object, base_offset);
                     links.push(link);
                     joints.push(joint);
                     link_scales.push(scale.clone());
+                    link_simulation_modes.push(EnvironmentLinkSimulationMode::Active);
                 }
                 EnvironmentCreatorAction::AddSingleObjectFromObjFile {  object_name, parent_object, base_offset, scale, .. } => {
                     let (link, joint) = get_link_and_joint_from_single_mesh_file(object_name, parent_object, base_offset);
                     links.push(link);
                     joints.push(joint);
                     link_scales.push(scale.clone());
+                    link_simulation_modes.push(EnvironmentLinkSimulationMode::Active);
                 }
                 EnvironmentCreatorAction::AddSingleObjectFromGlbFile { object_name, parent_object, base_offset, scale, .. } => {
                     let (link, joint) = get_link_and_joint_from_single_mesh_file(object_name, parent_object, base_offset);
                     links.push(link);
                     joints.push(joint);
                     link_scales.push(scale.clone());
+                    link_simulation_modes.push(EnvironmentLinkSimulationMode::Active);
                 }
                 EnvironmentCreatorAction::AddSceneFromGlbFile { fp, parent_object, transform, scale } => {
                     fp.verify_extension(&vec!["glb", "GLB", "gltf", "GLTF"]).expect("error");
@@ -87,7 +92,12 @@ impl EnvironmentDescriptionModuleBuilders for ApolloEnvironmentDescriptionModule
 
                     mesh_object_scene.nodes.iter().for_each(|node| {
                         let parent_link_name = match &node.parent_node {
-                            None => { "world_environment_origin".to_string() }
+                            None => {
+                                match parent_object {
+                                    None => { "world_environment_origin".to_string()  }
+                                    Some(p) => { p.clone() }
+                                }
+                            }
                             Some(s) => { s.clone() }
                         };
 
@@ -99,8 +109,14 @@ impl EnvironmentDescriptionModuleBuilders for ApolloEnvironmentDescriptionModule
                         };
 
                         let joint_name = format!("joint_between_{}_and_{}", parent_link_name, node.name);
-                        let xyz = node.local_space_mesh_object.offset_from_parent.translation.vector.xyz().as_slice().to_vec();
-                        let rpy = node.local_space_mesh_object.offset_from_parent.rotation.euler_angles();
+
+                        let mut offset_from_parent = node.local_space_mesh_object.offset_from_parent.clone();
+                        if parent_object.is_none() {
+                            offset_from_parent = offset_from_parent * transform.0;
+                        }
+
+                        let xyz = offset_from_parent.translation.vector.xyz().as_slice().to_vec();
+                        let rpy = offset_from_parent.rotation.euler_angles();
 
                         let joint = ApolloURDFJoint {
                             name: joint_name,
@@ -120,12 +136,58 @@ impl EnvironmentDescriptionModuleBuilders for ApolloEnvironmentDescriptionModule
 
                         links.push(link);
                         joints.push(joint);
+                        link_scales.push(scale.clone());
+                        link_simulation_modes.push(EnvironmentLinkSimulationMode::Active);
                     });
                 }
                 _ => { }
             }
         });
 
+        assert_eq!(links.len(), link_scales.len());
+        assert_eq!(links.len(), link_simulation_modes.len());
+
+        environment_creator.actions.iter().for_each(|action| {
+            match action {
+                EnvironmentCreatorAction::SetJointType { parent_object, child_object, joint_type } => {
+                    let idx = get_joint_idx_from_parent_and_child_names(parent_object, child_object, &joints).expect("error");
+                    joints[idx].joint_type = joint_type.clone();
+                }
+                EnvironmentCreatorAction::SetJointAxis { parent_object, child_object, axis } => {
+                    let idx = get_joint_idx_from_parent_and_child_names(parent_object, child_object, &joints).expect("error");
+                    joints[idx].axis = axis.clone();
+                }
+                EnvironmentCreatorAction::SetJointLimit { parent_object, child_object, joint_limit } => {
+                    let idx = get_joint_idx_from_parent_and_child_names(parent_object, child_object, &joints).expect("error");
+                    joints[idx].limit = joint_limit.clone();
+                }
+                EnvironmentCreatorAction::SetObjectSimulationMode { object_name, mode } => {
+                    let idx = links.iter().position(|x| &x.name == object_name).expect("error");
+                    link_simulation_modes[idx] = mode.clone();
+                }
+                EnvironmentCreatorAction::SetObjectMass { object_name, mass } => {
+                    let idx = links.iter().position(|x| &x.name == object_name).expect("error");
+                    links[idx].inertial.mass.value = *mass;
+                }
+                EnvironmentCreatorAction::SetObjectInertialOrigin { object_name, pose } => {
+                    let idx = links.iter().position(|x| &x.name == object_name).expect("error");
+                    let xyz = pose.0.translation.vector.xyz().as_slice().to_vec();
+                    let rpy = pose.0.rotation.euler_angles();
+                    links[idx].inertial.origin.xyz = [xyz[0], xyz[1], xyz[2]];
+                    links[idx].inertial.origin.rpy = [ rpy.0, rpy.1, rpy.2 ];
+                }
+                EnvironmentCreatorAction::SetObjectInertia { object_name, ixx, ixy, ixz, iyy, iyz, izz } => {
+                    let idx = links.iter().position(|x| &x.name == object_name).expect("error");
+                    links[idx].inertial.inertia.ixx = *ixx;
+                    links[idx].inertial.inertia.ixy = *ixy;
+                    links[idx].inertial.inertia.ixz = *ixz;
+                    links[idx].inertial.inertia.iyy = *iyy;
+                    links[idx].inertial.inertia.iyz = *iyz;
+                    links[idx].inertial.inertia.izz = *izz;
+                }
+                _ => { }
+            }
+        });
 
         Ok(Self {
             urdf_module: ApolloURDFModule {
@@ -135,6 +197,7 @@ impl EnvironmentDescriptionModuleBuilders for ApolloEnvironmentDescriptionModule
                 materials: vec![],
             },
             link_scales: vec![],
+            link_simulation_modes
         })
     }
 }
@@ -172,6 +235,15 @@ fn get_link_and_joint_from_single_mesh_file(object_name: &String, parent_object:
     };
 
     return (urdf_link, urdf_joint);
+}
+
+fn get_joint_idx_from_parent_and_child_names(parent_name: &Option<String>, child_name: &String, joints: &Vec<ApolloURDFJoint>) -> Option<usize> {
+    let parent_name = match parent_name {
+        None => { "world_environment_origin".to_string() }
+        Some(s) => { s.clone() }
+    };
+    let joint_name = format!("joint_between_{}_and_{}", parent_name, child_name);
+    joints.iter().position(|x| x.name == joint_name)
 }
 
 impl PreprocessorModule for ApolloEnvironmentDescriptionModule {

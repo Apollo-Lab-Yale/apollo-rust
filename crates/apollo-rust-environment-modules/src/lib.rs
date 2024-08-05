@@ -1,5 +1,4 @@
 pub mod environment_description_module;
-pub mod environment_link_simulation_modes_module;
 pub mod mesh_modules;
 
 use std::path::PathBuf;
