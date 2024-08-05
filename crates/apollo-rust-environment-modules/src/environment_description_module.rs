@@ -2,5 +2,8 @@ use serde::{Deserialize, Serialize};
 use apollo_rust_robot_modules::urdf_module::ApolloURDFModule;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ApolloEnvironmentDescriptionModule(pub ApolloURDFModule);
+pub struct ApolloEnvironmentDescriptionModule {
+    pub urdf_module: ApolloURDFModule,
+    pub link_scales: Vec<[f64; 3]>
+}
 
