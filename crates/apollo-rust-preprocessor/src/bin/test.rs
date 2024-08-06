@@ -18,7 +18,7 @@ fn main() {
 
 
     let r = ResourcesEnvironmentsDirectory::new(PathBuf::new_from_documents_dir().append("apollo-robots-dir/environments"));
-    r.preprocess_all(true);
+    r.preprocess_all(false);
 
     /*
     let c = ApolloEnvironmentCreator::new("woah").add_action(EnvironmentCreatorAction::AddAlreadyExistingEnvironment {
