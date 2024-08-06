@@ -20,7 +20,7 @@ impl PreprocessorModule for ApolloLinkShapesMaxDistanceFromOriginModule {
     fn build_raw(s: &ResourcesSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
         let convex_hull_meshes_module = ApolloConvexHullMeshesModule::load_or_build(s, false).expect("error");
         let convex_decomposition_meshes_module = ApolloConvexDecompositionMeshesModule::load_or_build(s, false).expect("error");
-        let link_shapes_module = ApolloLinkShapesModule::from_mesh_modules(s, &convex_hull_meshes_module, &convex_decomposition_meshes_module);
+        let link_shapes_module = ApolloLinkShapesModule::from_robot_mesh_modules(s, &convex_hull_meshes_module, &convex_decomposition_meshes_module);
 
         let mut full_convex_hulls_maximum_distances = vec![];
         let mut full_obbs_maximum_distances = vec![];

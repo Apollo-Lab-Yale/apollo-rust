@@ -7,7 +7,6 @@ edition = "2021"
 apollo-rust-robot-modules = { path = "../apollo-rust-robot-modules" }
 apollo-rust-robotics-core = { path = "../apollo-rust-robotics-core" }
 apollo-rust-environment-modules = { path = "../apollo-rust-environment-modules" }
-apollo-rust-environments-core = { path = "../apollo-rust-environments-core" }
 apollo-rust-preprocessor = { path = "../apollo-rust-preprocessor" }
 apollo-rust-file = { path = "../apollo-rust-file" }
 apollo-rust-spatial = { path = "../apollo-rust-spatial" }

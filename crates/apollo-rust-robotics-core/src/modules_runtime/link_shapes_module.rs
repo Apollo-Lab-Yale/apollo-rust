@@ -1,5 +1,8 @@
 use parry3d_f64::math::Point;
 use parry3d_f64::shape::ConvexPolyhedron;
+use apollo_rust_environment_modules::mesh_modules::environment_convex_decomposition_meshes_module::ApolloEnvironmentConvexDecompositionMeshesModule;
+use apollo_rust_environment_modules::mesh_modules::environment_convex_hull_meshes_module::ApolloEnvironmentConvexHullMeshesModule;
+use apollo_rust_environment_modules::ResourcesSingleEnvironmentDirectory;
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_mesh_utils::stl::load_stl_file;
 use apollo_rust_mesh_utils::trimesh::ToTriMesh;
@@ -24,7 +27,7 @@ pub struct ApolloLinkShapesModule {
     pub link_idx_to_decomposition_shape_idxs: Vec<Vec<usize>>
 }
 impl ApolloLinkShapesModule {
-    pub fn from_mesh_modules(s: &ResourcesSingleRobotDirectory, convex_hull_meshes_module: &ApolloConvexHullMeshesModule, convex_decomposition_meshes_module: &ApolloConvexDecompositionMeshesModule) -> Self {
+    pub fn from_robot_mesh_modules(s: &ResourcesSingleRobotDirectory, convex_hull_meshes_module: &ApolloConvexHullMeshesModule, convex_decomposition_meshes_module: &ApolloConvexDecompositionMeshesModule) -> Self {
         let root = ResourcesRobotsDirectory { directory: s.robots_directory.clone() };
         let mut full_convex_hulls = vec![];
         let mut full_obbs = vec![];
@@ -96,6 +99,16 @@ impl ApolloLinkShapesModule {
             decomposition_shape_idx_to_link_idx_and_link_sub_idx,
             link_idx_to_decomposition_shape_idxs,
         }
+    }
+
+    pub fn from_environment_mesh_modules(s: &ResourcesSingleEnvironmentDirectory, convex_hull_meshes_module: &ApolloEnvironmentConvexHullMeshesModule, convex_decomposition_meshes_module: &ApolloEnvironmentConvexDecompositionMeshesModule) -> Self {
+        let ss = ResourcesSingleRobotDirectory {
+            robot_name: s.environment_name.clone(),
+            robots_directory: s.environments_directory.clone(),
+            directory: s.directory.clone(),
+        };
+
+        Self::from_robot_mesh_modules(&ss, &convex_hull_meshes_module.0, &convex_decomposition_meshes_module.0)
     }
 
     #[inline(always)]

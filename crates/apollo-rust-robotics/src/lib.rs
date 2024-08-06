@@ -54,7 +54,7 @@ impl Robot {
         let plain_meshes_module = ApolloPlainMeshesModule::load_or_build(&s, false).expect("error");
         let convex_hull_meshes_module = ApolloConvexHullMeshesModule::load_or_build(&s, false).expect("error");
         let convex_decomposition_meshes_module = ApolloConvexDecompositionMeshesModule::load_or_build(&s, false).expect("error");
-        let link_shapes_module = ApolloLinkShapesModule::from_mesh_modules(&s, &convex_hull_meshes_module, &convex_decomposition_meshes_module);
+        let link_shapes_module = ApolloLinkShapesModule::from_robot_mesh_modules(&s, &convex_hull_meshes_module, &convex_decomposition_meshes_module);
         let link_shapes_max_distance_from_origin_module = ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(&s, false).expect("error");
         let link_shapes_distance_statistics_module = ApolloLinkShapesDistanceStatisticsModule::load_or_build(&s, false).expect("error");
         let link_shapes_simple_skips_module = ApolloLinkShapesSimpleSkipsModule::load_or_build(&s, false).expect("error");
