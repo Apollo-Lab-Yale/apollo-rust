@@ -5,27 +5,17 @@ use apollo_rust_robot_modules::urdf_module::ApolloURDFModule;
 use crate::PreprocessorModule;
 use crate::utils::progress_bar::ProgressBarWrapper;
 
-impl PreprocessorModule for ApolloBoundsModule {
-    type SubDirectoryType = ResourcesSingleRobotDirectory;
-
-    fn relative_file_path_str_from_sub_dir_to_module_dir() -> String {
-        "bounds_module".to_string()
-    }
-
-    fn current_version() -> String {
-        "0.0.1".to_string()
-    }
-
-    fn build_raw(s: &ResourcesSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
-        let urdf = ApolloURDFModule::load_or_build(s, false).expect("error");
-        let dof_module = ApolloDOFModule::load_or_build(s, false).expect("error");
-
+pub trait BoundsModuleBuilders : Sized {
+    fn build_from_urdf_and_dof_module(urdf_module: &ApolloURDFModule, dof_module: &ApolloDOFModule, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
+}
+impl BoundsModuleBuilders for ApolloBoundsModule {
+    fn build_from_urdf_and_dof_module(urdf_module: &ApolloURDFModule, dof_module: &ApolloDOFModule, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
         let mut bounds = vec![];
         let mut dof_lower_bounds = vec![];
         let mut dof_upper_bounds = vec![];
 
         dof_module.dof_idx_to_joint_idx_mapping.iter().for_each(|joint_idx| {
-            let joint = &urdf.joints[*joint_idx];
+            let joint = &urdf_module.joints[*joint_idx];
             let limit = &joint.limit;
 
             if limit.lower == limit.upper {
@@ -45,5 +35,24 @@ impl PreprocessorModule for ApolloBoundsModule {
             dof_lower_bounds,
             dof_upper_bounds,
         })
+    }
+}
+
+impl PreprocessorModule for ApolloBoundsModule {
+    type SubDirectoryType = ResourcesSingleRobotDirectory;
+
+    fn relative_file_path_str_from_sub_dir_to_module_dir() -> String {
+        "bounds_module".to_string()
+    }
+
+    fn current_version() -> String {
+        "0.0.1".to_string()
+    }
+
+    fn build_raw(s: &ResourcesSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
+        let urdf = ApolloURDFModule::load_or_build(s, false).expect("error");
+        let dof_module = ApolloDOFModule::load_or_build(s, false).expect("error");
+
+        Self::build_from_urdf_and_dof_module(&urdf, &dof_module, progress_bar)
     }
 }

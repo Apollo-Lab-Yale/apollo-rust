@@ -3,7 +3,11 @@ pub mod modules;
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use apollo_rust_environment_modules::{ResourcesEnvironmentsDirectory, ResourcesSingleEnvironmentDirectory};
+use apollo_rust_environment_modules::environment_bounds_module::ApolloEnvironmentBoundsModule;
+use apollo_rust_environment_modules::environment_chain_module::ApolloEnvironmentChainModule;
+use apollo_rust_environment_modules::environment_connections_module::ApolloEnvironmentConnectionsModule;
 use apollo_rust_environment_modules::environment_description_module::{ApolloEnvironmentDescriptionModule, EnvironmentLinkSimulationMode};
+use apollo_rust_environment_modules::environment_dof_module::ApolloEnvironmentDOFModule;
 use apollo_rust_environment_modules::mesh_modules::environment_convex_decomposition_meshes_module::ApolloEnvironmentConvexDecompositionMeshesModule;
 use apollo_rust_environment_modules::mesh_modules::environment_convex_hull_meshes_module::ApolloEnvironmentConvexHullMeshesModule;
 use apollo_rust_environment_modules::mesh_modules::environment_original_meshes_module::ApolloEnvironmentOriginalMeshesModule;
@@ -66,6 +70,10 @@ impl ResourcesSubDirectoryPreprocessorTrait for ResourcesSingleEnvironmentDirect
         ApolloEnvironmentPlainMeshesModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloEnvironmentConvexHullMeshesModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloEnvironmentConvexDecompositionMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloEnvironmentChainModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloEnvironmentDOFModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloEnvironmentConnectionsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloEnvironmentBoundsModule::load_or_build(self, force_build_on_all).expect("error");
     }
 }
 
