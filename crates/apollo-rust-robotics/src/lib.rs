@@ -202,10 +202,10 @@ impl ToChain for ResourcesSubDirectory {
 }
 
 pub trait ToChainFromName {
-    fn to_robot(&self, robot_name: &str) -> Chain;
+    fn to_chain(&self, robot_name: &str) -> Chain;
 }
 impl ToChainFromName for ResourcesRootDirectory {
-    fn to_robot(&self, robot_name: &str) -> Chain {
+    fn to_chain(&self, robot_name: &str) -> Chain {
         Chain::new_from_root_directory(self, robot_name)
     }
 }
