@@ -5,8 +5,7 @@ pub mod convex_decomposition_meshes_module;
 
 use std::path::PathBuf;
 use apollo_rust_file::ApolloPathBufTrait;
-use apollo_rust_robot_modules::ResourcesSingleRobotDirectory;
-use crate::ResourcesSubDirectoryTrait;
+use apollo_rust_robot_modules::{ResourcesSubDirectory};
 
 pub trait VecOfPathBufOptionsToVecOfVecTrait {
     fn to_vec_of_vec_path_bufs(&self) -> Vec<Vec<PathBuf>>;
@@ -22,7 +21,7 @@ impl VecOfPathBufOptionsToVecOfVecTrait for Vec<Option<PathBuf>> {
     }
 }
 
-pub fn recover_full_paths_from_relative_paths(s: &ResourcesSingleRobotDirectory, paths: &Vec<Option<PathBuf>>) -> Vec<Option<PathBuf>> {
+pub fn recover_full_paths_from_relative_paths(s: &ResourcesSubDirectory, paths: &Vec<Option<PathBuf>>) -> Vec<Option<PathBuf>> {
     let root = s.root_directory().clone();
 
     let out = paths.iter().map(|x| {
@@ -35,7 +34,7 @@ pub fn recover_full_paths_from_relative_paths(s: &ResourcesSingleRobotDirectory,
     out
 }
 
-pub fn recover_full_paths_from_double_vec_of_relative_paths(s: &ResourcesSingleRobotDirectory, paths: &Vec<Vec<PathBuf>>) -> Vec<Vec<PathBuf>> {
+pub fn recover_full_paths_from_double_vec_of_relative_paths(s: &ResourcesSubDirectory, paths: &Vec<Vec<PathBuf>>) -> Vec<Vec<PathBuf>> {
     let root = s.root_directory().clone();
     let out: Vec<Vec<PathBuf>> = paths.iter().map(|x| {
         let tmp: Vec<PathBuf> = x.iter().map(|y| {
@@ -51,7 +50,7 @@ pub fn recover_full_paths_from_double_vec_of_relative_paths(s: &ResourcesSingleR
 macro_rules! create_generic_build_from_combined_robot {
     ($module:ty, $initial_push:expr) => {
         fn build_from_combined_robot(
-            s: &ResourcesSingleRobotDirectory,
+            s: &ResourcesSubDirectory,
             progress_bar: &mut ProgressBarWrapper,
         ) -> Result<Self, String> {
             let fp = s.directory.clone().append("combined_robot_module/module.json");
@@ -62,7 +61,7 @@ macro_rules! create_generic_build_from_combined_robot {
                 link_mesh_relative_paths.push($initial_push);
                 combined_robot.attached_robots.iter().for_each(|x| {
                     let robot_name = x.robot_name.clone();
-                    let ss = ResourcesRobotsDirectory::new(s.robots_directory.clone())
+                    let ss = ResourcesRootDirectory::new(s.root_directory().clone())
                         .get_subdirectory(&robot_name);
                     let module = <$module>::load_or_build(&ss, false).expect("error");
                     link_mesh_relative_paths.extend(module.link_mesh_relative_paths);
@@ -83,7 +82,7 @@ macro_rules! create_generic_build_from_combined_robot {
 macro_rules! create_generic_build_from_combined_robot2 {
     ($module:ty, $initial_push:expr) => {
         fn build_from_combined_robot(
-            s: &ResourcesSingleRobotDirectory,
+            s: &ResourcesSubDirectory,
             progress_bar: &mut ProgressBarWrapper,
         ) -> Result<Self, String> {
             let fp = s.directory.clone().append("combined_robot_module/module.json");
@@ -99,7 +98,7 @@ macro_rules! create_generic_build_from_combined_robot2 {
 
                 combined_robot.attached_robots.iter().for_each(|x| {
                     let robot_name = x.robot_name.clone();
-                    let ss = ResourcesRobotsDirectory::new(s.robots_directory.clone())
+                    let ss = ResourcesRootDirectory::new(s.root_directory().clone())
                         .get_subdirectory(&robot_name);
                     let module = <$module>::load_or_build(&ss, false).expect("error");
 
@@ -125,7 +124,7 @@ macro_rules! create_generic_build_from_combined_robot2 {
 macro_rules! create_generic_build_from_adjusted_robot {
     ($module:ty) => {
         fn build_from_adjusted_robot(
-            s: &ResourcesSingleRobotDirectory,
+            s: &ResourcesSubDirectory,
             progress_bar: &mut ProgressBarWrapper,
         ) -> Result<Self, String> {
             let fp = s.directory.clone().append("adjusted_robot_module/module.json");
@@ -133,7 +132,7 @@ macro_rules! create_generic_build_from_adjusted_robot {
             return if let Ok(adjusted_robot) = adjusted_robot {
                 let mut link_mesh_relative_paths = vec![];
 
-                let ss = ResourcesRobotsDirectory::new(s.robots_directory.clone())
+                let ss = ResourcesRootDirectory::new(s.root_directory().clone())
                     .get_subdirectory(&adjusted_robot.base_robot_name);
                 let module = <$module>::load_or_build(&ss, false).expect("error");
 
@@ -172,7 +171,7 @@ macro_rules! create_generic_build_from_adjusted_robot {
 macro_rules! create_generic_build_from_adjusted_robot2 {
         ($module:ty) => {
         fn build_from_adjusted_robot(
-            s: &ResourcesSingleRobotDirectory,
+            s: &ResourcesSubDirectory,
             progress_bar: &mut ProgressBarWrapper,
         ) -> Result<Self, String> {
             let fp = s.directory.clone().append("adjusted_robot_module/module.json");
@@ -186,7 +185,7 @@ macro_rules! create_generic_build_from_adjusted_robot2 {
                 // obj_link_mesh_relative_paths.push($initial_push);
                 // glb_link_mesh_relative_paths.push($initial_push);
 
-                let ss = ResourcesRobotsDirectory::new(s.robots_directory.clone())
+                let ss = ResourcesRootDirectory::new(s.root_directory().clone())
                     .get_subdirectory(&adjusted_robot.base_robot_name);
                 let module = <$module>::load_or_build(&ss, false).expect("error");
 
@@ -227,7 +226,7 @@ macro_rules! create_generic_build_from_adjusted_robot2 {
 #[macro_export]
 macro_rules! create_generic_build_raw {
     ($self_ty:ty, $default_fn:ident) => {
-        fn build_raw(s: &ResourcesSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<$self_ty, String> {
+        fn build_raw(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<$self_ty, String> {
             let res = <$self_ty>::build_from_combined_robot(s, progress_bar);
             if let Ok(res) = res {
                 return Ok(res);

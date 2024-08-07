@@ -1,7 +1,7 @@
-use apollo_rust_robot_modules::chain_module::ApolloChainModule;
-use apollo_rust_robot_modules::connections_module::ApolloConnectionsModule;
-use apollo_rust_robot_modules::ResourcesSingleRobotDirectory;
-use apollo_rust_robot_modules::urdf_module::ApolloURDFModule;
+use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
+use apollo_rust_robot_modules::robot_modules::connections_module::ApolloConnectionsModule;
+use apollo_rust_robot_modules::ResourcesSubDirectory;
+use apollo_rust_robot_modules::robot_modules::urdf_module::ApolloURDFModule;
 use crate::PreprocessorModule;
 use crate::utils::progress_bar::ProgressBarWrapper;
 
@@ -43,7 +43,7 @@ impl ConnectionsModuleBuilders for ApolloConnectionsModule {
 }
 
 impl PreprocessorModule for ApolloConnectionsModule {
-    type SubDirectoryType = ResourcesSingleRobotDirectory;
+    // type SubDirectoryType = ResourcesSingleRobotDirectory;
 
     fn relative_file_path_str_from_sub_dir_to_module_dir() -> String {
         "connections_module".to_string()
@@ -53,7 +53,7 @@ impl PreprocessorModule for ApolloConnectionsModule {
         "0.0.1".to_string()
     }
 
-    fn build_raw(s: &ResourcesSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
+    fn build_raw(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
         let urdf_module = ApolloURDFModule::load_or_build(s, false).expect("error");
         let chain_module = ApolloChainModule::load_or_build(s, false).expect("error");
 

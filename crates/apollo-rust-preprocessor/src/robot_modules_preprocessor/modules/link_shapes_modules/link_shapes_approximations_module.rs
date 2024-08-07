@@ -1,14 +1,14 @@
 use parry3d_f64::shape::TypedShape;
-use apollo_rust_robot_modules::link_shapes_modules::link_shapes_approximations_module::{ApolloLinkShapesApproximationsModule, BoundingSphereDescriptor, OBBDescriptor};
-use apollo_rust_robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
-use apollo_rust_robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
-use apollo_rust_robot_modules::ResourcesSingleRobotDirectory;
+use apollo_rust_robot_modules::ResourcesSubDirectory;
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_approximations_module::{ApolloLinkShapesApproximationsModule, BoundingSphereDescriptor, OBBDescriptor};
+use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_module::ApolloLinkShapesModule;
 use crate::PreprocessorModule;
 use crate::utils::progress_bar::ProgressBarWrapper;
 
 impl PreprocessorModule for ApolloLinkShapesApproximationsModule {
-    type SubDirectoryType = ResourcesSingleRobotDirectory;
+    // type SubDirectoryType = ResourcesSingleRobotDirectory;
 
     fn relative_file_path_str_from_sub_dir_to_module_dir() -> String {
         "link_shapes_modules/link_shapes_approximations_module".to_string()
@@ -18,10 +18,10 @@ impl PreprocessorModule for ApolloLinkShapesApproximationsModule {
         "0.0.2".to_string()
     }
 
-    fn build_raw(s: &ResourcesSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
+    fn build_raw(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
         let convex_hull_meshes_module = ApolloConvexHullMeshesModule::load_or_build(s, false).expect("error");
         let convex_decomposition_meshes_module = ApolloConvexDecompositionMeshesModule::load_or_build(s, false).expect("error");
-        let link_shapes_module = ApolloLinkShapesModule::from_robot_mesh_modules(s, &convex_hull_meshes_module, &convex_decomposition_meshes_module);
+        let link_shapes_module = ApolloLinkShapesModule::from_mesh_modules(s, &convex_hull_meshes_module, &convex_decomposition_meshes_module);
 
         let mut full_obbs = vec![];
         let mut full_bounding_spheres = vec![];

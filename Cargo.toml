@@ -12,7 +12,7 @@ members = [
     "crates/apollo-rust-proximity",
     "crates/apollo-rust-file-pyo3",
     "crates/apollo-rust-bevy",
-    "crates/apollo-rust-robot-modules",
+    "crates/apollo-rust-modules",
     "crates/apollo-rust-robotics-core",
     "crates/apollo-rust-robotics",
     "crates/apollo-rust-mesh-utils",

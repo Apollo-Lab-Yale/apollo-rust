@@ -1,13 +1,27 @@
 pub mod utils;
 pub mod robot_modules_preprocessor;
-pub mod environment_modules_preprocessor;
 
 use std::path::PathBuf;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use apollo_rust_file::ApolloPathBufTrait;
+use apollo_rust_robot_modules::{ResourcesRootDirectory, ResourcesSubDirectory};
+use apollo_rust_robot_modules::robot_modules::bounds_module::ApolloBoundsModule;
+use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
+use apollo_rust_robot_modules::robot_modules::connections_module::ApolloConnectionsModule;
+use apollo_rust_robot_modules::robot_modules::dof_module::ApolloDOFModule;
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_approximations_module::ApolloLinkShapesApproximationsModule;
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::ApolloLinkShapesDistanceStatisticsModule;
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_simple_skips_module::ApolloLinkShapesSimpleSkipsModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
+use apollo_rust_robot_modules::robot_modules::urdf_module::ApolloURDFModule;
 use crate::utils::progress_bar::ProgressBarWrapper;
 
+/*
 pub trait ResourcesRootDirectoryTrait {
     type SubDirectoryType : ResourcesSubDirectoryTrait;
 
@@ -49,44 +63,45 @@ pub trait ResourcesRootDirectoryPreprocessorTrait {
 pub trait ResourcesSubDirectoryPreprocessorTrait {
     fn preprocess(&self, force_build_on_all: bool);
 }
+ */
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 pub trait PreprocessorModule : Serialize + DeserializeOwned {
-    type SubDirectoryType : ResourcesSubDirectoryTrait;
+    // type SubDirectoryType : ResourcesSubDirectoryTrait;
 
     fn relative_file_path_str_from_sub_dir_to_module_dir() -> String;
 
-    fn relative_file_path_from_root_dir_to_module_dir(s: &Self::SubDirectoryType) -> PathBuf {
+    fn relative_file_path_from_root_dir_to_module_dir(s: &ResourcesSubDirectory) -> PathBuf {
         PathBuf::new().append(&s.name()).append(&Self::relative_file_path_str_from_sub_dir_to_module_dir())
     }
 
-    fn full_path_to_module_dir(s: &Self::SubDirectoryType) -> PathBuf {
+    fn full_path_to_module_dir(s: &ResourcesSubDirectory) -> PathBuf {
         s.directory().clone().append(&Self::relative_file_path_str_from_sub_dir_to_module_dir())
     }
 
-    fn full_path_to_module_version(s: &Self::SubDirectoryType) -> PathBuf {
+    fn full_path_to_module_version(s: &ResourcesSubDirectory) -> PathBuf {
         Self::full_path_to_module_dir(s).append("VERSION")
     }
 
-    fn full_path_module_json(s: &Self::SubDirectoryType) -> PathBuf {
+    fn full_path_module_json(s: &ResourcesSubDirectory) -> PathBuf {
         Self::full_path_to_module_dir(s).append("module.json")
     }
 
-    fn full_path_module_ron(s: &Self::SubDirectoryType) -> PathBuf {
+    fn full_path_module_ron(s: &ResourcesSubDirectory) -> PathBuf {
         Self::full_path_to_module_dir(s).append("module.ron")
     }
 
-    fn full_path_module_yaml(s: &Self::SubDirectoryType) -> PathBuf {
+    fn full_path_module_yaml(s: &ResourcesSubDirectory) -> PathBuf {
         Self::full_path_to_module_dir(s).append("module.yaml")
     }
 
     /// should be in the format "0.0.1"
     fn current_version() -> String;
 
-    fn build_raw(s: &Self::SubDirectoryType, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
+    fn build_raw(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
 
-    fn build(s: &Self::SubDirectoryType) -> Result<Self, String> {
+    fn build(s: &ResourcesSubDirectory) -> Result<Self, String> {
         let mut pb = ProgressBarWrapper::new(&s.name(), &Self::relative_file_path_str_from_sub_dir_to_module_dir());
         let o = Self::build_raw(s, &mut pb);
         return match o {
@@ -100,32 +115,32 @@ pub trait PreprocessorModule : Serialize + DeserializeOwned {
         }
     }
 
-    fn load_from_json(s: &Self::SubDirectoryType) -> Result<Self, String> {
+    fn load_from_json(s: &ResourcesSubDirectory) -> Result<Self, String> {
         let saved_version = Self::full_path_to_module_version(s).read_file_contents_to_string();
         if saved_version != Self::current_version() { return Err(format!("Version did not match when loading module {:?}.  saved version: {:?} vs. current version: {:?}", Self::relative_file_path_str_from_sub_dir_to_module_dir(), saved_version, Self::current_version())) }
         Self::full_path_module_json(s).load_object_from_json_file_result()
     }
 
-    fn load_from_ron(s: &Self::SubDirectoryType) -> Result<Self, String> {
+    fn load_from_ron(s: &ResourcesSubDirectory) -> Result<Self, String> {
         let saved_version = Self::full_path_to_module_version(s).read_file_contents_to_string();
         if saved_version != Self::current_version() { return Err(format!("Version did not match when loading module {:?}.  saved version: {:?} vs. current version: {:?}", Self::relative_file_path_str_from_sub_dir_to_module_dir(), saved_version, Self::current_version())) }
         Self::full_path_module_ron(s).load_object_from_ron_file_result()
     }
 
-    fn load_from_yaml(s: &Self::SubDirectoryType) -> Result<Self, String> {
+    fn load_from_yaml(s: &ResourcesSubDirectory) -> Result<Self, String> {
         let saved_version = Self::full_path_to_module_version(s).read_file_contents_to_string();
         if saved_version != Self::current_version() { return Err(format!("Version did not match when loading module {:?}.  saved version: {:?} vs. current version: {:?}", Self::relative_file_path_str_from_sub_dir_to_module_dir(), saved_version, Self::current_version())) }
         Self::full_path_module_yaml(s).load_object_from_yaml_file_result()
     }
 
-    fn save(&self, s: &Self::SubDirectoryType) {
+    fn save(&self, s: &ResourcesSubDirectory) {
         Self::full_path_to_module_version(s).write_string_to_file(&Self::current_version());
         Self::full_path_module_json(s).save_object_to_json_file(self);
         Self::full_path_module_ron(s).save_object_to_ron_file(self);
         Self::full_path_module_yaml(s).save_object_to_yaml_file(self);
     }
 
-    fn load_or_build(s: &Self::SubDirectoryType, force_build: bool) -> Result<Self, String> {
+    fn load_or_build(s: &ResourcesSubDirectory, force_build: bool) -> Result<Self, String> {
         if !force_build {
             let fp = Self::full_path_to_module_version(s);
             match fp.exists() {
@@ -153,3 +168,58 @@ pub trait PreprocessorModule : Serialize + DeserializeOwned {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+pub trait ResourcesRootDirectoryTrait {
+    fn preprocess_all_robots(&self, force_build_on_all: bool);
+    fn preprocess_all_environments(&self, force_build_on_all: bool);
+}
+impl ResourcesRootDirectoryTrait for ResourcesRootDirectory {
+    fn preprocess_all_robots(&self, force_build_on_all: bool) {
+        self.get_all_subdirectories().iter().for_each(|x| {
+            x.preprocess_robot(force_build_on_all);
+        });
+    }
+
+    fn preprocess_all_environments(&self, force_build_on_all: bool) {
+        self.get_all_subdirectories().iter().for_each(|x| {
+            x.preprocess_environment(force_build_on_all);
+        });
+    }
+}
+
+pub trait ResourcesSubDirectoryTrait {
+    fn preprocess_robot(&self, force_build_on_all: bool);
+    fn preprocess_environment(&self, force_build_on_all: bool);
+}
+impl ResourcesSubDirectoryTrait for ResourcesSubDirectory {
+    fn preprocess_robot(&self, force_build_on_all: bool) {
+        ApolloURDFModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloDOFModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloChainModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloConnectionsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloOriginalMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloPlainMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloConvexHullMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloConvexDecompositionMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloBoundsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesDistanceStatisticsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesSimpleSkipsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesApproximationsModule::load_or_build(self, force_build_on_all).expect("error");
+    }
+
+    fn preprocess_environment(&self, force_build_on_all: bool) {
+        ApolloURDFModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloDOFModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloChainModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloConnectionsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloOriginalMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloPlainMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloConvexHullMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloConvexDecompositionMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloBoundsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesDistanceStatisticsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesSimpleSkipsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesApproximationsModule::load_or_build(self, force_build_on_all).expect("error");
+    }
+}

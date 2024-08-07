@@ -1,12 +1,12 @@
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
-use apollo_rust_robot_modules::bounds_module::ApolloBoundsModule;
-use apollo_rust_robot_modules::chain_module::ApolloChainModule;
-use apollo_rust_robot_modules::dof_module::ApolloDOFModule;
-use apollo_rust_robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::{ApolloLinkShapesDistanceStatisticsModule, LinkShapesDistanceStatistics};
-use apollo_rust_robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
-use apollo_rust_robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
-use apollo_rust_robot_modules::ResourcesSingleRobotDirectory;
-use apollo_rust_robot_modules::urdf_module::ApolloURDFModule;
+use apollo_rust_robot_modules::robot_modules::bounds_module::ApolloBoundsModule;
+use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
+use apollo_rust_robot_modules::robot_modules::dof_module::ApolloDOFModule;
+use apollo_rust_robot_modules::ResourcesSubDirectory;
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::{ApolloLinkShapesDistanceStatisticsModule, LinkShapesDistanceStatistics};
+use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
+use apollo_rust_robot_modules::robot_modules::urdf_module::ApolloURDFModule;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_module::{ApolloLinkShapesModule, LinkShapeMode, LinkShapeRep};
 use apollo_rust_robotics_core::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModule;
 use apollo_rust_robotics_core::robot_functions::robot_kinematics_functions::RobotKinematicsFunctions;
@@ -16,7 +16,7 @@ use crate::utils::progress_bar::ProgressBarWrapper;
 
 
 impl PreprocessorModule for ApolloLinkShapesDistanceStatisticsModule {
-    type SubDirectoryType = ResourcesSingleRobotDirectory;
+    // type SubDirectoryType = ResourcesSingleRobotDirectory;
 
     fn relative_file_path_str_from_sub_dir_to_module_dir() -> String {
         "link_shapes_modules/link_shapes_distance_statistics_module".to_string()
@@ -26,13 +26,13 @@ impl PreprocessorModule for ApolloLinkShapesDistanceStatisticsModule {
         "0.0.1".to_string()
     }
 
-    fn build_raw(s: &ResourcesSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
+    fn build_raw(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
         let urdf_module = ApolloURDFModule::load_or_build(s, false).expect("error");
         let urdf_nalgebra_module = ApolloURDFNalgebraModule::from_urdf_module(&urdf_module);
         let chain_module = ApolloChainModule::load_or_build(s, false).expect("error");
         let convex_hull_meshes_module = ApolloConvexHullMeshesModule::load_or_build(s, false).expect("error");
         let convex_decomposition_meshes_module = ApolloConvexDecompositionMeshesModule::load_or_build(s, false).expect("error");
-        let link_shapes_module = ApolloLinkShapesModule::from_robot_mesh_modules(s, &convex_hull_meshes_module, &convex_decomposition_meshes_module);
+        let link_shapes_module = ApolloLinkShapesModule::from_mesh_modules(s, &convex_hull_meshes_module, &convex_decomposition_meshes_module);
         let dof_module = ApolloDOFModule::load_or_build(s, false).expect("error");
         let bounds_module = ApolloBoundsModule::load_or_build(s, false).expect("error");
 

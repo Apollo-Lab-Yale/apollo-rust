@@ -1,28 +1,27 @@
 use std::path::PathBuf;
 use apollo_rust_file::ApolloPathBufTrait;
-use apollo_rust_robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
-use apollo_rust_robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
-use crate::{create_generic_build_from_adjusted_robot2, create_generic_build_from_combined_robot2, create_generic_build_raw, PreprocessorModule, ResourcesSubDirectoryTrait};
+use crate::{create_generic_build_from_adjusted_robot2, create_generic_build_from_combined_robot2, create_generic_build_raw, PreprocessorModule};
 use apollo_rust_mesh_utils::collada::load_dae_file;
 use apollo_rust_mesh_utils::gltf::load_gltf_file;
 use apollo_rust_mesh_utils::obj::load_obj_file;
 use crate::utils::progress_bar::ProgressBarWrapper;
 use apollo_rust_mesh_utils::stl::load_stl_file;
 use apollo_rust_mesh_utils::trimesh::ToTriMesh;
-use apollo_rust_robot_modules::ResourcesSingleRobotDirectory;
+use apollo_rust_robot_modules::ResourcesSubDirectory;
 use crate::robot_modules_preprocessor::modules::mesh_modules::recover_full_paths_from_relative_paths;
 use crate::robot_modules_preprocessor::CombinedRobot;
-use apollo_rust_robot_modules::ResourcesRobotsDirectory;
 use crate::robot_modules_preprocessor::AdjustedRobot;
-use crate::ResourcesRootDirectoryTrait;
+use apollo_rust_robot_modules::ResourcesRootDirectory;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 
 pub trait PlainMeshesModuleBuilders: Sized {
-    fn build_from_original_meshes_module(s: &ResourcesSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
-    fn build_from_combined_robot(s: &ResourcesSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
-    fn build_from_adjusted_robot(s: &ResourcesSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
+    fn build_from_original_meshes_module(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
+    fn build_from_combined_robot(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
+    fn build_from_adjusted_robot(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
 }
 impl PlainMeshesModuleBuilders for ApolloPlainMeshesModule {
-    fn build_from_original_meshes_module(s: &ResourcesSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
+    fn build_from_original_meshes_module(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
         let original_meshes_module = ApolloOriginalMeshesModule::load_or_build(s, false);
 
         if let Ok(original_meshes_module) = original_meshes_module {
@@ -116,7 +115,7 @@ impl PlainMeshesModuleBuilders for ApolloPlainMeshesModule {
 }
 
 impl PreprocessorModule for ApolloPlainMeshesModule {
-    type SubDirectoryType = ResourcesSingleRobotDirectory;
+    // type SubDirectoryType = ResourcesSingleRobotDirectory;
 
     fn relative_file_path_str_from_sub_dir_to_module_dir() -> String {
         "mesh_modules/plain_meshes_module".to_string()
@@ -130,22 +129,22 @@ impl PreprocessorModule for ApolloPlainMeshesModule {
 }
 
 pub trait PlainMeshesModuleGetFullPaths {
-    fn get_stl_full_paths(&self, s: &ResourcesSingleRobotDirectory) -> Vec<Option<PathBuf>>;
+    fn get_stl_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>>;
 
-    fn get_obj_full_paths(&self, s: &ResourcesSingleRobotDirectory) -> Vec<Option<PathBuf>>;
+    fn get_obj_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>>;
 
-    fn get_glb_full_paths(&self, s: &ResourcesSingleRobotDirectory) -> Vec<Option<PathBuf>>;
+    fn get_glb_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>>;
 }
 impl PlainMeshesModuleGetFullPaths for ApolloPlainMeshesModule {
-    fn get_stl_full_paths(&self, s: &ResourcesSingleRobotDirectory) -> Vec<Option<PathBuf>> {
+    fn get_stl_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>> {
         recover_full_paths_from_relative_paths(s, &self.stl_link_mesh_relative_paths)
     }
 
-    fn get_obj_full_paths(&self, s: &ResourcesSingleRobotDirectory) -> Vec<Option<PathBuf>> {
+    fn get_obj_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>> {
         recover_full_paths_from_relative_paths(s, &self.obj_link_mesh_relative_paths)
     }
 
-    fn get_glb_full_paths(&self, s: &ResourcesSingleRobotDirectory) -> Vec<Option<PathBuf>> {
+    fn get_glb_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>> {
         recover_full_paths_from_relative_paths(s, &self.glb_link_mesh_relative_paths)
     }
 }

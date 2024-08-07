@@ -1,8 +1,8 @@
 use std::collections::HashMap;
-use apollo_rust_robot_modules::chain_module::{ApolloChainModule, ApolloJointInChain, ApolloLinkInChain};
-use apollo_rust_robot_modules::ResourcesSingleRobotDirectory;
-use apollo_rust_robot_modules::urdf_module::ApolloURDFModule;
-use crate::{PreprocessorModule, ResourcesSubDirectoryTrait};
+use apollo_rust_robot_modules::robot_modules::chain_module::{ApolloChainModule, ApolloJointInChain, ApolloLinkInChain};
+use apollo_rust_robot_modules::ResourcesSubDirectory;
+use apollo_rust_robot_modules::robot_modules::urdf_module::ApolloURDFModule;
+use crate::{PreprocessorModule};
 use crate::utils::progress_bar::ProgressBarWrapper;
 
 pub trait ChainModuleBuilders: Sized {
@@ -81,7 +81,7 @@ impl ChainModuleBuilders for ApolloChainModule {
 }
 
 impl PreprocessorModule for ApolloChainModule {
-    type SubDirectoryType = ResourcesSingleRobotDirectory;
+    // type SubDirectoryType = ResourcesSingleRobotDirectory;
 
     fn relative_file_path_str_from_sub_dir_to_module_dir() -> String {
         "chain_module".to_string()
@@ -91,7 +91,7 @@ impl PreprocessorModule for ApolloChainModule {
         "0.0.1".to_string()
     }
 
-    fn build_raw(s: &ResourcesSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
+    fn build_raw(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
         let urdf_module = ApolloURDFModule::load_or_build(s, false).expect(&format!("could not build ChainModule module in {:?} because urdf module could not be loaded or built.", s.directory()));
         return Self::build_from_urdf_module(&urdf_module, progress_bar);
     }

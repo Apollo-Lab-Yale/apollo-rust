@@ -4,6 +4,7 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
+apollo-rust-file = { path = "../apollo-rust-file" }
 serde = { version="1.0.204", features = ["derive"] }
 serde_json = { version="1.0.120" }
 urdf-rs = { version="0.8.0" }

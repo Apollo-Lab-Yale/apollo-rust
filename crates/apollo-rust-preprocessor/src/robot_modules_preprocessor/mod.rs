@@ -1,24 +1,15 @@
 pub mod modules;
 pub mod utils;
 
-use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use apollo_rust_file::ApolloPathBufTrait;
-use apollo_rust_robot_modules::bounds_module::ApolloBoundsModule;
-use apollo_rust_robot_modules::chain_module::ApolloChainModule;
-use apollo_rust_robot_modules::connections_module::ApolloConnectionsModule;
-use apollo_rust_robot_modules::dof_module::ApolloDOFModule;
-use apollo_rust_robot_modules::link_shapes_modules::link_shapes_approximations_module::ApolloLinkShapesApproximationsModule;
-use apollo_rust_robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::ApolloLinkShapesDistanceStatisticsModule;
-use apollo_rust_robot_modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
-use apollo_rust_robot_modules::link_shapes_modules::link_shapes_simple_skips_module::ApolloLinkShapesSimpleSkipsModule;
-use apollo_rust_robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
-use apollo_rust_robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
-use apollo_rust_robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
-use apollo_rust_robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
-use apollo_rust_robot_modules::{ResourcesRobotsDirectory, ResourcesSingleRobotDirectory};
-use apollo_rust_robot_modules::urdf_module::{ApolloURDFAxis, ApolloURDFDynamics, ApolloURDFJoint, ApolloURDFJointLimit, ApolloURDFJointType, ApolloURDFLink, ApolloURDFModule, ApolloURDFPose, ApolloURDFSafetyController};
-use crate::{PreprocessorModule, ResourcesRootDirectoryPreprocessorTrait, ResourcesRootDirectoryTrait, ResourcesSubDirectoryPreprocessorTrait, ResourcesSubDirectoryTrait};
+use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
+use apollo_rust_robot_modules::{ResourcesRootDirectory, ResourcesSubDirectory};
+use apollo_rust_robot_modules::robot_modules::urdf_module::{ApolloURDFAxis, ApolloURDFDynamics, ApolloURDFJoint, ApolloURDFJointLimit, ApolloURDFJointType, ApolloURDFLink, ApolloURDFModule, ApolloURDFPose, ApolloURDFSafetyController};
+use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
+use std::path::PathBuf;
+use apollo_rust_robot_modules::robot_modules::link_simulation_mode_module::EnvironmentLinkSimulationMode;
+use crate::{PreprocessorModule, ResourcesSubDirectoryTrait};
 
 /*
 pub trait ResourcesSingleRobotDirectoryTrait {
@@ -54,6 +45,7 @@ impl ResourcesRobotsDirectoryTrait for ResourcesRobotsDirectory {
 }
 */
 
+/*
 impl ResourcesRootDirectoryTrait for ResourcesRobotsDirectory {
     type SubDirectoryType = ResourcesSingleRobotDirectory;
 
@@ -123,6 +115,7 @@ impl ResourcesSubDirectoryPreprocessorTrait for ResourcesSingleRobotDirectory {
         ApolloLinkShapesApproximationsModule::load_or_build(self, force_build_on_all).expect("error");
     }
 }
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -273,14 +266,14 @@ impl CombinedRobot {
     pub fn attached_robots(&self) -> &Vec<AttachedRobot> {
         &self.attached_robots
     }
-    pub fn create_and_preprocess(&self, r: &ResourcesRobotsDirectory) {
+    pub fn create_and_preprocess(&self, r: &ResourcesRootDirectory) {
         let fp = r.directory().clone().append(&self.name);
         assert!( !fp.exists(), "combined robot directory with name {:?} already exists!", self.name );
 
         fp.create_directory();
-        let s = ResourcesSingleRobotDirectory {
-            robot_name: self.name.clone(),
-            robots_directory: r.directory.clone(),
+        let s = ResourcesSubDirectory {
+            name: self.name.clone(),
+            root_directory: r.directory.clone(),
             directory: fp.clone(),
         };
 
@@ -291,7 +284,7 @@ impl CombinedRobot {
         let yaml_fp =  fp.clone().append("combined_robot_module/module.yaml");
         yaml_fp.save_object_to_yaml_file(self);
 
-        s.preprocess(false);
+        s.preprocess_robot(false);
     }
 }
 
@@ -381,8 +374,7 @@ impl AdjustedRobot {
 
         out
     }
-
-    pub fn create_and_preprocess(&self, r: &ResourcesRobotsDirectory) {
+    pub fn create_and_preprocess(&self, r: &ResourcesRootDirectory) {
         let mut out = self.clone();
 
         let s = r.get_subdirectory(&self.base_robot_name);
@@ -452,7 +444,6 @@ impl AdjustedRobot {
         out.adjusted_joint_idx_to_base_joint_idx_mapping = adjusted_joint_idx_to_base_joint_idx_mapping;
         out.base_joint_idx_to_adjusted_joint_idx_mapping = base_joint_idx_to_adjusted_joint_idx_mapping;
 
-
         let fp = r.directory.clone().append(&self.name);
         assert!( !fp.exists(), "adjusted robot directory with name {:?} already exists!", self.name );
 
@@ -465,11 +456,177 @@ impl AdjustedRobot {
         let yaml_fp =  fp.clone().append("adjusted_robot_module/module.yaml");
         yaml_fp.save_object_to_yaml_file(&out);
 
-        let s = ResourcesSingleRobotDirectory {
-            robot_name: self.name.clone(),
-            robots_directory: r.directory.clone(),
+        let s = ResourcesSubDirectory {
+            name: self.name.clone(),
+            root_directory: r.directory.clone(),
             directory: fp.clone(),
         };
-        s.preprocess(false);
+        s.preprocess_robot(false);
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ApolloChainCreator {
+    pub name: String,
+    pub actions: Vec<ChainCreatorAction>
+}
+impl ApolloChainCreator {
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            actions: vec![],
+        }
+    }
+    pub fn to_new_name(&self, new_name: &str) -> Self {
+        let mut out = self.clone();
+        out.name = new_name.to_string();
+        return out;
+    }
+    pub fn add_action(self, action: ChainCreatorAction) -> Self {
+        let mut out = self.clone();
+
+        for a in &out.actions {
+            if a.is_matching(&action) {
+                println!("already have an action with signature {:?}.  Cannot add duplicate.  Returning.", a.to_signature());
+                return out;
+            }
+        }
+
+        out.actions.push(action);
+
+        out
+    }
+    pub fn add_or_replace(self, action: ChainCreatorAction) -> Self {
+        let mut out = self.clone();
+
+        let idx = out.actions.iter().position(|x| x.is_matching(&action));
+        match idx {
+            None => { out.actions.push(action); }
+            Some(idx) => { out.actions[idx] = action; }
+        }
+
+        out
+    }
+    pub fn remove_action(self, signature: ChainCreatorActionSignature) -> Self {
+        let mut out = self.clone();
+
+        let idx = out.actions.iter().position(|x| x.is_matching_signature(&signature));
+        match idx {
+            None => { return out; }
+            Some(idx) => { out.actions.remove(idx); }
+        }
+
+        return out;
+    }
+    pub fn create_and_preprocess(&self, r: &ResourcesRootDirectory, force_build_on_all: bool) {
+        let fp = r.directory().clone().append(&self.name);
+        assert!(!fp.exists(), "chain with name {:?} already exists!", self.name);
+
+        fp.create_directory();
+        let s = ResourcesSubDirectory {
+            name: self.name.clone(),
+            root_directory: r.directory.clone(),
+            directory: fp.clone(),
+        };
+
+        let json_fp = fp.clone().append("creator_module/module.json");
+        json_fp.save_object_to_json_file(self);
+        let ron_fp =  fp.clone().append("creator_module/module.ron");
+        ron_fp.save_object_to_ron_file(self);
+        let yaml_fp =  fp.clone().append("creator_module/module.yaml");
+        yaml_fp.save_object_to_yaml_file(self);
+
+        s.preprocess_environment(force_build_on_all);
+    }
+    pub fn load(r: &ResourcesRootDirectory, name: &str) -> Self {
+        let s = r.get_subdirectory(name);
+        let fp = s.directory.clone().append("creator_module/module.json");
+        return fp.load_object_from_json_file()
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum ChainCreatorAction {
+    AddAlreadyExistingChain { name: String, base_offset: ISE3q, scale: [f64; 3] },
+    AddSingleLinkFromStlFile {
+        // #[serde(skip_serializing, default)] fp: PathBuf,
+        fp: PathBuf,
+        object_name: String,
+        parent_object: Option<String>,
+        base_offset: ISE3q,
+        scale: [f64; 3]
+    },
+    AddSingleLinkFromObjFile {
+        // #[serde(skip_serializing, default)] fp: PathBuf,
+        fp: PathBuf,
+        object_name: String,
+        parent_object: Option<String>,
+        base_offset: ISE3q,
+        scale: [f64; 3]
+    },
+    AddSingleLinkFromGlbFile {
+        // #[serde(skip_serializing, default)] fp: PathBuf,
+        fp: PathBuf,
+        object_name: String,
+        parent_object: Option<String>,
+        base_offset: ISE3q,
+        scale: [f64; 3]
+    },
+    AddSceneFromGlbFile {
+        scene_name: String,
+        // #[serde(skip_serializing, default)] fp: PathBuf,
+        fp: PathBuf,
+        parent_object: Option<String>,
+        transform: ISE3q,
+        scale: [f64; 3]
+    },
+    SetJointType { parent_object: Option<String>, child_object: String, joint_type: ApolloURDFJointType },
+    SetJointAxis { parent_object: Option<String>, child_object: String, axis: ApolloURDFAxis },
+    SetJointLimit { parent_object: Option<String>, child_object: String, joint_limit: ApolloURDFJointLimit },
+    SetObjectSimulationMode { object_name: String, mode: EnvironmentLinkSimulationMode },
+    SetObjectMass { object_name: String, mass: f64 },
+    SetObjectInertialOrigin { object_name: String, pose: ISE3q },
+    SetObjectInertia { object_name: String, ixx: f64, ixy: f64, ixz: f64, iyy: f64, iyz: f64, izz: f64 }
+}
+impl ChainCreatorAction {
+    pub fn to_signature(&self) -> ChainCreatorActionSignature {
+        match self {
+            ChainCreatorAction::AddAlreadyExistingChain { name, .. } => { ChainCreatorActionSignature::AddAlreadyExistingEnvironment { name: name.clone() } }
+            ChainCreatorAction::AddSingleLinkFromStlFile { object_name, .. } => { ChainCreatorActionSignature::AddSingleObjectFromStlFile { object_name: object_name.clone() } }
+            ChainCreatorAction::AddSingleLinkFromObjFile { object_name, .. } => { ChainCreatorActionSignature::AddSingleObjectFromObjFile { object_name: object_name.clone() } }
+            ChainCreatorAction::AddSingleLinkFromGlbFile { object_name, .. } => { ChainCreatorActionSignature::AddSingleObjectFromGlbFile { object_name: object_name.clone() } }
+            ChainCreatorAction::AddSceneFromGlbFile { scene_name, .. } => { ChainCreatorActionSignature::AddSceneFromGlbFile { scene_name: scene_name.to_string() } }
+            ChainCreatorAction::SetJointType { parent_object, child_object, .. } => {  ChainCreatorActionSignature::SetJointType { parent_object: parent_object.clone(), child_object: child_object.clone() } }
+            ChainCreatorAction::SetJointAxis { parent_object, child_object, .. } => { ChainCreatorActionSignature::SetJointAxis { parent_object: parent_object.clone(), child_object: child_object.clone() } }
+            ChainCreatorAction::SetJointLimit { parent_object, child_object, .. } => { ChainCreatorActionSignature::SetJointLimit { parent_object: parent_object.clone(), child_object: child_object.clone() } }
+            ChainCreatorAction::SetObjectSimulationMode { object_name, .. } => { ChainCreatorActionSignature::SetObjectSimulationMode { object_name: object_name.clone() } }
+            ChainCreatorAction::SetObjectMass { object_name, .. } => { ChainCreatorActionSignature::SetObjectMass { object_name: object_name.clone() } }
+            ChainCreatorAction::SetObjectInertialOrigin { object_name, .. } => { ChainCreatorActionSignature::SetObjectInertialOrigin { object_name: object_name.clone() } }
+            ChainCreatorAction::SetObjectInertia { object_name, .. } => { ChainCreatorActionSignature::SetObjectInertia { object_name: object_name.clone() } }
+        }
+    }
+
+    pub fn is_matching(&self, other: &ChainCreatorAction) -> bool {
+        return self.to_signature() == other.to_signature()
+    }
+
+    pub fn is_matching_signature(&self, signature: &ChainCreatorActionSignature) -> bool {
+        &self.to_signature() == signature
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ChainCreatorActionSignature {
+    AddAlreadyExistingEnvironment { name: String },
+    AddSingleObjectFromStlFile { object_name: String },
+    AddSingleObjectFromObjFile { object_name: String },
+    AddSingleObjectFromGlbFile { object_name: String },
+    AddSceneFromGlbFile { scene_name: String },
+    SetJointType { parent_object: Option<String>, child_object: String },
+    SetJointAxis { parent_object: Option<String>, child_object: String },
+    SetJointLimit { parent_object: Option<String>, child_object: String },
+    SetObjectSimulationMode { object_name: String },
+    SetObjectMass { object_name: String },
+    SetObjectInertialOrigin { object_name: String },
+    SetObjectInertia { object_name: String }
 }

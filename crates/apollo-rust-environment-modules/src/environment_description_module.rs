@@ -1,3 +1,4 @@
+/*
 use serde::{Deserialize, Serialize};
 use apollo_rust_robot_modules::urdf_module::ApolloURDFModule;
 
@@ -13,3 +14,4 @@ pub enum EnvironmentLinkSimulationMode {
     Active,
     Passive
 }
+*/

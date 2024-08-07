@@ -1,15 +1,12 @@
 use parry3d_f64::math::Point;
 use parry3d_f64::shape::ConvexPolyhedron;
-use apollo_rust_environment_modules::mesh_modules::environment_convex_decomposition_meshes_module::ApolloEnvironmentConvexDecompositionMeshesModule;
-use apollo_rust_environment_modules::mesh_modules::environment_convex_hull_meshes_module::ApolloEnvironmentConvexHullMeshesModule;
-use apollo_rust_environment_modules::ResourcesSingleEnvironmentDirectory;
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_mesh_utils::stl::load_stl_file;
 use apollo_rust_mesh_utils::trimesh::ToTriMesh;
 use apollo_rust_proximity::offset_shape::{OffsetShape, to_offset_shape_bounding_sphere, to_offset_shape_obb};
-use apollo_rust_robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
-use apollo_rust_robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
-use apollo_rust_robot_modules::{ResourcesRobotsDirectory, ResourcesSingleRobotDirectory};
+use apollo_rust_robot_modules::{ResourcesRootDirectory, ResourcesSubDirectory};
+use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 
 /// initialized in apollo-rust-robotics
@@ -27,8 +24,8 @@ pub struct ApolloLinkShapesModule {
     pub link_idx_to_decomposition_shape_idxs: Vec<Vec<usize>>
 }
 impl ApolloLinkShapesModule {
-    pub fn from_robot_mesh_modules(s: &ResourcesSingleRobotDirectory, convex_hull_meshes_module: &ApolloConvexHullMeshesModule, convex_decomposition_meshes_module: &ApolloConvexDecompositionMeshesModule) -> Self {
-        let root = ResourcesRobotsDirectory { directory: s.robots_directory.clone() };
+    pub fn from_mesh_modules(s: &ResourcesSubDirectory, convex_hull_meshes_module: &ApolloConvexHullMeshesModule, convex_decomposition_meshes_module: &ApolloConvexDecompositionMeshesModule) -> Self {
+        let root = ResourcesRootDirectory::new(s.root_directory().clone());
         let mut full_convex_hulls = vec![];
         let mut full_obbs = vec![];
         let mut full_bounding_spheres = vec![];
@@ -45,7 +42,7 @@ impl ApolloLinkShapesModule {
         convex_hull_meshes_module.stl_link_mesh_relative_paths.iter().enumerate().for_each(|(link_idx, x)| {
             if let Some(path_buf) = x {
                 let full_path = root.directory.clone().append_path(path_buf);
-                let tm = load_stl_file(&full_path).expect("error").to_trimesh();
+                let tm = load_stl_file(&full_path).expect(&format!("error: {:?}", full_path)).to_trimesh();
                 let points: Vec<Point<f64>> = tm.points().iter().map(|x| Point::new(x[0], x[1], x[2])).collect();
                 let cp = ConvexPolyhedron::from_convex_hull(&points).expect("error");
                 let os = OffsetShape::new(cp.clone(), None);
@@ -101,6 +98,7 @@ impl ApolloLinkShapesModule {
         }
     }
 
+    /*
     pub fn from_environment_mesh_modules(s: &ResourcesSingleEnvironmentDirectory, convex_hull_meshes_module: &ApolloEnvironmentConvexHullMeshesModule, convex_decomposition_meshes_module: &ApolloEnvironmentConvexDecompositionMeshesModule) -> Self {
         let ss = ResourcesSingleRobotDirectory {
             robot_name: s.environment_name.clone(),
@@ -110,6 +108,7 @@ impl ApolloLinkShapesModule {
 
         Self::from_robot_mesh_modules(&ss, &convex_hull_meshes_module.0, &convex_decomposition_meshes_module.0)
     }
+    */
 
     #[inline(always)]
     pub fn full_convex_hulls(&self) -> &Vec<OffsetShape> {

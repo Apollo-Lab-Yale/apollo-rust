@@ -1,11 +1,12 @@
-use apollo_rust_robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::{ApolloLinkShapesDistanceStatisticsModule, LinkShapesDistanceStatistics};
-use apollo_rust_robot_modules::link_shapes_modules::link_shapes_simple_skips_module::ApolloLinkShapesSimpleSkipsModule;
-use apollo_rust_robot_modules::ResourcesSingleRobotDirectory;
+
+use apollo_rust_robot_modules::ResourcesSubDirectory;
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::{ApolloLinkShapesDistanceStatisticsModule, LinkShapesDistanceStatistics};
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_simple_skips_module::ApolloLinkShapesSimpleSkipsModule;
 use crate::PreprocessorModule;
 use crate::utils::progress_bar::ProgressBarWrapper;
 
 impl PreprocessorModule for ApolloLinkShapesSimpleSkipsModule {
-    type SubDirectoryType = ResourcesSingleRobotDirectory;
+    // type SubDirectoryType = ResourcesSingleRobotDirectory;
 
     fn relative_file_path_str_from_sub_dir_to_module_dir() -> String {
         "link_shapes_modules/link_shapes_simple_skips_module".to_string()
@@ -15,7 +16,7 @@ impl PreprocessorModule for ApolloLinkShapesSimpleSkipsModule {
         "0.0.1".to_string()
     }
 
-    fn build_raw(s: &ResourcesSingleRobotDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
+    fn build_raw(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
         let link_shapes_distance_stats_module = ApolloLinkShapesDistanceStatisticsModule::load_or_build(s, false).expect("error");
 
         let full_convex_hulls_simple_skips = get_simple_skips_from_link_shapes_distance_stats(&link_shapes_distance_stats_module.full_convex_hulls);

@@ -1,29 +1,29 @@
 use parry3d_f64::query::Contact;
 use apollo_rust_linalg::V;
-use apollo_rust_robot_modules::bounds_module::ApolloBoundsModule;
-use apollo_rust_robot_modules::chain_module::ApolloChainModule;
-use apollo_rust_robot_modules::connections_module::ApolloConnectionsModule;
-use apollo_rust_robot_modules::dof_module::ApolloDOFModule;
-use apollo_rust_robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::ApolloLinkShapesDistanceStatisticsModule;
-use apollo_rust_robot_modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
-use apollo_rust_robot_modules::link_shapes_modules::link_shapes_simple_skips_module::ApolloLinkShapesSimpleSkipsModule;
-use apollo_rust_robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
-use apollo_rust_robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
-use apollo_rust_robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
-use apollo_rust_robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
-use apollo_rust_robot_modules::urdf_module::ApolloURDFModule;
+use apollo_rust_robot_modules::robot_modules::bounds_module::ApolloBoundsModule;
+use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
+use apollo_rust_robot_modules::robot_modules::connections_module::ApolloConnectionsModule;
+use apollo_rust_robot_modules::robot_modules::dof_module::ApolloDOFModule;
+use apollo_rust_robot_modules::robot_modules::urdf_module::ApolloURDFModule;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_module::{ApolloLinkShapesModule, LinkShapeMode, LinkShapeRep};
 use apollo_rust_robotics_core::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModule;
 use apollo_rust_robotics_core::robot_functions::robot_kinematics_functions::RobotKinematicsFunctions;
 use apollo_rust_robotics_core::robot_functions::robot_proximity_functions::RobotProximityFunctions;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_simple_skips_nalgebra_module::ApolloLinkShapesSimpleSkipsNalgebraModule;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
-use apollo_rust_preprocessor::{PreprocessorModule, ResourcesRootDirectoryTrait};
-use apollo_rust_robot_modules::{ResourcesRobotsDirectory, ResourcesSingleRobotDirectory};
+use apollo_rust_preprocessor::{PreprocessorModule};
+use apollo_rust_robot_modules::{ResourcesRootDirectory, ResourcesSubDirectory};
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::ApolloLinkShapesDistanceStatisticsModule;
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_simple_skips_module::ApolloLinkShapesSimpleSkipsModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 
 #[derive(Clone)]
 pub struct Robot {
-    single_robot_directory: ResourcesSingleRobotDirectory,
+    single_robot_directory: ResourcesSubDirectory,
     urdf_module: ApolloURDFNalgebraModule,
     chain_module: ApolloChainModule,
     dof_module: ApolloDOFModule,
@@ -39,13 +39,13 @@ pub struct Robot {
     bounds_module: ApolloBoundsModule
 }
 impl Robot {
-    pub fn new_from_root(root: &ResourcesRobotsDirectory, robot_name: &str) -> Self {
+    pub fn new_from_root(root: &ResourcesRootDirectory, robot_name: &str) -> Self {
         let s = root.get_subdirectory(robot_name);
 
         Self::new_from_single_robot_directory(&s)
     }
 
-    pub fn new_from_single_robot_directory(s: &ResourcesSingleRobotDirectory) -> Self {
+    pub fn new_from_single_robot_directory(s: &ResourcesSubDirectory) -> Self {
         let urdf_module = ApolloURDFNalgebraModule::from_urdf_module(&ApolloURDFModule::load_or_build(&s, false).expect("error"));
         let chain_module = ApolloChainModule::load_or_build(&s, false).expect("error");
         let dof_module = ApolloDOFModule::load_or_build(&s, false).expect("error");
@@ -54,7 +54,7 @@ impl Robot {
         let plain_meshes_module = ApolloPlainMeshesModule::load_or_build(&s, false).expect("error");
         let convex_hull_meshes_module = ApolloConvexHullMeshesModule::load_or_build(&s, false).expect("error");
         let convex_decomposition_meshes_module = ApolloConvexDecompositionMeshesModule::load_or_build(&s, false).expect("error");
-        let link_shapes_module = ApolloLinkShapesModule::from_robot_mesh_modules(&s, &convex_hull_meshes_module, &convex_decomposition_meshes_module);
+        let link_shapes_module = ApolloLinkShapesModule::from_mesh_modules(&s, &convex_hull_meshes_module, &convex_decomposition_meshes_module);
         let link_shapes_max_distance_from_origin_module = ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(&s, false).expect("error");
         let link_shapes_distance_statistics_module = ApolloLinkShapesDistanceStatisticsModule::load_or_build(&s, false).expect("error");
         let link_shapes_simple_skips_module = ApolloLinkShapesSimpleSkipsModule::load_or_build(&s, false).expect("error");
@@ -80,7 +80,7 @@ impl Robot {
     }
 
     #[inline(always)]
-    pub fn single_robot_directory(&self) -> &ResourcesSingleRobotDirectory {
+    pub fn single_robot_directory(&self) -> &ResourcesSubDirectory {
         &self.single_robot_directory
     }
 
@@ -195,7 +195,7 @@ impl Robot {
 pub trait ToRobot {
     fn to_robot(&self) -> Robot;
 }
-impl ToRobot for ResourcesSingleRobotDirectory {
+impl ToRobot for ResourcesSubDirectory {
     fn to_robot(&self) -> Robot {
         Robot::new_from_single_robot_directory(self)
     }
@@ -204,7 +204,7 @@ impl ToRobot for ResourcesSingleRobotDirectory {
 pub trait ToRobotFromName {
     fn to_robot(&self, robot_name: &str) -> Robot;
 }
-impl ToRobotFromName for ResourcesRobotsDirectory {
+impl ToRobotFromName for ResourcesRootDirectory {
     fn to_robot(&self, robot_name: &str) -> Robot {
         Robot::new_from_root(self, robot_name)
     }

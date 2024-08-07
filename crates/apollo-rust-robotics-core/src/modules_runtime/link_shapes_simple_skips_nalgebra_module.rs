@@ -1,7 +1,7 @@
 use nalgebra::DMatrix;
 use serde::{Deserialize, Serialize};
 use apollo_rust_linalg::dmatrix_from_2dvec;
-use apollo_rust_robot_modules::link_shapes_modules::link_shapes_simple_skips_module::ApolloLinkShapesSimpleSkipsModule;
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_simple_skips_module::ApolloLinkShapesSimpleSkipsModule;
 use crate::modules_runtime::link_shapes_module::{LinkShapeMode, LinkShapeRep};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

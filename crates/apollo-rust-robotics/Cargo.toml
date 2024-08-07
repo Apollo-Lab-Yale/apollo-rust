@@ -4,7 +4,7 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-apollo-rust-robot-modules = { path = "../apollo-rust-robot-modules" }
+apollo-rust-robot-modules = { path = "../apollo-rust-modules" }
 apollo-rust-robotics-core = { path = "../apollo-rust-robotics-core" }
 apollo-rust-environment-modules = { path = "../apollo-rust-environment-modules" }
 apollo-rust-preprocessor = { path = "../apollo-rust-preprocessor" }

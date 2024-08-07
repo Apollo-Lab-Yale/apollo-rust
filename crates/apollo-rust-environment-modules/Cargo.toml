@@ -4,7 +4,7 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-apollo-rust-robot-modules = { path = "../apollo-rust-robot-modules" }
+apollo-rust-robot-modules = { path = "../apollo-rust-modules" }
 serde = { version="1.0.204", features = ["derive"] }
 serde_json = { version="1.0.120" }
 rand = "0.9.0-alpha.1"
