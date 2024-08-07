@@ -14,7 +14,7 @@ use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_preprocessor::ResourcesRootDirectoryTrait;
 use apollo_rust_robot_modules::ResourcesRobotsDirectory;
-use apollo_rust_robotics::ToRobotFromName;
+use apollo_rust_robotics::ToChainFromName;
 
 fn main () {
     let mut app = App::new()

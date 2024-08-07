@@ -10,7 +10,7 @@ use apollo_rust_preprocessor::robot_modules_preprocessor::modules::mesh_modules:
 use apollo_rust_preprocessor::robot_modules_preprocessor::modules::mesh_modules::convex_hull_meshes_module::ConvexHullMeshesModuleGetFullPaths;
 use apollo_rust_preprocessor::robot_modules_preprocessor::modules::mesh_modules::plain_meshes_module::PlainMeshesModuleGetFullPaths;
 use apollo_rust_preprocessor::robot_modules_preprocessor::modules::mesh_modules::VecOfPathBufOptionsToVecOfVecTrait;
-use apollo_rust_robotics::{Robot};
+use apollo_rust_robotics::{Chain};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::apollo_bevy_utils::gltf::spawn_gltf;
 use crate::apollo_bevy_utils::meshes::MeshType;
@@ -54,7 +54,7 @@ pub fn spawn_robot_meshes_generic(robot_instance_idx: usize,
 pub fn spawn_robot_meshes(robot_instance_idx: usize,
                           robot_meshes_representation: RobotMeshesRepresentation,
                           mesh_type: MeshType,
-                          robot: &Robot,
+                          robot: &Chain,
                           state: &V,
                           path_to_bevy_assets: &PathBuf,
                           commands: &mut Commands,
@@ -63,16 +63,16 @@ pub fn spawn_robot_meshes(robot_instance_idx: usize,
     let full_paths = match &mesh_type {
         MeshType::GLB => {
             match &robot_meshes_representation {
-                RobotMeshesRepresentation::Plain => { robot.plain_meshes_module().get_glb_full_paths(robot.single_robot_directory()).to_vec_of_vec_path_bufs() }
-                RobotMeshesRepresentation::ConvexHull => { robot.convex_hull_meshes_module().get_glb_full_paths(robot.single_robot_directory()).to_vec_of_vec_path_bufs() }
-                RobotMeshesRepresentation::ConvexDecomposition => { robot.convex_decomposition_meshes_module().get_glb_full_paths(robot.single_robot_directory()) }
+                RobotMeshesRepresentation::Plain => { robot.plain_meshes_module().get_glb_full_paths(robot.resources_sub_directory()).to_vec_of_vec_path_bufs() }
+                RobotMeshesRepresentation::ConvexHull => { robot.convex_hull_meshes_module().get_glb_full_paths(robot.resources_sub_directory()).to_vec_of_vec_path_bufs() }
+                RobotMeshesRepresentation::ConvexDecomposition => { robot.convex_decomposition_meshes_module().get_glb_full_paths(robot.resources_sub_directory()) }
             }
         }
         MeshType::OBJ => {
             match &robot_meshes_representation {
-                RobotMeshesRepresentation::Plain => { robot.plain_meshes_module().get_obj_full_paths(robot.single_robot_directory()).to_vec_of_vec_path_bufs() }
-                RobotMeshesRepresentation::ConvexHull => { robot.convex_hull_meshes_module().get_obj_full_paths(robot.single_robot_directory()).to_vec_of_vec_path_bufs() }
-                RobotMeshesRepresentation::ConvexDecomposition => { robot.convex_decomposition_meshes_module().get_obj_full_paths(robot.single_robot_directory()) }
+                RobotMeshesRepresentation::Plain => { robot.plain_meshes_module().get_obj_full_paths(robot.resources_sub_directory()).to_vec_of_vec_path_bufs() }
+                RobotMeshesRepresentation::ConvexHull => { robot.convex_hull_meshes_module().get_obj_full_paths(robot.resources_sub_directory()).to_vec_of_vec_path_bufs() }
+                RobotMeshesRepresentation::ConvexDecomposition => { robot.convex_decomposition_meshes_module().get_obj_full_paths(robot.resources_sub_directory()) }
             }
         }
     };
@@ -90,7 +90,7 @@ pub fn spawn_robot_meshes(robot_instance_idx: usize,
     res
 }
 
-pub fn pose_robot(robot_instance_idx: usize, robot: &Robot, state: &V, query: &mut Query<(&mut Transform, &RobotLinkMesh)>) {
+pub fn pose_robot(robot_instance_idx: usize, robot: &Chain, state: &V, query: &mut Query<(&mut Transform, &RobotLinkMesh)>) {
     let fk_res = robot.fk(state);
     query.iter_mut().for_each(|(mut x, y)| {
         if y.robot_instance_idx == robot_instance_idx {
@@ -100,7 +100,7 @@ pub fn pose_robot(robot_instance_idx: usize, robot: &Robot, state: &V, query: &m
     });
 }
 
-pub fn robot_sliders_egui(robot_instance_idx: usize, robot: &Robot, ui: &mut Ui, robot_states: &mut ResMut<RobotStates>) {
+pub fn robot_sliders_egui(robot_instance_idx: usize, robot: &Chain, ui: &mut Ui, robot_states: &mut ResMut<RobotStates>) {
     let dof_module = robot.dof_module();
     let bounds_module = robot.bounds_module();
     let num_dofs = dof_module.num_dofs;
@@ -116,7 +116,7 @@ pub fn robot_sliders_egui(robot_instance_idx: usize, robot: &Robot, ui: &mut Ui,
     }
 }
 
-pub fn robot_state_updater_loop(robot: &Robot, query: &mut Query<(&mut Transform, &RobotLinkMesh)>, robot_states: &Res<RobotStates>) {
+pub fn robot_state_updater_loop(robot: &Chain, query: &mut Query<(&mut Transform, &RobotLinkMesh)>, robot_states: &Res<RobotStates>) {
     if robot_states.is_changed() {
         robot_states.states.iter().enumerate().for_each(|(i, x)| {
             pose_robot(i, robot, x, query);

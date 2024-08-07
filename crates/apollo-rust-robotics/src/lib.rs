@@ -22,7 +22,7 @@ use apollo_rust_robot_modules::robot_modules::mesh_modules::original_meshes_modu
 use apollo_rust_robot_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 
 #[derive(Clone)]
-pub struct Robot {
+pub struct Chain {
     single_robot_directory: ResourcesSubDirectory,
     urdf_module: ApolloURDFNalgebraModule,
     chain_module: ApolloChainModule,
@@ -38,14 +38,14 @@ pub struct Robot {
     link_shapes_simple_skips_nalgebra_module: ApolloLinkShapesSimpleSkipsNalgebraModule,
     bounds_module: ApolloBoundsModule
 }
-impl Robot {
-    pub fn new_from_root(root: &ResourcesRootDirectory, robot_name: &str) -> Self {
+impl Chain {
+    pub fn new_from_root_directory(root: &ResourcesRootDirectory, robot_name: &str) -> Self {
         let s = root.get_subdirectory(robot_name);
 
-        Self::new_from_single_robot_directory(&s)
+        Self::new_from_sub_directory(&s)
     }
 
-    pub fn new_from_single_robot_directory(s: &ResourcesSubDirectory) -> Self {
+    pub fn new_from_sub_directory(s: &ResourcesSubDirectory) -> Self {
         let urdf_module = ApolloURDFNalgebraModule::from_urdf_module(&ApolloURDFModule::load_or_build(&s, false).expect("error"));
         let chain_module = ApolloChainModule::load_or_build(&s, false).expect("error");
         let dof_module = ApolloDOFModule::load_or_build(&s, false).expect("error");
@@ -80,7 +80,7 @@ impl Robot {
     }
 
     #[inline(always)]
-    pub fn single_robot_directory(&self) -> &ResourcesSubDirectory {
+    pub fn resources_sub_directory(&self) -> &ResourcesSubDirectory {
         &self.single_robot_directory
     }
 
@@ -149,7 +149,7 @@ impl Robot {
         &self.bounds_module
     }
 }
-impl Robot {
+impl Chain {
     #[inline(always)]
     pub fn num_dofs(&self) -> usize {
         self.dof_module.num_dofs
@@ -192,20 +192,20 @@ impl Robot {
 }
 
 
-pub trait ToRobot {
-    fn to_robot(&self) -> Robot;
+pub trait ToChain {
+    fn to_chain(&self) -> Chain;
 }
-impl ToRobot for ResourcesSubDirectory {
-    fn to_robot(&self) -> Robot {
-        Robot::new_from_single_robot_directory(self)
+impl ToChain for ResourcesSubDirectory {
+    fn to_chain(&self) -> Chain {
+        Chain::new_from_sub_directory(self)
     }
 }
 
-pub trait ToRobotFromName {
-    fn to_robot(&self, robot_name: &str) -> Robot;
+pub trait ToChainFromName {
+    fn to_robot(&self, robot_name: &str) -> Chain;
 }
-impl ToRobotFromName for ResourcesRootDirectory {
-    fn to_robot(&self, robot_name: &str) -> Robot {
-        Robot::new_from_root(self, robot_name)
+impl ToChainFromName for ResourcesRootDirectory {
+    fn to_robot(&self, robot_name: &str) -> Chain {
+        Chain::new_from_root_directory(self, robot_name)
     }
 }
