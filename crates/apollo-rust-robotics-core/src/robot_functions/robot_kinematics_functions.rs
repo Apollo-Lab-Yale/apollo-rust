@@ -56,21 +56,31 @@ impl RobotKinematicsFunctions {
             let constant_transform = &joint.origin.ise3q;
             let joint_type = &joint.joint_type;
             let dof_idxs = &dof_module.joint_idx_to_dof_idxs_mapping[joint_idx];
+            let axis = &joint.axis.axis;
 
             let t_variable = constant_transform.inverse().group_operator(&link_frames[parent_link_idx].inverse()).group_operator(&link_frames[child_link_idx]);
             let t_variable_vee = t_variable.ln().vee();
 
             match joint_type {
                 ApolloURDFJointType::Revolute => {
-                    let value = t_variable_vee.norm() * 2.0;
+                    let mut value = t_variable_vee.norm() * 2.0;
+                    let tmp = V3::new(t_variable_vee[0], t_variable_vee[1], t_variable_vee[2]);
+                    let d = tmp.dot(axis);
+                    if d < 0.0 { value *= -1.0 }
                     out[dof_idxs[0]] = value;
                 }
                 ApolloURDFJointType::Continuous => {
-                    let value = t_variable_vee.norm() * 2.0;
+                    let mut value = t_variable_vee.norm() * 2.0;
+                    let tmp = V3::new(t_variable_vee[0], t_variable_vee[1], t_variable_vee[2]);
+                    let d = tmp.dot(axis);
+                    if d < 0.0 { value *= -1.0 }
                     out[dof_idxs[0]] = value;
                 }
                 ApolloURDFJointType::Prismatic => {
-                    let value = t_variable_vee.norm();
+                    let mut value = t_variable_vee.norm();
+                    let tmp = V3::new(t_variable_vee[3], t_variable_vee[4], t_variable_vee[5]);
+                    let d = tmp.dot(axis);
+                    if d < 0.0 { value *= -1.0 }
                     out[dof_idxs[0]] = value;
                 }
                 ApolloURDFJointType::Fixed => { }

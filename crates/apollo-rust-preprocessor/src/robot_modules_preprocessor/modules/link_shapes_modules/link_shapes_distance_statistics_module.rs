@@ -69,7 +69,7 @@ impl PreprocessorModule for ApolloLinkShapesDistanceStatisticsModule {
                     let fk_res = RobotKinematicsFunctions::fk(&sample, &urdf_nalgebra_module, &chain_module, &dof_module);
                     let res = RobotProximityFunctions::self_contact(&link_shapes_module, &fk_res, *link_shape_mode, *link_shape_rep, None, false, 1000000.0);
 
-                    res.iter().for_each(|((i, j), c)| {
+                    res.outputs.iter().zip(res.shape_idxs.iter()).for_each(|(c, (i, j))| {
                         let dis = c.unwrap().dist;
                         averages[*i][*j] += dis;
                         averages[*j][*i] += dis;

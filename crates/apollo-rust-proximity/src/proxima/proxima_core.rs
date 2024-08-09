@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 use nalgebra::DMatrix;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::{DistanceMode, ProximityLossFunction, ToIntersectionResult, ToProximityValue};
-use crate::double_group_queries::DoubleGroupQueryMode;
+use crate::double_group_queries::DoubleGroupProximityQueryMode;
 use crate::offset_shape::OffsetShape;
 
 pub trait ProximaTrait {
@@ -38,11 +38,11 @@ pub trait ProximaTrait {
             }
         }
     }
-    fn get_all_proxima_outputs_for_proximity(&self, cache: &Self::CacheType, poses_a: &Vec<ISE3q>, poses_b: &Vec<ISE3q>, query_mode: &DoubleGroupQueryMode, skips: Option<&DMatrix<bool>>, average_distances: Option<&DMatrix<f64>>, cutoff_distance: f64) -> Vec<ProximaOutput> {
+    fn get_all_proxima_outputs_for_proximity(&self, cache: &Self::CacheType, poses_a: &Vec<ISE3q>, poses_b: &Vec<ISE3q>, query_mode: &DoubleGroupProximityQueryMode, skips: Option<&DMatrix<bool>>, average_distances: Option<&DMatrix<f64>>, cutoff_distance: f64) -> Vec<ProximaOutput> {
         let mut out = vec![];
 
         match query_mode {
-            DoubleGroupQueryMode::AllPossiblePairs => {
+            DoubleGroupProximityQueryMode::AllPossiblePairs => {
                 for (i, pa) in poses_a.iter().enumerate() {
                     for (j, pb) in poses_b.iter().enumerate() {
                         let output = self.f(cache, i, pa, j, pb, skips, cutoff_distance);
@@ -53,7 +53,7 @@ pub trait ProximaTrait {
                     }
                 }
             }
-            DoubleGroupQueryMode::SkipSymmetricalPairs => {
+            DoubleGroupProximityQueryMode::SkipSymmetricalPairs => {
                 for (i, pa) in poses_a.iter().enumerate() {
                     'l: for (j, pb) in poses_b.iter().enumerate() {
                         if i >= j { continue 'l; }
@@ -65,7 +65,7 @@ pub trait ProximaTrait {
                     }
                 }
             }
-            DoubleGroupQueryMode::SubsetOfPairs(v) => {
+            DoubleGroupProximityQueryMode::SubsetOfPairs(v) => {
                 for (i,j) in v {
                     let pa = &poses_a[*i];
                     let pb = &poses_b[*j];
@@ -85,11 +85,11 @@ pub trait ProximaTrait {
 
         out
     }
-    fn get_all_proxima_outputs_for_intersection(&self, cache: &Self::CacheType, poses_a: &Vec<ISE3q>, poses_b: &Vec<ISE3q>, query_mode: &DoubleGroupQueryMode, skips: Option<&DMatrix<bool>>, cutoff_distance: f64) -> Option<Vec<ProximaOutput>> {
+    fn get_all_proxima_outputs_for_intersection(&self, cache: &Self::CacheType, poses_a: &Vec<ISE3q>, poses_b: &Vec<ISE3q>, query_mode: &DoubleGroupProximityQueryMode, skips: Option<&DMatrix<bool>>, cutoff_distance: f64) -> Option<Vec<ProximaOutput>> {
         let mut out = vec![];
 
         match query_mode {
-            DoubleGroupQueryMode::AllPossiblePairs => {
+            DoubleGroupProximityQueryMode::AllPossiblePairs => {
                 for (i, pa) in poses_a.iter().enumerate() {
                     for (j, pb) in poses_b.iter().enumerate() {
                         let output = self.f(cache, i, pa, j, pb, skips, cutoff_distance);
@@ -103,7 +103,7 @@ pub trait ProximaTrait {
                     }
                 }
             }
-            DoubleGroupQueryMode::SkipSymmetricalPairs => {
+            DoubleGroupProximityQueryMode::SkipSymmetricalPairs => {
                 for (i, pa) in poses_a.iter().enumerate() {
                     'l: for (j, pb) in poses_b.iter().enumerate() {
                         if i >= j { continue 'l; }
@@ -118,7 +118,7 @@ pub trait ProximaTrait {
                     }
                 }
             }
-            DoubleGroupQueryMode::SubsetOfPairs(v) => {
+            DoubleGroupProximityQueryMode::SubsetOfPairs(v) => {
                 for (i,j) in v {
                     let pa = &poses_a[*i];
                     let pb = &poses_b[*j];
@@ -143,7 +143,7 @@ pub trait ProximaTrait {
                              poses_a: &Vec<ISE3q>,
                              group_b: &Vec<OffsetShape>,
                              poses_b: &Vec<ISE3q>,
-                             query_mode: &DoubleGroupQueryMode,
+                             query_mode: &DoubleGroupProximityQueryMode,
                              loss_function: &ProximityLossFunction,
                              p_norm: f64,
                              cutoff_distance: f64,
@@ -203,7 +203,7 @@ pub trait ProximaTrait {
                                 poses_a: &Vec<ISE3q>,
                                 group_b: &Vec<OffsetShape>,
                                 poses_b: &Vec<ISE3q>,
-                                query_mode: &DoubleGroupQueryMode,
+                                query_mode: &DoubleGroupProximityQueryMode,
                                 loss_function: &ProximityLossFunction,
                                 p_norm: f64,
                                 skips: Option<&DMatrix<bool>>,

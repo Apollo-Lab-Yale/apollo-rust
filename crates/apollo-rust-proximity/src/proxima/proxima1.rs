@@ -4,7 +4,7 @@ use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
 use apollo_rust_spatial::lie::h1::ApolloUnitQuaternionH1LieTrait;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use apollo_rust_spatial::vectors::V3;
-use crate::double_group_queries::{DoubleGroupQueryMode, pairwise_group_query_contact};
+use crate::double_group_queries::{DoubleGroupProximityQueryMode, pairwise_group_query_contact};
 use crate::offset_shape::OffsetShape;
 use crate::proxima::proxima_core::{ProximaCacheTrait, ProximaTrait};
 
@@ -13,8 +13,8 @@ pub struct Proxima1Cache {
     pub elements: DMatrix<Proxima1CacheElement>
 }
 impl Proxima1Cache {
-    pub fn new(group_a: &Vec<OffsetShape>, poses_a: &Vec<ISE3q>, group_b: &Vec<OffsetShape>, poses_b: &Vec<ISE3q>, query_mode: &DoubleGroupQueryMode, skips: Option<&DMatrix<bool>>) -> Self {
-        if let DoubleGroupQueryMode::SubsetOfPairs(_) = query_mode {
+    pub fn new(group_a: &Vec<OffsetShape>, poses_a: &Vec<ISE3q>, group_b: &Vec<OffsetShape>, poses_b: &Vec<ISE3q>, query_mode: &DoubleGroupProximityQueryMode, skips: Option<&DMatrix<bool>>) -> Self {
+        if let DoubleGroupProximityQueryMode::SubsetOfPairs(_) = query_mode {
             panic!("you probably shouldn't use a subset of pairs to initialize the Proxima cache.");
         }
         assert_eq!(group_a.len(), poses_a.len());
@@ -22,21 +22,22 @@ impl Proxima1Cache {
 
         let mut elements = DMatrix::from_vec(group_a.len(), group_b.len(), vec![Proxima1CacheElement::default(); group_a.len()*group_b.len()]);
         let contacts = pairwise_group_query_contact(group_a, poses_a, group_b, poses_b, query_mode, skips, false, f64::INFINITY);
-        contacts.iter().for_each(|((i,j),c)| {
-            let pose_a_j = &poses_a[*i];
-            let pose_b_j = &poses_b[*j];
+        // contacts.iter().for_each(|((i,j),c)| {
+        contacts.outputs.iter().zip(contacts.shape_idxs).for_each(|(c, (i, j))| {
+            let pose_a_j = &poses_a[i];
+            let pose_b_j = &poses_b[j];
             let disp_between_a_and_b_j = pose_a_j.displacement(pose_b_j);
             let c = c.unwrap();
             let raw_distance_j = c.dist;
             let closest_point_a_j = c.point1.coords.xyz();
             let closest_point_b_j = c.point2.coords.xyz();
 
-            elements[(*i,*j)].pose_a_j = pose_a_j.clone();
-            elements[(*i,*j)].pose_b_j = pose_b_j.clone();
-            elements[(*i,*j)].disp_between_a_and_b_j = disp_between_a_and_b_j;
-            elements[(*i,*j)].raw_distance_j = raw_distance_j;
-            elements[(*i,*j)].closest_point_a_j = closest_point_a_j;
-            elements[(*i,*j)].closest_point_b_j = closest_point_b_j;
+            elements[(i,j)].pose_a_j = pose_a_j.clone();
+            elements[(i,j)].pose_b_j = pose_b_j.clone();
+            elements[(i,j)].disp_between_a_and_b_j = disp_between_a_and_b_j;
+            elements[(i,j)].raw_distance_j = raw_distance_j;
+            elements[(i,j)].closest_point_a_j = closest_point_a_j;
+            elements[(i,j)].closest_point_b_j = closest_point_b_j;
         });
 
         Self {
