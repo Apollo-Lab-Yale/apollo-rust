@@ -43,6 +43,13 @@ impl PathBufPy {
         }
     }
 
+    #[staticmethod]
+    pub fn new_from_default_apollo_environments_dir() -> Self {
+        Self {
+            pathbuf: PathBuf::new_from_default_apollo_environments_dir()
+        }
+    }
+
     pub fn append(&self, s: &str) -> Self {
         Self {
             pathbuf: self.pathbuf.clone().append(s),

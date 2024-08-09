@@ -47,7 +47,7 @@ impl LieGroupElement for LieGroupH1 {
 
     #[inline(always)]
     fn ln(&self) -> Self::LieAlgebraElementType {
-        let w = self.0.w;
+        let w = self.0.w.min(1.0);
         let acos = w.acos();
         return if acos == 0.0 {
             LieAlgH1::new(Q::new(0.,0.,0.,0.))

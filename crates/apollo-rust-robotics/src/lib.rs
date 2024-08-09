@@ -160,6 +160,11 @@ impl Chain {
         RobotKinematicsFunctions::fk(state, self.urdf_module(), self.chain_module(), self.dof_module())
     }
 
+    #[inline]
+    pub fn reverse_of_fk(&self, link_frame: &Vec<ISE3q>) -> V {
+        RobotKinematicsFunctions::reverse_of_fk(link_frame, &self.urdf_module, &self.chain_module, &self.dof_module)
+    }
+
     pub fn self_intersect(&self, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool) -> Vec<((usize, usize), bool)> {
         let skips = self.link_shapes_simple_skips_nalgebra_module().get_skips(link_shape_mode, link_shape_rep);
         RobotProximityFunctions::self_intersect(self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, Some(skips), early_stop)

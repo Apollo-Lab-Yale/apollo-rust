@@ -1,5 +1,5 @@
 use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
-use apollo_rust_linalg::V;
+use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
 use apollo_rust_robot_modules::robot_modules::dof_module::ApolloDOFModule;
 use apollo_rust_robot_modules::robot_modules::urdf_module::ApolloURDFJointType;
@@ -41,6 +41,53 @@ impl RobotKinematicsFunctions {
                 out[*link_idx] = out[parent_link_idx].group_operator(constant_transform).group_operator(&variable_transform);
             });
         }
+
+        out
+    }
+
+    pub fn reverse_of_fk(link_frames: &Vec<ISE3q>, urdf_module: &ApolloURDFNalgebraModule, chain_module: &ApolloChainModule, dof_module: &ApolloDOFModule) -> V {
+        let mut out = V::new(&vec![0.0; dof_module.num_dofs]);
+
+        chain_module.joints_in_chain.iter().for_each(|joint_in_chain| {
+            let joint_idx = joint_in_chain.joint_idx;
+            let parent_link_idx = joint_in_chain.parent_link_idx;
+            let child_link_idx = joint_in_chain.child_link_idx;
+            let joint = &urdf_module.joints[joint_idx];
+            let constant_transform = &joint.origin.ise3q;
+            let joint_type = &joint.joint_type;
+            let dof_idxs = &dof_module.joint_idx_to_dof_idxs_mapping[joint_idx];
+
+            let t_variable = constant_transform.inverse().group_operator(&link_frames[parent_link_idx].inverse()).group_operator(&link_frames[child_link_idx]);
+            let t_variable_vee = t_variable.ln().vee();
+
+            match joint_type {
+                ApolloURDFJointType::Revolute => {
+                    let value = t_variable_vee.norm() * 2.0;
+                    out[dof_idxs[0]] = value;
+                }
+                ApolloURDFJointType::Continuous => {
+                    let value = t_variable_vee.norm() * 2.0;
+                    out[dof_idxs[0]] = value;
+                }
+                ApolloURDFJointType::Prismatic => {
+                    let value = t_variable_vee.norm();
+                    out[dof_idxs[0]] = value;
+                }
+                ApolloURDFJointType::Fixed => { }
+                ApolloURDFJointType::Floating => {
+                    dof_idxs.iter().enumerate().for_each(|(i, x)| out[*x] = t_variable_vee[i]);
+                }
+                ApolloURDFJointType::Planar => {
+                    out[dof_idxs[0]] = t_variable_vee[4];
+                    out[dof_idxs[1]] = t_variable_vee[5];
+                }
+                ApolloURDFJointType::Spherical => {
+                    out[dof_idxs[0]] = t_variable_vee[0];
+                    out[dof_idxs[1]] = t_variable_vee[1];
+                    out[dof_idxs[2]] = t_variable_vee[2];
+                }
+            }
+        });
 
         out
     }

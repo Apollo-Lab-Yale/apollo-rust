@@ -29,9 +29,9 @@ impl LieAlgSO3 {
         assert_eq!(field0.m22, 0.0);
         assert_eq!(field0.m33, 0.0);
 
-        assert_eq!(field0.m12, -field0.m21);
-        assert_eq!(field0.m13, -field0.m31);
-        assert_eq!(field0.m23, -field0.m32);
+        assert_eq!(field0.m12, -field0.m21, "{}", format!("{}, {}", field0.m12, -field0.m21));
+        assert_eq!(field0.m13, -field0.m31, "{}", format!("{}, {}", field0.m13, -field0.m31));
+        assert_eq!(field0.m23, -field0.m32, "{}", format!("{}, {}", field0.m23, -field0.m32));
 
         Self(field0)
     }
