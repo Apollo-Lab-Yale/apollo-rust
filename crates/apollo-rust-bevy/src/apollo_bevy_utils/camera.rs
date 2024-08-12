@@ -2,6 +2,7 @@ use bevy::input::ButtonInput;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::{Camera3dBundle, Commands, Component, EventReader, KeyCode, Mat3, MouseButton, Projection, Quat, Query, Res, Transform, Vec2, Vec3, Window, With};
 use bevy::window::PrimaryWindow;
+use crate::apollo_bevy_utils::egui::CursorIsOverEgui;
 use crate::apollo_bevy_utils::transform::TransformUtils;
 
 pub struct CameraActions;
@@ -53,7 +54,10 @@ impl CameraSystems {
         input_mouse: Res<ButtonInput<MouseButton>>,
         input_keyboard: Res<ButtonInput<KeyCode>>,
         window_query: Query<&Window, With<PrimaryWindow>>,
+        cursor_is_over_egui: Res<CursorIsOverEgui>,
         mut query: Query<(&mut PanOrbitCamera, &mut Transform, &Projection)>) {
+
+        if cursor_is_over_egui.0 { return; }
 
         let Ok(window) = window_query.get_single() else { return };
         let size = Vec2::new(window.width() as f32, window.height() as f32);
@@ -127,7 +131,10 @@ impl CameraSystems {
         mut ev_scroll: EventReader<MouseWheel>,
         input_mouse: Res<ButtonInput<MouseButton>>,
         window_query: Query<&Window, With<PrimaryWindow>>,
+        cursor_is_over_egui: Res<CursorIsOverEgui>,
         mut query: Query<(&mut PanOrbitThreeStyleCamera, &mut Transform, &Projection)>) {
+
+        if cursor_is_over_egui.0 { return; }
 
         let Ok(window) = window_query.get_single() else { return };
         let size = Vec2::new(window.width() as f32, window.height() as f32);

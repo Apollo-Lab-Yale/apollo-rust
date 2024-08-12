@@ -4,7 +4,6 @@ use gltf::buffer::Data as Data1;
 use gltf::image::Data as Data2;
 use gltf::texture::Info;
 use gltf_json::{Index};
-use gltf_json::extras::Void;
 use gltf_json::material::{AlphaCutoff, PbrBaseColorFactor, PbrMetallicRoughness, StrengthFactor};
 use gltf_json::validation::Checked;
 use nalgebra::{Isometry3, Quaternion, Translation3, UnitQuaternion};
@@ -238,14 +237,14 @@ impl<'a> ToGlbJsonMaterial for Material<'a> {
                 roughness_factor: StrengthFactor(self.pbr_metallic_roughness().roughness_factor()),
                 metallic_roughness_texture: None,
                 extensions: None,
-                extras: Void::default(),
+                ..Default::default()
             },
             normal_texture: None,
             occlusion_texture: None,
             emissive_texture: None,
             emissive_factor: Default::default(),
             extensions: None,
-            extras: Void::default(),
+            ..Default::default()
         }
     }
 }
@@ -255,7 +254,7 @@ fn texture_info_conversion(info: &Info) -> gltf_json::texture::Info {
         index: Index::new(info.texture().index() as u32),
         tex_coord: info.tex_coord(),
         extensions: None,
-        extras: Void::default(),
+        extras: None,
     }
 }
 

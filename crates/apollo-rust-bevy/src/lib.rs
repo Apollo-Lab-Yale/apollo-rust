@@ -1,10 +1,20 @@
 pub mod apollo_bevy_utils;
 
+use std::path::PathBuf;
+use std::sync::Arc;
 use bevy::prelude::*;
-use bevy_egui::EguiPlugin;
+use bevy::window::PrimaryWindow;
+use bevy_egui::{EguiContexts, EguiPlugin};
+use bevy_egui::egui::panel::Side;
+use bevy_egui::egui::SidePanel;
 use bevy_mod_outline::{AsyncSceneInheritOutlinePlugin, AutoGenerateOutlineNormalsPlugin, OutlinePlugin};
 use bevy_obj::ObjPlugin;
+use apollo_rust_linalg::{ApolloDVectorTrait, V};
+use apollo_rust_robotics::Chain;
 use crate::apollo_bevy_utils::camera::CameraSystems;
+use crate::apollo_bevy_utils::chain::{chain_sliders_egui, chain_state_updater_loop, ChainLinkMesh, ChainMeshesRepresentation, ChainStates, spawn_chain_meshes};
+use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, reset_cursor_is_over_egui, set_cursor_is_over_egui_default};
+use crate::apollo_bevy_utils::meshes::MeshType;
 use crate::apollo_bevy_utils::viewport_visuals::ViewportVisualsActions;
 
 pub trait ApolloBevyTrait {
@@ -20,6 +30,7 @@ impl ApolloBevyTrait for App {
 
         out
             .insert_resource(ClearColor(Color::srgb(0.9, 0.9, 0.92)))
+            .insert_resource(CursorIsOverEgui(false))
             .insert_resource(Msaa::default())
             .add_plugins(DefaultPlugins
                 .set(WindowPlugin {
@@ -32,7 +43,8 @@ impl ApolloBevyTrait for App {
             )
             .add_plugins(EguiPlugin)
             .add_plugins(ObjPlugin)
-            .add_plugins((OutlinePlugin, AutoGenerateOutlineNormalsPlugin, AsyncSceneInheritOutlinePlugin));
+            .add_plugins((OutlinePlugin, AutoGenerateOutlineNormalsPlugin, AsyncSceneInheritOutlinePlugin))
+            .add_systems(Last, reset_cursor_is_over_egui);
 
         out
     }
@@ -89,5 +101,48 @@ impl ApolloBevyTrait for App {
             });
 
         out
+    }
+}
+
+
+pub trait ApolloChainBevyTrait {
+    fn bevy_display(&self, path_to_bevy_assets: &PathBuf) {
+        self.bevy_display_app(path_to_bevy_assets).run();
+    }
+
+    fn bevy_display_app(&self, path_to_bevy_assets: &PathBuf) -> App;
+}
+impl ApolloChainBevyTrait for Chain {
+    fn bevy_display_app(&self, path_to_bevy_assets: &PathBuf) -> App {
+        let mut app = App::new()
+            .apollo_bevy_base()
+            .apollo_bevy_starter_lights()
+            .apollo_bevy_robotics_scene_visuals_start()
+            .apollo_bevy_pan_orbit_three_style_camera();
+
+        let chain1 = Arc::new(self.clone());
+        let chain2 = chain1.clone();
+        let chain3 = chain1.clone();
+        let p = Arc::new(path_to_bevy_assets.clone());
+        let num_dofs = chain1.dof_module().num_dofs;
+        let zeros_state = V::new(&vec![0.0; num_dofs]);
+        app.insert_resource(ChainStates { states: vec![zeros_state.clone()] });
+
+        app.add_systems(Startup, move |mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<StandardMaterial>>| {
+            spawn_chain_meshes(0, ChainMeshesRepresentation::Plain, MeshType::GLB, &chain1, &zeros_state, &p, &mut commands, &asset_server, &mut materials);
+        });
+
+        app.add_systems(PostUpdate, move |mut query: Query<(&mut Transform, &ChainLinkMesh)>, chain_states: Res<ChainStates>| {
+            chain_state_updater_loop(&chain2, &mut query, &chain_states);
+        });
+
+        app.add_systems(Update, move |mut robot_states: ResMut<ChainStates>, mut egui_contexts: EguiContexts, mut cursor_is_over_egui: ResMut<CursorIsOverEgui>, window_query: Query<&Window, With<PrimaryWindow>>| {
+            SidePanel::new(Side::Left, "side").show(egui_contexts.ctx_mut(), |ui| {
+                chain_sliders_egui(0, &chain3, ui, &mut robot_states);
+                set_cursor_is_over_egui_default(ui, &mut cursor_is_over_egui, &window_query);
+            });
+        });
+
+        app
     }
 }
