@@ -12,6 +12,7 @@ apollo-rust-spatial = { path = "../apollo-rust-spatial" }
 apollo-rust-lie = { path = "../apollo-rust-lie" }
 apollo-rust-linalg = { path = "../apollo-rust-linalg" }
 apollo-rust-mesh-utils = { path = "../apollo-rust-mesh-utils" }
+apollo-rust-bevy = { path = "../apollo-rust-bevy" }
 serde = { version="1.0.204", features = ["derive"] }
 serde_json = { version="1.0.120" }
 pbr = { version="1.1.1" }

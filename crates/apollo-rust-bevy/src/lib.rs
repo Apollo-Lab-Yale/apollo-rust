@@ -10,9 +10,9 @@ use bevy_egui::egui::SidePanel;
 use bevy_mod_outline::{AsyncSceneInheritOutlinePlugin, AutoGenerateOutlineNormalsPlugin, OutlinePlugin};
 use bevy_obj::ObjPlugin;
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
-use apollo_rust_robotics::Chain;
+use apollo_rust_robotics_core::Chain;
 use crate::apollo_bevy_utils::camera::CameraSystems;
-use crate::apollo_bevy_utils::chain::{BevySpawnChainMeshes, chain_sliders_egui, chain_state_updater_loop, ChainLinkMesh, ChainMeshesRepresentation, ChainStates};
+use crate::apollo_bevy_utils::chain::{BevyChainSlidersEgui, BevyChainStateUpdaterLoop, BevySpawnChainMeshes, ChainMeshesRepresentation, ChainState};
 use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, reset_cursor_is_over_egui, set_cursor_is_over_egui_default};
 use crate::apollo_bevy_utils::meshes::MeshType;
 use crate::apollo_bevy_utils::viewport_visuals::ViewportVisualsActions;
@@ -23,6 +23,7 @@ pub trait ApolloBevyTrait {
     fn apollo_bevy_pan_orbit_three_style_camera(self) -> Self;
     fn apollo_bevy_starter_lights(self) -> Self;
     fn apollo_bevy_robotics_scene_visuals_start(self) -> Self;
+    fn apollo_bevy_spawn_robot(self, chain_instance_idx: usize, chain: &Chain, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType)>, path_to_bevy_assets: &PathBuf) -> Self;
 }
 impl ApolloBevyTrait for App {
     fn apollo_bevy_base(self) -> Self {
@@ -102,6 +103,41 @@ impl ApolloBevyTrait for App {
 
         out
     }
+
+    fn apollo_bevy_spawn_robot(self, chain_instance_idx: usize, chain: &Chain, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType)>, path_to_bevy_assets: &PathBuf) -> Self {
+        let mut out = App::from(self);
+
+        let chain_arc = Arc::new(chain.clone());
+        let zero_state = V::new(&vec![0.0; chain_arc.num_dofs()]);
+        let zero_state_clone = zero_state.clone();
+
+        out.add_systems(Startup, move |mut commands: Commands| {
+            commands.spawn(ChainState {
+                chain_instance_idx,
+                state: zero_state_clone.clone(),
+            });
+        });
+        
+        mesh_specs.iter().for_each(|(x, y)| {
+            let c = BevySpawnChainMeshes {
+                chain_instance_idx,
+                chain_meshes_representation: x.clone(),
+                mesh_type: y.clone(),
+                chain: chain_arc.clone(),
+                path_to_bevy_assets: path_to_bevy_assets.clone(),
+                state: zero_state.clone(),
+            };
+            out.add_systems(Startup, c.get_system());
+        });
+
+        let c = BevyChainStateUpdaterLoop {
+            chain_instance_idx,
+            chain: chain_arc.clone(),
+        };
+        out.add_systems(PostUpdate, c.get_system());
+        
+        out
+    }
 }
 
 
@@ -113,6 +149,10 @@ pub trait ApolloChainBevyTrait {
     fn bevy_display_app(&self, path_to_bevy_assets: &PathBuf) -> App;
 }
 impl ApolloChainBevyTrait for Chain {
+    fn bevy_display_app(&self, _path_to_bevy_assets: &PathBuf) -> App {
+        todo!()
+    }
+    /*
     fn bevy_display_app(&self, path_to_bevy_assets: &PathBuf) -> App {
         let mut app = App::new()
             .apollo_bevy_base()
@@ -135,20 +175,25 @@ impl ApolloChainBevyTrait for Chain {
             path_to_bevy_assets: path_to_bevy_assets.clone(),
             state: zeros_state.clone(),
         };
-
         app.add_systems(Startup, c.get_system());
 
-        app.add_systems(PostUpdate, move |mut query: Query<(&mut Transform, &ChainLinkMesh)>, chain_states: Res<ChainStates>| {
-            chain_state_updater_loop(&chain2, &mut query, &chain_states);
-        });
+        let c = BevyChainStateUpdaterLoop {
+            chain: chain2.clone()
+        };
+        app.add_systems(PostUpdate, c.get_system());
 
-        app.add_systems(Update, move |mut robot_states: ResMut<ChainStates>, mut egui_contexts: EguiContexts, mut cursor_is_over_egui: ResMut<CursorIsOverEgui>, window_query: Query<&Window, With<PrimaryWindow>>| {
+        app.add_systems(Update, move |mut robot_states: ResMut<ChainStates>, mut egui_contexts: EguiContexts| {
             SidePanel::new(Side::Left, "side").show(egui_contexts.ctx_mut(), |ui| {
-                chain_sliders_egui(0, &chain3, ui, &mut robot_states);
-                set_cursor_is_over_egui_default(ui, &mut cursor_is_over_egui, &window_query);
+                let mut b = BevyChainSlidersEgui {
+                    chain_instance_idx: 0,
+                    chain: chain3.clone(),
+                    ui,
+                };
+                b.action_chain_sliders_egui(&mut robot_states);
             });
         });
 
         app
     }
+    */
 }

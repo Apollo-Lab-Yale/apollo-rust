@@ -4,15 +4,15 @@ use std::sync::Arc;
 use bevy::asset::{Assets, AssetServer};
 use bevy::color::Color;
 use bevy::pbr::StandardMaterial;
-use bevy::prelude::{Commands, Component, DetectChanges, Entity, Query, Res, ResMut, Resource, Transform};
+use bevy::prelude::{Commands, Component, Entity, Query, Res, ResMut, Transform};
 use bevy_egui::egui::{Slider, Ui};
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_linalg::{V};
-use apollo_rust_preprocessor::robot_modules_preprocessor::modules::mesh_modules::convex_decomposition_meshes_module::ConvexDecompositionMeshesModuleGetFullPaths;
-use apollo_rust_preprocessor::robot_modules_preprocessor::modules::mesh_modules::convex_hull_meshes_module::ConvexHullMeshesModuleGetFullPaths;
-use apollo_rust_preprocessor::robot_modules_preprocessor::modules::mesh_modules::plain_meshes_module::PlainMeshesModuleGetFullPaths;
-use apollo_rust_preprocessor::robot_modules_preprocessor::modules::mesh_modules::VecOfPathBufOptionsToVecOfVecTrait;
-use apollo_rust_robotics::{Chain};
+use apollo_rust_robotics_core::Chain;
+use apollo_rust_robotics_core::modules::mesh_modules::convex_decomposition_meshes_module::ConvexDecompositionMeshesModuleGetFullPaths;
+use apollo_rust_robotics_core::modules::mesh_modules::convex_hulls_meshes_module::ConvexHullMeshesModuleGetFullPaths;
+use apollo_rust_robotics_core::modules::mesh_modules::plain_meshes_module::PlainMeshesModuleGetFullPaths;
+use apollo_rust_robotics_core::modules::mesh_modules::VecOfPathBufOptionsToVecOfVecTrait;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::apollo_bevy_utils::gltf::spawn_gltf;
 use crate::apollo_bevy_utils::meshes::MeshType;
@@ -181,16 +181,30 @@ pub fn spawn_chain_meshes(chain_instance_idx: usize,
 }
 */
 
-pub fn pose_chain(chain_instance_idx: usize, robot: &Chain, state: &V, query: &mut Query<(&mut Transform, &ChainLinkMesh)>) {
-    let fk_res = robot.fk(state);
-    query.iter_mut().for_each(|(mut x, y)| {
-        if y.chain_instance_idx == chain_instance_idx {
-            let link_idx = y.link_idx;
-            *x = TransformUtils::util_convert_pose_to_y_up_bevy_transform(&fk_res[link_idx]);
+pub struct BevyChainSlidersEgui<'a> {
+    pub chain_instance_idx: usize,
+    pub chain: Arc<Chain>,
+    pub ui: &'a mut Ui
+}
+impl<'a> BevyChainSlidersEgui<'a> {
+    pub fn action_chain_sliders_egui(&'a mut self, chain_state: &mut ChainState) {
+        let dof_module = self.chain.dof_module();
+        let bounds_module = self.chain.bounds_module();
+        let num_dofs = dof_module.num_dofs;
+
+        let robot_state = &mut chain_state.state;
+
+        for dof_idx in 0..num_dofs {
+            let bounds = bounds_module.bounds[dof_idx];
+            self.ui.horizontal(|ui| {
+                ui.label(format!("{}: ", dof_idx));
+                ui.add(Slider::new(&mut robot_state[dof_idx], bounds.0..=bounds.1));
+            });
         }
-    });
+    }
 }
 
+/*
 pub fn chain_sliders_egui(chain_instance_idx: usize, robot: &Chain, ui: &mut Ui, chain_states: &mut ResMut<ChainStates>) {
     let dof_module = robot.dof_module();
     let bounds_module = robot.bounds_module();
@@ -206,18 +220,70 @@ pub fn chain_sliders_egui(chain_instance_idx: usize, robot: &Chain, ui: &mut Ui,
         });
     }
 }
+*/
 
+#[derive(Clone)]
+pub struct BevyChainStateUpdaterLoop {
+    pub chain_instance_idx: usize,
+    pub chain: Arc<Chain>
+}
+impl BevyChainStateUpdaterLoop {
+    pub fn action_pose_chain(chain_instance_idx: usize, chain: &Chain, state: &V, query: &mut Query<(&mut Transform, &ChainLinkMesh)>) {
+        let fk_res = chain.fk(state);
+        query.iter_mut().for_each(|(mut x, y)| {
+            if y.chain_instance_idx == chain_instance_idx {
+                let link_idx = y.link_idx;
+                *x = TransformUtils::util_convert_pose_to_y_up_bevy_transform(&fk_res[link_idx]);
+            }
+        });
+    }
+
+    pub fn get_system(self) -> impl FnMut(Query<(&mut Transform, &ChainLinkMesh)>, Query<&mut ChainState>) + 'static {
+        let c: Cow<'_, BevyChainStateUpdaterLoop> = Cow::Owned(self.clone());
+        return move | mut query1:  Query<(&mut Transform, &ChainLinkMesh)>, mut query2: Query<&mut ChainState>| {
+            for x in query2.iter() {
+                if x.chain_instance_idx == self.chain_instance_idx {
+                    Self::action_pose_chain(c.as_ref().chain_instance_idx, &c.as_ref().chain, &x.state, &mut query1);
+                }
+            }
+        }
+    }
+
+    /*
+    pub fn get_system(self) -> impl FnMut(Query<(&mut Transform, &ChainLinkMesh)>, Res<ChainStates>) + 'static {
+        let c: Cow<'_, BevyChainStateUpdaterLoop> = Cow::Owned(self.clone());
+        return move |mut query: Query<(&mut Transform, &ChainLinkMesh)>, chain_states: Res<ChainStates>| {
+            if chain_states.is_changed() {
+                chain_states.states.iter().enumerate().for_each(|(i, x)| {
+                    bevy_pose_chain(i, &c.as_ref().chain, x, &mut query);
+                });
+            }
+        }
+    }
+    */
+}
+
+/*
 pub fn chain_state_updater_loop(chain: &Chain, query: &mut Query<(&mut Transform, &ChainLinkMesh)>, chain_states: &Res<ChainStates>) {
     if chain_states.is_changed() {
         chain_states.states.iter().enumerate().for_each(|(i, x)| {
-            pose_chain(i, chain, x, query);
+            bevy_pose_chain(i, chain, x, query);
         });
     }
 }
+*/
 
+/*
 #[derive(Resource)]
 pub struct ChainStates {
     pub states: Vec<V>
+}
+*/
+
+#[derive(Component)]
+pub struct ChainState {
+    pub chain_instance_idx: usize,
+    pub state: V
 }
 
 #[derive(Clone, Debug, Copy)]

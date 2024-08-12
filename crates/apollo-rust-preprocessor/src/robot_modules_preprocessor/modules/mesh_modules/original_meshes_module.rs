@@ -6,7 +6,6 @@ use apollo_rust_mesh_utils::gltf::load_gltf_file;
 use apollo_rust_mesh_utils::mesh_object_scene::ToMeshObjectScene;
 use apollo_rust_robot_modules::ResourcesSubDirectory;
 use apollo_rust_robot_modules::robot_modules::urdf_module::{ApolloURDFGeometry, ApolloURDFModule};
-use crate::robot_modules_preprocessor::modules::mesh_modules::recover_full_paths_from_relative_paths;
 use crate::robot_modules_preprocessor::{ApolloChainCreator, ChainCreatorAction, CombinedRobot};
 use crate::robot_modules_preprocessor::AdjustedRobot;
 use apollo_rust_robot_modules::ResourcesRootDirectory;
@@ -172,13 +171,4 @@ impl PreprocessorModule for ApolloOriginalMeshesModule {
     }
 
     // create_generic_build_raw!(Self, build_from_urdf_module);
-}
-
-pub trait OriginalMeshesModuleGetFullPaths {
-    fn get_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>>;
-}
-impl OriginalMeshesModuleGetFullPaths for ApolloOriginalMeshesModule {
-    fn get_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>> {
-        recover_full_paths_from_relative_paths(s, &self.link_mesh_relative_paths)
-    }
 }

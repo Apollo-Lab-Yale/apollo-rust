@@ -7,7 +7,6 @@ use apollo_rust_mesh_utils::trimesh::ToTriMesh;
 use apollo_rust_robot_modules::ResourcesSubDirectory;
 use crate::robot_modules_preprocessor::CombinedRobot;
 use crate::robot_modules_preprocessor::AdjustedRobot;
-use crate::robot_modules_preprocessor::modules::mesh_modules::recover_full_paths_from_relative_paths;
 use apollo_rust_robot_modules::ResourcesRootDirectory;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
@@ -92,23 +91,3 @@ impl PreprocessorModule for ApolloConvexHullMeshesModule {
     create_generic_build_raw!(Self, build_from_plain_meshes_module);
 }
 
-pub trait ConvexHullMeshesModuleGetFullPaths {
-    fn get_stl_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>>;
-
-    fn get_obj_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>>;
-
-    fn get_glb_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>>;
-}
-impl ConvexHullMeshesModuleGetFullPaths for ApolloConvexHullMeshesModule {
-    fn get_stl_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>> {
-        recover_full_paths_from_relative_paths(s, &self.stl_link_mesh_relative_paths)
-    }
-
-    fn get_obj_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>> {
-        recover_full_paths_from_relative_paths(s, &self.obj_link_mesh_relative_paths)
-    }
-
-    fn get_glb_full_paths(&self, s: &ResourcesSubDirectory) -> Vec<Option<PathBuf>> {
-        recover_full_paths_from_relative_paths(s, &self.glb_link_mesh_relative_paths)
-    }
-}
