@@ -15,7 +15,7 @@ pub trait OriginalMeshesModuleBuilders: Sized {
     fn build_from_urdf_module(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
     fn build_from_combined_robot(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
     fn build_from_adjusted_robot(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
-    fn build_from_environment_creator(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
+    fn build_from_chain_creator(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
 }
 impl OriginalMeshesModuleBuilders for ApolloOriginalMeshesModule {
     fn build_from_urdf_module(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
@@ -65,14 +65,15 @@ impl OriginalMeshesModuleBuilders for ApolloOriginalMeshesModule {
 
     create_generic_build_from_adjusted_robot!(ApolloOriginalMeshesModule);
 
-    fn build_from_environment_creator(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
+    fn build_from_chain_creator(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
         let p = s.directory.clone().append("creator_module/module.json");
         let creator_module = p.load_object_from_json_file_result::<ApolloChainCreator>();
 
-        return if let Ok(environment_creator) = creator_module {
+        return if let Ok(chain_creator) = creator_module {
             let mut out = ApolloOriginalMeshesModule { link_mesh_relative_paths: vec![] };
+            out.link_mesh_relative_paths.push(None);
 
-            environment_creator.actions.iter().for_each(|action| {
+            chain_creator.actions.iter().for_each(|action| {
                 match action {
                     ChainCreatorAction::AddAlreadyExistingChain { name, .. } => {
                         let r = ResourcesRootDirectory::new(s.root_directory.clone());
@@ -158,7 +159,7 @@ impl PreprocessorModule for ApolloOriginalMeshesModule {
     }
 
     fn build_raw(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
-        let res = Self::build_from_environment_creator(s, progress_bar);
+        let res = Self::build_from_chain_creator(s, progress_bar);
         if let Ok(res) = res { return Ok(res); }
 
         let res = Self::build_from_adjusted_robot(s, progress_bar);

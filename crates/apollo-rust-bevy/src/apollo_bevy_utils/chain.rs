@@ -47,7 +47,6 @@ impl BevySpawnChainMeshes {
                     MeshType::GLB => { spawn_gltf(path.clone(), Some(pose), commands, asset_server) }
                     MeshType::OBJ => { spawn_obj(path.clone(), Color::srgba(0.6, 0.6, 0.62, 1.0), Some(pose), commands, asset_server, materials) }
                 };
-
                 tmp.push(entity.clone());
                 let mut ec = commands.get_entity(entity).unwrap();
                 ec.insert(ChainLinkMesh {
@@ -107,6 +106,7 @@ impl BevySpawnChainMeshes {
     }
 }
 
+/*
 pub fn spawn_chain_meshes_generic(chain_instance_idx: usize,
                                   mesh_type: MeshType,
                                   full_paths: Vec<Vec<PathBuf>>,
@@ -179,6 +179,7 @@ pub fn spawn_chain_meshes(chain_instance_idx: usize,
 
     res
 }
+*/
 
 pub fn pose_chain(chain_instance_idx: usize, robot: &Chain, state: &V, query: &mut Query<(&mut Transform, &ChainLinkMesh)>) {
     let fk_res = robot.fk(state);

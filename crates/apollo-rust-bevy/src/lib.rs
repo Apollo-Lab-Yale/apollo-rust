@@ -12,7 +12,7 @@ use bevy_obj::ObjPlugin;
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_robotics::Chain;
 use crate::apollo_bevy_utils::camera::CameraSystems;
-use crate::apollo_bevy_utils::chain::{chain_sliders_egui, chain_state_updater_loop, ChainLinkMesh, ChainMeshesRepresentation, ChainStates, spawn_chain_meshes};
+use crate::apollo_bevy_utils::chain::{BevySpawnChainMeshes, chain_sliders_egui, chain_state_updater_loop, ChainLinkMesh, ChainMeshesRepresentation, ChainStates};
 use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, reset_cursor_is_over_egui, set_cursor_is_over_egui_default};
 use crate::apollo_bevy_utils::meshes::MeshType;
 use crate::apollo_bevy_utils::viewport_visuals::ViewportVisualsActions;
@@ -123,14 +123,20 @@ impl ApolloChainBevyTrait for Chain {
         let chain1 = Arc::new(self.clone());
         let chain2 = chain1.clone();
         let chain3 = chain1.clone();
-        let p = Arc::new(path_to_bevy_assets.clone());
         let num_dofs = chain1.dof_module().num_dofs;
         let zeros_state = V::new(&vec![0.0; num_dofs]);
         app.insert_resource(ChainStates { states: vec![zeros_state.clone()] });
 
-        app.add_systems(Startup, move |mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<StandardMaterial>>| {
-            spawn_chain_meshes(0, ChainMeshesRepresentation::Plain, MeshType::GLB, &chain1, &zeros_state, &p, &mut commands, &asset_server, &mut materials);
-        });
+        let c = BevySpawnChainMeshes {
+            chain_instance_idx: 0,
+            chain_meshes_representation: ChainMeshesRepresentation::Plain,
+            mesh_type: MeshType::GLB,
+            chain: chain1,
+            path_to_bevy_assets: path_to_bevy_assets.clone(),
+            state: zeros_state.clone(),
+        };
+
+        app.add_systems(Startup, c.get_system());
 
         app.add_systems(PostUpdate, move |mut query: Query<(&mut Transform, &ChainLinkMesh)>, chain_states: Res<ChainStates>| {
             chain_state_updater_loop(&chain2, &mut query, &chain_states);

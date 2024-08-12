@@ -10,7 +10,7 @@ use bevy_egui::egui::panel::Side;
 use bevy_egui::egui::{SidePanel, Window as Window2};
 use apollo_rust_bevy::apollo_bevy_utils::egui::{CursorIsOverEgui, set_cursor_is_over_egui_default};
 use apollo_rust_bevy::apollo_bevy_utils::meshes::MeshType;
-use apollo_rust_bevy::apollo_bevy_utils::chain::{ChainMeshesRepresentation, spawn_chain_meshes, ChainStates, ChainLinkMesh, chain_state_updater_loop, chain_sliders_egui, BevySpawnChainMeshes};
+use apollo_rust_bevy::apollo_bevy_utils::chain::{ChainMeshesRepresentation, ChainStates, ChainLinkMesh, chain_state_updater_loop, chain_sliders_egui, BevySpawnChainMeshes};
 use apollo_rust_bevy::ApolloBevyTrait;
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
