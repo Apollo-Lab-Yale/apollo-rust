@@ -3,7 +3,6 @@ pub mod plain_meshes_module;
 pub mod convex_hull_meshes_module;
 pub mod convex_decomposition_meshes_module;
 
-use apollo_rust_file::ApolloPathBufTrait;
 
 #[macro_export]
 macro_rules! create_generic_build_from_combined_robot {

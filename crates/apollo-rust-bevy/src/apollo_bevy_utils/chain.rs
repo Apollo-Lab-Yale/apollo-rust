@@ -240,7 +240,7 @@ impl BevyChainStateUpdaterLoop {
 
     pub fn get_system(self) -> impl FnMut(Query<(&mut Transform, &ChainLinkMesh)>, Query<&mut ChainState>) + 'static {
         let c: Cow<'_, BevyChainStateUpdaterLoop> = Cow::Owned(self.clone());
-        return move | mut query1:  Query<(&mut Transform, &ChainLinkMesh)>, mut query2: Query<&mut ChainState>| {
+        return move | mut query1:  Query<(&mut Transform, &ChainLinkMesh)>, query2: Query<&mut ChainState>| {
             for x in query2.iter() {
                 if x.chain_instance_idx == self.chain_instance_idx {
                     Self::action_pose_chain(c.as_ref().chain_instance_idx, &c.as_ref().chain, &x.state, &mut query1);

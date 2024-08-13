@@ -3,17 +3,14 @@ pub mod apollo_bevy_utils;
 use std::path::PathBuf;
 use std::sync::Arc;
 use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
-use bevy_egui::{EguiContexts, EguiPlugin};
-use bevy_egui::egui::panel::Side;
-use bevy_egui::egui::SidePanel;
+use bevy_egui::{EguiPlugin};
 use bevy_mod_outline::{AsyncSceneInheritOutlinePlugin, AutoGenerateOutlineNormalsPlugin, OutlinePlugin};
 use bevy_obj::ObjPlugin;
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_robotics_core::Chain;
 use crate::apollo_bevy_utils::camera::CameraSystems;
-use crate::apollo_bevy_utils::chain::{BevyChainSlidersEgui, BevyChainStateUpdaterLoop, BevySpawnChainMeshes, ChainMeshesRepresentation, ChainState};
-use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, reset_cursor_is_over_egui, set_cursor_is_over_egui_default};
+use crate::apollo_bevy_utils::chain::{BevyChainStateUpdaterLoop, BevySpawnChainMeshes, ChainMeshesRepresentation, ChainState};
+use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, reset_cursor_is_over_egui};
 use crate::apollo_bevy_utils::meshes::MeshType;
 use crate::apollo_bevy_utils::viewport_visuals::ViewportVisualsActions;
 
@@ -23,7 +20,7 @@ pub trait ApolloBevyTrait {
     fn apollo_bevy_pan_orbit_three_style_camera(self) -> Self;
     fn apollo_bevy_starter_lights(self) -> Self;
     fn apollo_bevy_robotics_scene_visuals_start(self) -> Self;
-    fn apollo_bevy_spawn_robot(self, chain_instance_idx: usize, chain: &Chain, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType)>, path_to_bevy_assets: &PathBuf) -> Self;
+    fn apollo_bevy_spawn_robot(self, chain_counter: &mut BevyChainCounter, chain: &Chain, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType)>, path_to_bevy_assets: &PathBuf) -> Self;
 }
 impl ApolloBevyTrait for App {
     fn apollo_bevy_base(self) -> Self {
@@ -104,8 +101,10 @@ impl ApolloBevyTrait for App {
         out
     }
 
-    fn apollo_bevy_spawn_robot(self, chain_instance_idx: usize, chain: &Chain, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType)>, path_to_bevy_assets: &PathBuf) -> Self {
+    fn apollo_bevy_spawn_robot(self, chain_counter: &mut BevyChainCounter, chain: &Chain, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType)>, path_to_bevy_assets: &PathBuf) -> Self {
         let mut out = App::from(self);
+
+        let chain_instance_idx = chain_counter.0;
 
         let chain_arc = Arc::new(chain.clone());
         let zero_state = V::new(&vec![0.0; chain_arc.num_dofs()]);
@@ -135,11 +134,20 @@ impl ApolloBevyTrait for App {
             chain: chain_arc.clone(),
         };
         out.add_systems(PostUpdate, c.get_system());
-        
+
+        chain_counter.0 += 1;
+
         out
     }
 }
 
+#[derive(Clone, Debug, Copy)]
+pub struct BevyChainCounter(usize);
+impl BevyChainCounter {
+    pub fn new() -> Self {
+        Self(0)
+    }
+}
 
 pub trait ApolloChainBevyTrait {
     fn bevy_display(&self, path_to_bevy_assets: &PathBuf) {
