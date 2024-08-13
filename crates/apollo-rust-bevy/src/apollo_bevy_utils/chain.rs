@@ -1,12 +1,14 @@
-use std::borrow::Cow;
 use std::path::PathBuf;
 use std::sync::Arc;
 use bevy::asset::{Assets, AssetServer};
 use bevy::color::Color;
 use bevy::pbr::StandardMaterial;
-use bevy::prelude::{Commands, Component, Entity, Query, Res, ResMut, Transform};
-use bevy_egui::egui::{Slider, Ui};
+use bevy::prelude::{Changed, Commands, Component, Entity, Query, Res, ResMut, Transform, Window as Window1, With};
+use bevy::window::PrimaryWindow;
+use bevy_egui::egui::{SidePanel, Slider, Ui};
+use bevy_egui::EguiContexts;
 use apollo_rust_file::ApolloPathBufTrait;
+use apollo_rust_lie::LieGroupElement;
 use apollo_rust_linalg::{V};
 use apollo_rust_robotics_core::Chain;
 use apollo_rust_robotics_core::modules::mesh_modules::convex_decomposition_meshes_module::ConvexDecompositionMeshesModuleGetFullPaths;
@@ -14,6 +16,7 @@ use apollo_rust_robotics_core::modules::mesh_modules::convex_hulls_meshes_module
 use apollo_rust_robotics_core::modules::mesh_modules::plain_meshes_module::PlainMeshesModuleGetFullPaths;
 use apollo_rust_robotics_core::modules::mesh_modules::VecOfPathBufOptionsToVecOfVecTrait;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
+use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, set_cursor_is_over_egui_default};
 use crate::apollo_bevy_utils::gltf::spawn_gltf;
 use crate::apollo_bevy_utils::meshes::MeshType;
 use crate::apollo_bevy_utils::obj::spawn_obj;
@@ -99,9 +102,8 @@ impl BevySpawnChainMeshes {
     }
 
     pub fn get_system(self) -> impl FnMut(Commands, Res<AssetServer>, ResMut<Assets<StandardMaterial>>) + 'static {
-        let c: Cow<'_, BevySpawnChainMeshes> = Cow::Owned(self.clone());
         move |mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<StandardMaterial>>| {
-            c.as_ref().action_spawn_chain_meshes(&mut commands, &asset_server, &mut materials);
+            self.action_spawn_chain_meshes(&mut commands, &asset_server, &mut materials);
         }
     }
 }
@@ -181,25 +183,38 @@ pub fn spawn_chain_meshes(chain_instance_idx: usize,
 }
 */
 
-pub struct BevyChainSlidersEgui<'a> {
+pub struct BevyChainSlidersEgui {
     pub chain_instance_idx: usize,
     pub chain: Arc<Chain>,
-    pub ui: &'a mut Ui
 }
-impl<'a> BevyChainSlidersEgui<'a> {
-    pub fn action_chain_sliders_egui(&'a mut self, chain_state: &mut ChainState) {
-        let dof_module = self.chain.dof_module();
-        let bounds_module = self.chain.bounds_module();
-        let num_dofs = dof_module.num_dofs;
+impl BevyChainSlidersEgui {
+    pub fn action_chain_sliders_egui(&self, query: &mut Query<&mut ChainState>, ui: &mut Ui) {
+        query.iter_mut().for_each(|mut x| {
+            if x.chain_instance_idx == self.chain_instance_idx {
+                let dof_module = self.chain.dof_module();
+                let bounds_module = self.chain.bounds_module();
+                let num_dofs = dof_module.num_dofs;
 
-        let robot_state = &mut chain_state.state;
+                let robot_state = &mut x.state;
 
-        for dof_idx in 0..num_dofs {
-            let bounds = bounds_module.bounds[dof_idx];
-            self.ui.horizontal(|ui| {
-                ui.label(format!("{}: ", dof_idx));
-                ui.add(Slider::new(&mut robot_state[dof_idx], bounds.0..=bounds.1));
-            });
+                for dof_idx in 0..num_dofs {
+                    let bounds = bounds_module.bounds[dof_idx];
+                    ui.horizontal(|ui| {
+                        ui.label(format!("{}: ", dof_idx));
+                        ui.add(Slider::new(&mut robot_state[dof_idx], bounds.0..=bounds.1));
+                    });
+                }
+            }
+        });
+    }
+
+    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, Query<&mut ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>) + 'static {
+        return move |mut egui_contexts: EguiContexts, mut query: Query<&mut ChainState>, mut cursor_is_over_egui: ResMut<CursorIsOverEgui>, query2: Query<&Window1, With<PrimaryWindow>>| {
+            SidePanel::left(format!("chain_sliders_side_panel_chain_instance_idx_{}", self.chain_instance_idx))
+                .show(egui_contexts.ctx_mut(), |ui| {
+                    self.action_chain_sliders_egui(&mut query, ui);
+                    set_cursor_is_over_egui_default(ui, &mut cursor_is_over_egui, &query2);
+                });
         }
     }
 }
@@ -228,62 +243,32 @@ pub struct BevyChainStateUpdaterLoop {
     pub chain: Arc<Chain>
 }
 impl BevyChainStateUpdaterLoop {
-    pub fn action_pose_chain(chain_instance_idx: usize, chain: &Chain, state: &V, query: &mut Query<(&mut Transform, &ChainLinkMesh)>) {
+    pub fn action_pose_chain(chain_instance_idx: usize, chain: &Chain, state: &V, global_offset: &ISE3q, query: &mut Query<(&mut Transform, &ChainLinkMesh)>) {
         let fk_res = chain.fk(state);
         query.iter_mut().for_each(|(mut x, y)| {
             if y.chain_instance_idx == chain_instance_idx {
                 let link_idx = y.link_idx;
-                *x = TransformUtils::util_convert_pose_to_y_up_bevy_transform(&fk_res[link_idx]);
+                *x = TransformUtils::util_convert_pose_to_y_up_bevy_transform(&global_offset.group_operator(&fk_res[link_idx]));
             }
         });
     }
 
-    pub fn get_system(self) -> impl FnMut(Query<(&mut Transform, &ChainLinkMesh)>, Query<&mut ChainState>) + 'static {
-        let c: Cow<'_, BevyChainStateUpdaterLoop> = Cow::Owned(self.clone());
-        return move | mut query1:  Query<(&mut Transform, &ChainLinkMesh)>, query2: Query<&mut ChainState>| {
+    pub fn get_system(self) -> impl FnMut(Query<(&mut Transform, &ChainLinkMesh)>, Query<&mut ChainState, Changed<ChainState>>) + 'static {
+        return move | mut query1:  Query<(&mut Transform, &ChainLinkMesh)>, query2: Query<&mut ChainState, Changed<ChainState>>| {
             for x in query2.iter() {
                 if x.chain_instance_idx == self.chain_instance_idx {
-                    Self::action_pose_chain(c.as_ref().chain_instance_idx, &c.as_ref().chain, &x.state, &mut query1);
+                    Self::action_pose_chain(self.chain_instance_idx, &self.chain, &x.state, &x.global_offset, &mut query1);
                 }
             }
         }
     }
-
-    /*
-    pub fn get_system(self) -> impl FnMut(Query<(&mut Transform, &ChainLinkMesh)>, Res<ChainStates>) + 'static {
-        let c: Cow<'_, BevyChainStateUpdaterLoop> = Cow::Owned(self.clone());
-        return move |mut query: Query<(&mut Transform, &ChainLinkMesh)>, chain_states: Res<ChainStates>| {
-            if chain_states.is_changed() {
-                chain_states.states.iter().enumerate().for_each(|(i, x)| {
-                    bevy_pose_chain(i, &c.as_ref().chain, x, &mut query);
-                });
-            }
-        }
-    }
-    */
 }
-
-/*
-pub fn chain_state_updater_loop(chain: &Chain, query: &mut Query<(&mut Transform, &ChainLinkMesh)>, chain_states: &Res<ChainStates>) {
-    if chain_states.is_changed() {
-        chain_states.states.iter().enumerate().for_each(|(i, x)| {
-            bevy_pose_chain(i, chain, x, query);
-        });
-    }
-}
-*/
-
-/*
-#[derive(Resource)]
-pub struct ChainStates {
-    pub states: Vec<V>
-}
-*/
 
 #[derive(Component)]
 pub struct ChainState {
     pub chain_instance_idx: usize,
-    pub state: V
+    pub state: V,
+    pub global_offset: ISE3q
 }
 
 #[derive(Clone, Debug, Copy)]

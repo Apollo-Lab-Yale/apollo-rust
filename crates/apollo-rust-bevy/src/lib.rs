@@ -8,6 +8,7 @@ use bevy_mod_outline::{AsyncSceneInheritOutlinePlugin, AutoGenerateOutlineNormal
 use bevy_obj::ObjPlugin;
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_robotics_core::Chain;
+use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::apollo_bevy_utils::camera::CameraSystems;
 use crate::apollo_bevy_utils::chain::{BevyChainStateUpdaterLoop, BevySpawnChainMeshes, ChainMeshesRepresentation, ChainState};
 use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, reset_cursor_is_over_egui};
@@ -20,7 +21,7 @@ pub trait ApolloBevyTrait {
     fn apollo_bevy_pan_orbit_three_style_camera(self) -> Self;
     fn apollo_bevy_starter_lights(self) -> Self;
     fn apollo_bevy_robotics_scene_visuals_start(self) -> Self;
-    fn apollo_bevy_spawn_robot(self, chain_counter: &mut BevyChainCounter, chain: &Chain, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType)>, path_to_bevy_assets: &PathBuf) -> Self;
+    fn apollo_bevy_spawn_robot(self, chain: &Chain, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType)>, path_to_bevy_assets: &PathBuf) -> Self;
 }
 impl ApolloBevyTrait for App {
     fn apollo_bevy_base(self) -> Self {
@@ -28,7 +29,6 @@ impl ApolloBevyTrait for App {
 
         out
             .insert_resource(ClearColor(Color::srgb(0.9, 0.9, 0.92)))
-            .insert_resource(CursorIsOverEgui(false))
             .insert_resource(Msaa::default())
             .add_plugins(DefaultPlugins
                 .set(WindowPlugin {
@@ -42,6 +42,7 @@ impl ApolloBevyTrait for App {
             .add_plugins(EguiPlugin)
             .add_plugins(ObjPlugin)
             .add_plugins((OutlinePlugin, AutoGenerateOutlineNormalsPlugin, AsyncSceneInheritOutlinePlugin))
+            .insert_resource(CursorIsOverEgui(false))
             .add_systems(Last, reset_cursor_is_over_egui);
 
         out
@@ -101,19 +102,19 @@ impl ApolloBevyTrait for App {
         out
     }
 
-    fn apollo_bevy_spawn_robot(self, chain_counter: &mut BevyChainCounter, chain: &Chain, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType)>, path_to_bevy_assets: &PathBuf) -> Self {
+    fn apollo_bevy_spawn_robot(self, chain: &Chain, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType)>, path_to_bevy_assets: &PathBuf) -> Self {
         let mut out = App::from(self);
-
-        let chain_instance_idx = chain_counter.0;
 
         let chain_arc = Arc::new(chain.clone());
         let zero_state = V::new(&vec![0.0; chain_arc.num_dofs()]);
         let zero_state_clone = zero_state.clone();
+        let global_offset_clone = global_offset.clone();
 
         out.add_systems(Startup, move |mut commands: Commands| {
             commands.spawn(ChainState {
                 chain_instance_idx,
                 state: zero_state_clone.clone(),
+                global_offset: global_offset_clone.clone(),
             });
         });
         
@@ -135,17 +136,7 @@ impl ApolloBevyTrait for App {
         };
         out.add_systems(PostUpdate, c.get_system());
 
-        chain_counter.0 += 1;
-
         out
-    }
-}
-
-#[derive(Clone, Debug, Copy)]
-pub struct BevyChainCounter(usize);
-impl BevyChainCounter {
-    pub fn new() -> Self {
-        Self(0)
     }
 }
 
