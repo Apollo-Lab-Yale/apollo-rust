@@ -17,6 +17,7 @@ use apollo_rust_robotics_core::modules::mesh_modules::convex_hulls_meshes_module
 use apollo_rust_robotics_core::modules::mesh_modules::plain_meshes_module::PlainMeshesModuleGetFullPaths;
 use apollo_rust_robotics_core::modules::mesh_modules::VecOfPathBufOptionsToVecOfVecTrait;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
+use crate::apollo_bevy_utils::colors::BaseColor;
 use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, set_cursor_is_over_egui_default};
 use crate::apollo_bevy_utils::gltf::spawn_gltf;
 use crate::apollo_bevy_utils::meshes::MeshType;
@@ -60,6 +61,7 @@ impl BevySpawnChainMeshes {
                     link_idx,
                 });
                 commands.entity(entity).insert(self.base_visibility_mode.clone());
+                commands.entity(entity).insert(BaseColor(Color::srgba(0.6, 0.6, 0.62, 1.0)));
             });
             out.push(tmp);
         });

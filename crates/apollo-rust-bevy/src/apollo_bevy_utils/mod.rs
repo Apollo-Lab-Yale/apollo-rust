@@ -6,6 +6,6 @@ pub mod gltf;
 pub mod chain;
 pub mod obj;
 pub mod meshes;
-pub mod materials;
+pub mod colors;
 pub mod signatures;
 pub mod visibility;

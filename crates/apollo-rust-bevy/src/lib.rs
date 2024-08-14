@@ -11,10 +11,11 @@ use apollo_rust_robotics_core::Chain;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::apollo_bevy_utils::camera::CameraSystems;
 use crate::apollo_bevy_utils::chain::{BevyChainStateUpdaterLoop, BevySpawnChainMeshes, ChainMeshesRepresentation, ChainState};
+use crate::apollo_bevy_utils::colors::{ColorChangeEngine, ColorChangeSystems};
 use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, reset_cursor_is_over_egui};
 use crate::apollo_bevy_utils::meshes::MeshType;
 use crate::apollo_bevy_utils::viewport_visuals::ViewportVisualsActions;
-use crate::apollo_bevy_utils::visibility::{BaseVisibility, VisibilityEngine, VisibilitySystems};
+use crate::apollo_bevy_utils::visibility::{BaseVisibility, VisibilityChangeEngine, VisibilityChangeSystems};
 
 pub trait ApolloBevyTrait {
     fn apollo_bevy_base(self) -> Self;
@@ -44,11 +45,16 @@ impl ApolloBevyTrait for App {
             .add_plugins(ObjPlugin)
             .add_plugins((OutlinePlugin, AutoGenerateOutlineNormalsPlugin, AsyncSceneInheritOutlinePlugin))
             .insert_resource(CursorIsOverEgui(false))
-            .insert_resource(VisibilityEngine::new())
-            .add_systems(Last, VisibilitySystems::system_reset_base_visibilities.before(VisibilitySystems::system_set_base_visibility_request_changes).before(VisibilitySystems::system_set_momentary_visibility_request_changes))
-            .add_systems(Last, VisibilitySystems::system_set_base_visibility_request_changes)
-            .add_systems(Last, VisibilitySystems::system_set_momentary_visibility_request_changes)
-            .add_systems(Last, VisibilitySystems::system_clear_visibility_request_changes.after(VisibilitySystems::system_set_base_visibility_request_changes).after(VisibilitySystems::system_set_momentary_visibility_request_changes))
+            .insert_resource(VisibilityChangeEngine::new())
+            .add_systems(Last, VisibilityChangeSystems::system_reset_base_visibilities.before(VisibilityChangeSystems::system_set_base_visibility_request_changes).before(VisibilityChangeSystems::system_set_momentary_visibility_request_changes))
+            .add_systems(Last, VisibilityChangeSystems::system_set_base_visibility_request_changes)
+            .add_systems(Last, VisibilityChangeSystems::system_set_momentary_visibility_request_changes)
+            .add_systems(Last, VisibilityChangeSystems::system_clear_visibility_request_changes.after(VisibilityChangeSystems::system_set_base_visibility_request_changes).after(VisibilityChangeSystems::system_set_momentary_visibility_request_changes))
+            .insert_resource(ColorChangeEngine::new())
+            .add_systems(Last, ColorChangeSystems::system_reset_base_colors.before(ColorChangeSystems::system_set_base_color_request_changes).before(ColorChangeSystems::system_set_momentary_color_request_changes))
+            .add_systems(Last, ColorChangeSystems::system_set_base_color_request_changes)
+            .add_systems(Last, ColorChangeSystems::system_set_momentary_color_request_changes)
+            .add_systems(Last, ColorChangeSystems::system_clear_color_request_changes.after(ColorChangeSystems::system_set_base_color_request_changes).after(ColorChangeSystems::system_set_momentary_color_request_changes))
             .add_systems(Last, reset_cursor_is_over_egui);
 
         out
