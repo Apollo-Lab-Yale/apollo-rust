@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use bevy::asset::{Assets, AssetServer};
@@ -20,7 +21,9 @@ use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, set_cursor_is_over_egui_d
 use crate::apollo_bevy_utils::gltf::spawn_gltf;
 use crate::apollo_bevy_utils::meshes::MeshType;
 use crate::apollo_bevy_utils::obj::spawn_obj;
+use crate::apollo_bevy_utils::signatures::{Signature, Signatures};
 use crate::apollo_bevy_utils::transform::TransformUtils;
+use crate::apollo_bevy_utils::visibility::BaseVisibility;
 
 #[derive(Clone)]
 pub struct BevySpawnChainMeshes {
@@ -29,7 +32,8 @@ pub struct BevySpawnChainMeshes {
     pub mesh_type: MeshType,
     pub chain: Arc<Chain>,
     pub path_to_bevy_assets: PathBuf,
-    pub state: V
+    pub state: V,
+    pub base_visibility_mode: BaseVisibility
 }
 impl BevySpawnChainMeshes {
     fn spawn_chain_meshes_generic(&self,
@@ -51,11 +55,11 @@ impl BevySpawnChainMeshes {
                     MeshType::OBJ => { spawn_obj(path.clone(), Color::srgba(0.6, 0.6, 0.62, 1.0), Some(pose), commands, asset_server, materials) }
                 };
                 tmp.push(entity.clone());
-                let mut ec = commands.get_entity(entity).unwrap();
-                ec.insert(ChainLinkMesh {
+                commands.entity(entity).insert(ChainLinkMesh {
                     chain_instance_idx: self.chain_instance_idx,
                     link_idx,
                 });
+                commands.entity(entity).insert(self.base_visibility_mode.clone());
             });
             out.push(tmp);
         });
@@ -93,9 +97,67 @@ impl BevySpawnChainMeshes {
         let res = self.clone().spawn_chain_meshes_generic(&full_paths, &fk_res, commands, asset_server, materials);
 
         match &self.chain_meshes_representation {
-            ChainMeshesRepresentation::Plain => { res.iter().flatten().for_each(|x| { commands.entity(x.clone()).insert(ChainLinkPlainMesh); }); }
-            ChainMeshesRepresentation::ConvexHull => { res.iter().flatten().for_each(|x| { commands.entity(x.clone()).insert(ChainLinkConvexHullMesh); }); }
-            ChainMeshesRepresentation::ConvexDecomposition => { res.iter().flatten().for_each(|x| { commands.entity(x.clone()).insert(ChainLinkConvexDecompositionMesh); }); }
+            ChainMeshesRepresentation::Plain => {
+                res.iter().flatten().for_each(|x| {
+                    commands.entity(x.clone()).insert(ChainLinkPlainMesh);
+                });
+            }
+            ChainMeshesRepresentation::ConvexHull => {
+                res.iter().flatten().for_each(|x| {
+                    commands.entity(x.clone()).insert(ChainLinkConvexHullMesh);
+                });
+            }
+            ChainMeshesRepresentation::ConvexDecomposition => {
+                res.iter().flatten().for_each(|x| {
+                    commands.entity(x.clone()).insert(ChainLinkConvexDecompositionMesh);
+                });
+            }
+        }
+
+        match &self.chain_meshes_representation {
+            ChainMeshesRepresentation::Plain => {
+                res.iter().enumerate().for_each(|(link_idx, x)| {
+                    x.iter().enumerate().for_each(|(_i, y)| {
+                        let mut hm = HashMap::new();
+                        hm.insert(Signature::ChainLinkMesh, ());
+                        hm.insert(Signature::ChainLinkMeshInstance { chain_instance_idx: self.chain_instance_idx }, ());
+                        hm.insert(Signature::ChainLinkMeshInstanceAndLink { chain_instance_idx: self.chain_instance_idx, link_idx }, ());
+                        hm.insert(Signature::ChainLinkPlainMesh, ());
+                        hm.insert(Signature::ChainLinkPlainMeshInstance { chain_instance_idx: self.chain_instance_idx }, ());
+                        hm.insert(Signature::ChainLinkPlainMeshLink { chain_instance_idx: self.chain_instance_idx, link_idx }, ());
+                        commands.entity(y.clone()).insert(Signatures(hm));
+                    })
+                });
+            }
+            ChainMeshesRepresentation::ConvexHull => {
+                res.iter().enumerate().for_each(|(link_idx, x)| {
+                    x.iter().enumerate().for_each(|(_i, y)| {
+                        let mut hm = HashMap::new();
+                        hm.insert(Signature::ChainLinkMesh, ());
+                        hm.insert(Signature::ChainLinkMeshInstance { chain_instance_idx: self.chain_instance_idx }, ());
+                        hm.insert(Signature::ChainLinkMeshInstanceAndLink { chain_instance_idx: self.chain_instance_idx, link_idx }, ());
+                        hm.insert(Signature::ChainLinkConvexHullMesh, ());
+                        hm.insert(Signature::ChainLinkConvexHullMeshInstance { chain_instance_idx: self.chain_instance_idx }, ());
+                        hm.insert(Signature::ChainLinkConvexHullMeshLink { chain_instance_idx: self.chain_instance_idx, link_idx }, ());
+                        commands.entity(y.clone()).insert(Signatures(hm));
+                    })
+                });
+            }
+            ChainMeshesRepresentation::ConvexDecomposition => {
+                res.iter().enumerate().for_each(|(link_idx, x)| {
+                    x.iter().enumerate().for_each(|(i, y)| {
+                        let mut hm = HashMap::new();
+                        hm.insert(Signature::ChainLinkMesh, ());
+                        hm.insert(Signature::ChainLinkMeshInstance { chain_instance_idx: self.chain_instance_idx }, ());
+                        hm.insert(Signature::ChainLinkMeshInstanceAndLink { chain_instance_idx: self.chain_instance_idx, link_idx }, ());
+                        hm.insert(Signature::ChainLinkConvexDecompositionMesh, ());
+                        hm.insert(Signature::ChainLinkConvexDecompositionMeshInstance { chain_instance_idx: self.chain_instance_idx }, ());
+                        hm.insert(Signature::ChainLinkConvexDecompositionMeshLink { chain_instance_idx: self.chain_instance_idx, link_idx }, ());
+                        hm.insert(Signature::ChainLinkConvexDecompositionMeshSubcomponent { chain_instance_idx: self.chain_instance_idx, link_idx, subcomponent_idx: i }, ());
+                        commands.entity(y.clone()).insert(Signatures(hm));
+                    })
+                });
+            }
         }
 
         res

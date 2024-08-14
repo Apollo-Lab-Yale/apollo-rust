@@ -1,2 +1,5 @@
 
 
+pub struct MaterialChangeRequest {
+
+}

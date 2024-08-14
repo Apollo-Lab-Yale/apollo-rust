@@ -14,6 +14,7 @@ use crate::apollo_bevy_utils::chain::{BevyChainStateUpdaterLoop, BevySpawnChainM
 use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, reset_cursor_is_over_egui};
 use crate::apollo_bevy_utils::meshes::MeshType;
 use crate::apollo_bevy_utils::viewport_visuals::ViewportVisualsActions;
+use crate::apollo_bevy_utils::visibility::{BaseVisibility, VisibilityEngine, VisibilitySystems};
 
 pub trait ApolloBevyTrait {
     fn apollo_bevy_base(self) -> Self;
@@ -21,7 +22,7 @@ pub trait ApolloBevyTrait {
     fn apollo_bevy_pan_orbit_three_style_camera(self) -> Self;
     fn apollo_bevy_starter_lights(self) -> Self;
     fn apollo_bevy_robotics_scene_visuals_start(self) -> Self;
-    fn apollo_bevy_spawn_robot(self, chain: &Chain, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType)>, path_to_bevy_assets: &PathBuf) -> Self;
+    fn apollo_bevy_spawn_robot(self, chain: &Chain, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>, path_to_bevy_assets: &PathBuf) -> Self;
 }
 impl ApolloBevyTrait for App {
     fn apollo_bevy_base(self) -> Self {
@@ -43,6 +44,11 @@ impl ApolloBevyTrait for App {
             .add_plugins(ObjPlugin)
             .add_plugins((OutlinePlugin, AutoGenerateOutlineNormalsPlugin, AsyncSceneInheritOutlinePlugin))
             .insert_resource(CursorIsOverEgui(false))
+            .insert_resource(VisibilityEngine::new())
+            .add_systems(Last, VisibilitySystems::system_reset_base_visibilities.before(VisibilitySystems::system_set_base_visibility_request_changes).before(VisibilitySystems::system_set_momentary_visibility_request_changes))
+            .add_systems(Last, VisibilitySystems::system_set_base_visibility_request_changes)
+            .add_systems(Last, VisibilitySystems::system_set_momentary_visibility_request_changes)
+            .add_systems(Last, VisibilitySystems::system_clear_visibility_request_changes.after(VisibilitySystems::system_set_base_visibility_request_changes).after(VisibilitySystems::system_set_momentary_visibility_request_changes))
             .add_systems(Last, reset_cursor_is_over_egui);
 
         out
@@ -102,7 +108,7 @@ impl ApolloBevyTrait for App {
         out
     }
 
-    fn apollo_bevy_spawn_robot(self, chain: &Chain, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType)>, path_to_bevy_assets: &PathBuf) -> Self {
+    fn apollo_bevy_spawn_robot(self, chain: &Chain, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>, path_to_bevy_assets: &PathBuf) -> Self {
         let mut out = App::from(self);
 
         let chain_arc = Arc::new(chain.clone());
@@ -118,7 +124,7 @@ impl ApolloBevyTrait for App {
             });
         });
         
-        mesh_specs.iter().for_each(|(x, y)| {
+        mesh_specs.iter().for_each(|(x, y, z)| {
             let c = BevySpawnChainMeshes {
                 chain_instance_idx,
                 chain_meshes_representation: x.clone(),
@@ -126,6 +132,7 @@ impl ApolloBevyTrait for App {
                 chain: chain_arc.clone(),
                 path_to_bevy_assets: path_to_bevy_assets.clone(),
                 state: zero_state.clone(),
+                base_visibility_mode: z.clone(),
             };
             out.add_systems(Startup, c.get_system());
         });
