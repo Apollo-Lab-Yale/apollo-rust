@@ -52,11 +52,11 @@ impl VisibilityEngine {
 
 #[derive(Clone, Debug)]
 pub struct VisibilityRequest {
-    pub visibility_request_type: VisibilityMode,
+    pub visibility_request_type: VisibilityRequestType,
     pub signature: Signature
 }
 impl VisibilityRequest {
-    pub fn new(visibility_request_type: VisibilityMode, signature: Signature) -> Self {
+    pub fn new(visibility_request_type: VisibilityRequestType, signature: Signature) -> Self {
         Self { visibility_request_type, signature }
     }
 }
@@ -68,7 +68,7 @@ pub enum BaseVisibility {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum VisibilityMode {
+pub enum VisibilityRequestType {
     Toggle,
     On,
     Off
@@ -78,13 +78,13 @@ pub struct VisibilitySystems;
 impl VisibilitySystems {
     pub fn system_set_momentary_visibility_request_changes(engine: Res<VisibilityEngine>, mut query_visibility: Query<&mut Visibility>, query_signatures: Query<(&Signatures, Entity)>) {
         for momentary_request in &engine.momentary_requests {
-            let e = query_signatures.get_all_entities_with_signature(momentary_request.signature);
+            let e = query_signatures.get_all_entities_with_signature(momentary_request.signature.clone());
             for ee in e {
                 let mut x = query_visibility.get_mut(ee).expect("error");
                 match &momentary_request.visibility_request_type {
-                    VisibilityMode::On => { *x = Visibility::Visible }
-                    VisibilityMode::Off => { *x = Visibility::Hidden }
-                    VisibilityMode::Toggle => {
+                    VisibilityRequestType::On => { *x = Visibility::Visible }
+                    VisibilityRequestType::Off => { *x = Visibility::Hidden }
+                    VisibilityRequestType::Toggle => {
                         if *x == Visibility::Visible {
                             *x = Visibility::Hidden
                         } else if *x == Visibility::Hidden {
@@ -98,13 +98,13 @@ impl VisibilitySystems {
 
     pub fn system_set_base_visibility_request_changes(engine: Res<VisibilityEngine>, mut query_base_visibility: Query<&mut BaseVisibility>, query_signatures: Query<(&Signatures, Entity)>) {
         for request in &engine.base_change_requests {
-            let e = query_signatures.get_all_entities_with_signature(request.signature);
+            let e = query_signatures.get_all_entities_with_signature(request.signature.clone());
             for ee in e {
                 let mut x = query_base_visibility.get_mut(ee).expect("error");
                 match &request.visibility_request_type {
-                    VisibilityMode::On => { *x = BaseVisibility::On }
-                    VisibilityMode::Off => { *x = BaseVisibility::Off }
-                    VisibilityMode::Toggle => {
+                    VisibilityRequestType::On => { *x = BaseVisibility::On }
+                    VisibilityRequestType::Off => { *x = BaseVisibility::Off }
+                    VisibilityRequestType::Toggle => {
                         match &*x {
                             BaseVisibility::On => { *x = BaseVisibility::Off }
                             BaseVisibility::Off => { *x = BaseVisibility::On }

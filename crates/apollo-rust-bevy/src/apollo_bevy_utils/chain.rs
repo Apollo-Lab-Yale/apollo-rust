@@ -21,7 +21,7 @@ use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, set_cursor_is_over_egui_d
 use crate::apollo_bevy_utils::gltf::spawn_gltf;
 use crate::apollo_bevy_utils::meshes::MeshType;
 use crate::apollo_bevy_utils::obj::spawn_obj;
-use crate::apollo_bevy_utils::signatures::{Signature, Signatures};
+use crate::apollo_bevy_utils::signatures::{ChainMeshComponents, Signature, Signatures};
 use crate::apollo_bevy_utils::transform::TransformUtils;
 use crate::apollo_bevy_utils::visibility::BaseVisibility;
 
@@ -114,51 +114,18 @@ impl BevySpawnChainMeshes {
             }
         }
 
-        match &self.chain_meshes_representation {
-            ChainMeshesRepresentation::Plain => {
-                res.iter().enumerate().for_each(|(link_idx, x)| {
-                    x.iter().enumerate().for_each(|(_i, y)| {
-                        let mut hm = HashMap::new();
-                        hm.insert(Signature::ChainLinkMesh, ());
-                        hm.insert(Signature::ChainLinkMeshInstance { chain_instance_idx: self.chain_instance_idx }, ());
-                        hm.insert(Signature::ChainLinkMeshInstanceAndLink { chain_instance_idx: self.chain_instance_idx, link_idx }, ());
-                        hm.insert(Signature::ChainLinkPlainMesh, ());
-                        hm.insert(Signature::ChainLinkPlainMeshInstance { chain_instance_idx: self.chain_instance_idx }, ());
-                        hm.insert(Signature::ChainLinkPlainMeshLink { chain_instance_idx: self.chain_instance_idx, link_idx }, ());
-                        commands.entity(y.clone()).insert(Signatures(hm));
-                    })
-                });
-            }
-            ChainMeshesRepresentation::ConvexHull => {
-                res.iter().enumerate().for_each(|(link_idx, x)| {
-                    x.iter().enumerate().for_each(|(_i, y)| {
-                        let mut hm = HashMap::new();
-                        hm.insert(Signature::ChainLinkMesh, ());
-                        hm.insert(Signature::ChainLinkMeshInstance { chain_instance_idx: self.chain_instance_idx }, ());
-                        hm.insert(Signature::ChainLinkMeshInstanceAndLink { chain_instance_idx: self.chain_instance_idx, link_idx }, ());
-                        hm.insert(Signature::ChainLinkConvexHullMesh, ());
-                        hm.insert(Signature::ChainLinkConvexHullMeshInstance { chain_instance_idx: self.chain_instance_idx }, ());
-                        hm.insert(Signature::ChainLinkConvexHullMeshLink { chain_instance_idx: self.chain_instance_idx, link_idx }, ());
-                        commands.entity(y.clone()).insert(Signatures(hm));
-                    })
-                });
-            }
-            ChainMeshesRepresentation::ConvexDecomposition => {
-                res.iter().enumerate().for_each(|(link_idx, x)| {
-                    x.iter().enumerate().for_each(|(i, y)| {
-                        let mut hm = HashMap::new();
-                        hm.insert(Signature::ChainLinkMesh, ());
-                        hm.insert(Signature::ChainLinkMeshInstance { chain_instance_idx: self.chain_instance_idx }, ());
-                        hm.insert(Signature::ChainLinkMeshInstanceAndLink { chain_instance_idx: self.chain_instance_idx, link_idx }, ());
-                        hm.insert(Signature::ChainLinkConvexDecompositionMesh, ());
-                        hm.insert(Signature::ChainLinkConvexDecompositionMeshInstance { chain_instance_idx: self.chain_instance_idx }, ());
-                        hm.insert(Signature::ChainLinkConvexDecompositionMeshLink { chain_instance_idx: self.chain_instance_idx, link_idx }, ());
-                        hm.insert(Signature::ChainLinkConvexDecompositionMeshSubcomponent { chain_instance_idx: self.chain_instance_idx, link_idx, subcomponent_idx: i }, ());
-                        commands.entity(y.clone()).insert(Signatures(hm));
-                    })
-                });
-            }
-        }
+        res.iter().enumerate().for_each(|(link_idx, x)| {
+            x.iter().enumerate().for_each(|(i, y)| {
+                let mut hm = HashMap::new();
+
+                let p = ChainMeshComponents::get_power_set(self.chain_meshes_representation.clone(), self.mesh_type, self.chain_instance_idx, link_idx, i);
+                for pp in p {
+                    hm.insert(Signature::ChainLinkMesh { components: pp.clone() }, () );
+                }
+
+                commands.entity(y.clone()).insert(Signatures(hm));
+            });
+        });
 
         res
     }
@@ -333,7 +300,7 @@ pub struct ChainState {
     pub global_offset: ISE3q
 }
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ChainMeshesRepresentation {
     Plain,
     ConvexHull,
