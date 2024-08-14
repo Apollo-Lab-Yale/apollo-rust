@@ -7,10 +7,17 @@ use bevy_egui::{EguiPlugin};
 use bevy_mod_outline::{AsyncSceneInheritOutlinePlugin, AutoGenerateOutlineNormalsPlugin, OutlinePlugin};
 use bevy_obj::ObjPlugin;
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
-use apollo_rust_robotics_core::Chain;
+use apollo_rust_robot_modules::ResourcesSubDirectory;
+use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
+use apollo_rust_robot_modules::robot_modules::dof_module::ApolloDOFModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
+use apollo_rust_robot_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
+use apollo_rust_robotics_core::ChainNalgebra;
+use apollo_rust_robotics_core::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModule;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::apollo_bevy_utils::camera::CameraSystems;
-use crate::apollo_bevy_utils::chain::{BevyChainStateUpdaterLoop, BevySpawnChainMeshes, ChainMeshesRepresentation, ChainState};
+use crate::apollo_bevy_utils::chain::{BevyChainStateUpdaterLoop, BevyChainStateUpdaterLoopRaw, BevySpawnChainMeshes, BevySpawnChainMeshesRaw, ChainMeshesRepresentation, ChainState};
 use crate::apollo_bevy_utils::colors::{ColorChangeEngine, ColorChangeSystems};
 use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, reset_cursor_is_over_egui};
 use crate::apollo_bevy_utils::meshes::MeshType;
@@ -23,7 +30,19 @@ pub trait ApolloBevyTrait {
     fn apollo_bevy_pan_orbit_three_style_camera(self) -> Self;
     fn apollo_bevy_starter_lights(self) -> Self;
     fn apollo_bevy_robotics_scene_visuals_start(self) -> Self;
-    fn apollo_bevy_spawn_robot(self, chain: &Chain, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>, path_to_bevy_assets: &PathBuf) -> Self;
+    fn apollo_bevy_spawn_robot(self, chain: &ChainNalgebra, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>, path_to_bevy_assets: &PathBuf) -> Self;
+    fn apollo_bevy_spawn_robot_raw(self,
+                                   resources_sub_directory: &ResourcesSubDirectory,
+                                   urdf_module: &ApolloURDFNalgebraModule,
+                                   chain_module: &ApolloChainModule,
+                                   dof_module: &ApolloDOFModule,
+                                   plain_meshes_module: &ApolloPlainMeshesModule,
+                                   convex_hull_meshes_module: &ApolloConvexHullMeshesModule,
+                                   convex_decomposition_meshes_module: &ApolloConvexDecompositionMeshesModule,
+                                   chain_instance_idx: usize,
+                                   global_offset: ISE3q,
+                                   mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>,
+                                   path_to_bevy_assets: &PathBuf) -> Self;
 }
 impl ApolloBevyTrait for App {
     fn apollo_bevy_base(self) -> Self {
@@ -114,11 +133,35 @@ impl ApolloBevyTrait for App {
         out
     }
 
-    fn apollo_bevy_spawn_robot(self, chain: &Chain, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>, path_to_bevy_assets: &PathBuf) -> Self {
+    fn apollo_bevy_spawn_robot(self, chain: &ChainNalgebra, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>, path_to_bevy_assets: &PathBuf) -> Self {
+        return self.apollo_bevy_spawn_robot_raw(&chain.resources_sub_directory(),
+                                                &chain.urdf_module,
+                                                &chain.chain_module,
+                                                &chain.dof_module,
+                                                &chain.plain_meshes_module,
+                                                &chain.convex_hull_meshes_module,
+                                                &chain.convex_decomposition_meshes_module,
+                                                chain_instance_idx,
+                                                global_offset,
+                                                mesh_specs,
+                                                path_to_bevy_assets);
+    }
+
+    fn apollo_bevy_spawn_robot_raw(self,
+                                   resources_sub_directory: &ResourcesSubDirectory,
+                                   urdf_module: &ApolloURDFNalgebraModule,
+                                   chain_module: &ApolloChainModule,
+                                   dof_module: &ApolloDOFModule,
+                                   plain_meshes_module: &ApolloPlainMeshesModule,
+                                   convex_hull_meshes_module: &ApolloConvexHullMeshesModule,
+                                   convex_decomposition_meshes_module: &ApolloConvexDecompositionMeshesModule,
+                                   chain_instance_idx: usize,
+                                   global_offset: ISE3q,
+                                   mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>,
+                                   path_to_bevy_assets: &PathBuf) -> Self {
         let mut out = App::from(self);
 
-        let chain_arc = Arc::new(chain.clone());
-        let zero_state = V::new(&vec![0.0; chain_arc.num_dofs()]);
+        let zero_state = V::new(&vec![0.0; dof_module.num_dofs]);
         let zero_state_clone = zero_state.clone();
         let global_offset_clone = global_offset.clone();
 
@@ -129,13 +172,19 @@ impl ApolloBevyTrait for App {
                 global_offset: global_offset_clone.clone(),
             });
         });
-        
+
         mesh_specs.iter().for_each(|(x, y, z)| {
-            let c = BevySpawnChainMeshes {
+            let c = BevySpawnChainMeshesRaw {
                 chain_instance_idx,
                 chain_meshes_representation: x.clone(),
                 mesh_type: y.clone(),
-                chain: chain_arc.clone(),
+                resources_sub_directory: resources_sub_directory.clone(),
+                urdf_module: urdf_module.clone(),
+                chain_module: chain_module.clone(),
+                dof_module: dof_module.clone(),
+                plain_meshes_module: plain_meshes_module.clone(),
+                convex_hull_meshes_module: convex_hull_meshes_module.clone(),
+                convex_decomposition_meshes_module: convex_decomposition_meshes_module.clone(),
                 path_to_bevy_assets: path_to_bevy_assets.clone(),
                 state: zero_state.clone(),
                 base_visibility_mode: z.clone(),
@@ -143,9 +192,11 @@ impl ApolloBevyTrait for App {
             out.add_systems(Startup, c.get_system());
         });
 
-        let c = BevyChainStateUpdaterLoop {
+        let c = BevyChainStateUpdaterLoopRaw {
             chain_instance_idx,
-            chain: chain_arc.clone(),
+            urdf_module: urdf_module.clone(),
+            chain_module: chain_module.clone(),
+            dof_module: dof_module.clone(),
         };
         out.add_systems(PostUpdate, c.get_system());
 
@@ -160,7 +211,7 @@ pub trait ApolloChainBevyTrait {
 
     fn bevy_display_app(&self, path_to_bevy_assets: &PathBuf) -> App;
 }
-impl ApolloChainBevyTrait for Chain {
+impl ApolloChainBevyTrait for ChainNalgebra {
     fn bevy_display_app(&self, _path_to_bevy_assets: &PathBuf) -> App {
         todo!()
     }
@@ -208,4 +259,15 @@ impl ApolloChainBevyTrait for Chain {
         app
     }
     */
+}
+
+pub fn get_default_mesh_specs() -> Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)> {
+    return vec![
+        (ChainMeshesRepresentation::Plain, MeshType::OBJ, BaseVisibility::On),
+        (ChainMeshesRepresentation::Plain, MeshType::GLB, BaseVisibility::Off),
+        (ChainMeshesRepresentation::ConvexHull, MeshType::OBJ, BaseVisibility::Off),
+        (ChainMeshesRepresentation::ConvexHull, MeshType::GLB, BaseVisibility::Off),
+        (ChainMeshesRepresentation::ConvexDecomposition, MeshType::OBJ, BaseVisibility::Off),
+        (ChainMeshesRepresentation::ConvexDecomposition, MeshType::GLB, BaseVisibility::Off),
+    ];
 }

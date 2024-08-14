@@ -27,6 +27,19 @@ impl ResourcesRootDirectory {
             directory,
         }
     }
+
+    pub fn new_from_default_apollo_robots_directory() -> Self {
+        return Self {
+            directory: PathBuf::new_from_default_apollo_robots_dir(),
+        }
+    }
+
+    pub fn new_from_default_apollo_environments_directory() -> Self {
+        return Self {
+            directory: PathBuf::new_from_default_apollo_environments_dir(),
+        }
+    }
+
     pub fn get_subdirectory(&self, name: &str) -> ResourcesSubDirectory {
         let directory = self.directory().clone().append(name);
         assert!(directory.exists(), "{}", format!("directory {:?} does not exist", directory));

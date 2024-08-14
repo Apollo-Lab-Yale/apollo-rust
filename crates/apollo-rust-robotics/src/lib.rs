@@ -15,9 +15,9 @@ use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_decomposition
 use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
-use apollo_rust_robotics_core::Chain;
+use apollo_rust_robotics_core::ChainNalgebra;
 
-impl ChainBuildersTrait for Chain {
+impl ChainBuildersTrait for ChainNalgebra {
     fn new_from_root_directory(root: &ResourcesRootDirectory, robot_name: &str) -> Self {
         let s = root.get_subdirectory(robot_name);
 
@@ -65,21 +65,20 @@ pub trait ChainBuildersTrait {
     fn new_from_sub_directory(s: &ResourcesSubDirectory) -> Self;
 }
 
-
-pub trait ToChain {
-    fn to_chain(&self) -> Chain;
+pub trait ToChainNalgebra {
+    fn to_chain_nalgebra(&self) -> ChainNalgebra;
 }
-impl ToChain for ResourcesSubDirectory {
-    fn to_chain(&self) -> Chain {
-        Chain::new_from_sub_directory(self)
+impl ToChainNalgebra for ResourcesSubDirectory {
+    fn to_chain_nalgebra(&self) -> ChainNalgebra {
+        ChainNalgebra::new_from_sub_directory(self)
     }
 }
 
 pub trait ToChainFromName {
-    fn to_chain(&self, robot_name: &str) -> Chain;
+    fn to_chain(&self, robot_name: &str) -> ChainNalgebra;
 }
 impl ToChainFromName for ResourcesRootDirectory {
-    fn to_chain(&self, robot_name: &str) -> Chain {
-        Chain::new_from_root_directory(self, robot_name)
+    fn to_chain(&self, robot_name: &str) -> ChainNalgebra {
+        ChainNalgebra::new_from_root_directory(self, robot_name)
     }
 }

@@ -1,19 +1,14 @@
-use std::path::PathBuf;
-use apollo_rust_file::ApolloPathBufTrait;
-use apollo_rust_linalg::{ApolloDVectorTrait};
-use apollo_rust_preprocessor::ResourcesRootDirectoryTrait;
-use apollo_rust_preprocessor::robot_modules_preprocessor::{ApolloChainCreator, ChainCreatorAction};
+use apollo_rust_linalg::{ApolloDVectorTrait, V};
+use apollo_rust_proximity::double_group_queries::IntersectionFoundTrait;
 use apollo_rust_robot_modules::ResourcesRootDirectory;
+use apollo_rust_robotics::ToChainNalgebra;
+use apollo_rust_robotics_core::modules_runtime::link_shapes_module::{LinkShapeMode, LinkShapeRep};
 
 fn main() {
-    let r = ResourcesRootDirectory::new(PathBuf::new_from_default_apollo_environments_dir());
+    let r = ResourcesRootDirectory::new_from_default_apollo_robots_directory();
+    let s = r.get_subdirectory("ur5");
+    let c = s.to_chain_nalgebra();
 
-    ApolloChainCreator::new("test")
-        .add_action(ChainCreatorAction::AddSingleLinkFromGlbFile {
-            fp: PathBuf::new_from_desktop_dir().append("untitled.glb"),
-            object_name: "tester".to_string(),
-            parent_object: None,
-            base_offset: Default::default(),
-            scale: [1., 1., 1.],
-        }).create_and_preprocess(&r, true);
+    let res = c.self_intersect_from_state(&V::new(&[0.0; 6]), LinkShapeMode::Decomposition, LinkShapeRep::ConvexHull, false);
+    println!("{:?}", res.intersection_found());
 }

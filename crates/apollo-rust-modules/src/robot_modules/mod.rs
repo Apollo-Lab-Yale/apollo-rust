@@ -10,3 +10,4 @@ pub mod connections_module;
 pub mod bounds_module;
 pub mod link_shapes_modules;
 pub mod link_simulation_mode_module;
+pub mod bevy_modules;

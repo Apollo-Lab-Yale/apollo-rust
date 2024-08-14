@@ -1,23 +1,24 @@
 use std::path::PathBuf;
 use std::sync::Arc;
-use bevy::app::App;
+use bevy::app::{App, AppExit};
 use bevy::prelude::{ButtonInput, KeyCode, Res, ResMut, Update};
+use bevy_egui::egui::Ui;
 use apollo_rust_bevy::{ApolloBevyTrait};
-use apollo_rust_bevy::apollo_bevy_utils::chain::{BevyChainSlidersEgui, ChainMeshesRepresentation};
+use apollo_rust_bevy::apollo_bevy_utils::chain::{BevyChainSlidersEgui, BevyChainSlidersEguiRaw, ChainMeshesRepresentation};
 use apollo_rust_bevy::apollo_bevy_utils::colors::{ColorChangeEngine, ColorChangeRequest, ColorChangeRequestType};
 use apollo_rust_bevy::apollo_bevy_utils::meshes::MeshType;
 use apollo_rust_bevy::apollo_bevy_utils::signatures::{ChainMeshComponent, ChainMeshComponents, Signature};
-use apollo_rust_bevy::apollo_bevy_utils::visibility::{BaseVisibility, VisibilityChangeEngine, VisibilityChangeRequestType, VisibilityChangeRequest};
+use apollo_rust_bevy::apollo_bevy_utils::visibility::{BaseVisibility, VisibilityChangeEngine};
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_robot_modules::ResourcesRootDirectory;
-use apollo_rust_robotics::ToChain;
+use apollo_rust_robotics::ToChainNalgebra;
 use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, I3};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 
 fn main() {
     let r = ResourcesRootDirectory::new(PathBuf::new_from_default_apollo_robots_dir());
     let s = r.get_subdirectory("ur5");
-    let chain = s.to_chain();
+    let chain = s.to_chain_nalgebra();
     let chain_arc = Arc::new(chain.clone());
 
     let mut app = App::new()
@@ -32,14 +33,14 @@ fn main() {
     app.add_systems(Update, BevyChainSlidersEgui {
         chain_instance_idx: 0,
         chain: chain_arc.clone(),
-    }.get_system_side_panel_left());
+    }.get_system_side_panel_left(|_, _| { }));
 
     app.add_systems(Update, BevyChainSlidersEgui {
         chain_instance_idx: 1,
         chain: chain_arc.clone(),
-    }.get_system_side_panel_left());
+    }.get_system_side_panel_left(|ui, b| { ui.label("what's up!"); }));
 
-    app.add_systems(Update, |keys: Res<ButtonInput<KeyCode>>, mut engine: ResMut<VisibilityChangeEngine>, mut color: ResMut<ColorChangeEngine>| {
+    app.add_systems(Update, |keys: Res<ButtonInput<KeyCode>>, _engine: ResMut<VisibilityChangeEngine>, mut color: ResMut<ColorChangeEngine>| {
         if keys.pressed(KeyCode::KeyM) {
             // engine.add_base_change_request(VisibilityRequest::new(VisibilityRequestType::Toggle, Signature::ChainLinkConvexDecompositionMeshInstance { chain_instance_idx: 1 }));
             // engine.add_base_change_request(VisibilityRequest::new(VisibilityRequestType::Toggle, Signature::ChainLinkPlainMeshInstance { chain_instance_idx: 1 }));

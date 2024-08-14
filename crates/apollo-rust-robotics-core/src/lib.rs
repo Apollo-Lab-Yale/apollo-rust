@@ -134,7 +134,7 @@ impl ResourcesSingleRobotDirectory {
 
 
 #[derive(Clone)]
-pub struct Chain {
+pub struct ChainNalgebra {
     pub single_robot_directory: ResourcesSubDirectory,
     pub urdf_module: ApolloURDFNalgebraModule,
     pub chain_module: ApolloChainModule,
@@ -150,7 +150,7 @@ pub struct Chain {
     pub link_shapes_simple_skips_nalgebra_module: ApolloLinkShapesSimpleSkipsNalgebraModule,
     pub bounds_module: ApolloBoundsModule
 }
-impl Chain {
+impl ChainNalgebra {
     #[inline(always)]
     pub fn resources_sub_directory(&self) -> &ResourcesSubDirectory {
         &self.single_robot_directory
@@ -221,7 +221,7 @@ impl Chain {
         &self.bounds_module
     }
 }
-impl Chain {
+impl ChainNalgebra {
     #[inline(always)]
     pub fn num_dofs(&self) -> usize {
         self.dof_module.num_dofs
@@ -268,7 +268,7 @@ impl Chain {
     }
 
     pub fn other_chain_intersect(&self,
-                                 other_chain: &Chain,
+                                 other_chain: &ChainNalgebra,
                                  self_link_poses: &Vec<ISE3q>,
                                  self_link_shape_mode: LinkShapeMode,
                                  self_link_shape_rep: LinkShapeRep,
@@ -280,7 +280,7 @@ impl Chain {
     }
 
     pub fn other_chain_intersect_from_states(&self,
-                                             other_chain: &Chain,
+                                             other_chain: &ChainNalgebra,
                                              self_state: &V,
                                              self_link_shape_mode: LinkShapeMode,
                                              self_link_shape_rep: LinkShapeRep,
@@ -295,7 +295,7 @@ impl Chain {
     }
 
     pub fn other_chain_distance(&self,
-                                other_chain: &Chain,
+                                other_chain: &ChainNalgebra,
                                 self_link_poses: &Vec<ISE3q>,
                                 self_link_shape_mode: LinkShapeMode,
                                 self_link_shape_rep: LinkShapeRep,
@@ -307,7 +307,7 @@ impl Chain {
     }
 
     pub fn other_chain_distance_from_states(&self,
-                                            other_chain: &Chain,
+                                            other_chain: &ChainNalgebra,
                                             self_state: &V,
                                             self_link_shape_mode: LinkShapeMode,
                                             self_link_shape_rep: LinkShapeRep,
@@ -322,7 +322,7 @@ impl Chain {
     }
 
     pub fn other_chain_contact(&self,
-                               other_chain: &Chain,
+                               other_chain: &ChainNalgebra,
                                self_link_poses: &Vec<ISE3q>,
                                self_link_shape_mode: LinkShapeMode,
                                self_link_shape_rep: LinkShapeRep,
@@ -335,7 +335,7 @@ impl Chain {
     }
 
     pub fn other_chain_contact_from_states(&self,
-                                           other_chain: &Chain,
+                                           other_chain: &ChainNalgebra,
                                            self_state: &V,
                                            self_link_shape_mode: LinkShapeMode,
                                            self_link_shape_rep: LinkShapeRep,

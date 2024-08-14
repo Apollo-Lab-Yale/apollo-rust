@@ -5,3 +5,4 @@ pub mod dof_module;
 pub mod urdf_module;
 pub mod link_shapes_modules;
 pub mod mesh_modules;
+pub mod bevy_modules;

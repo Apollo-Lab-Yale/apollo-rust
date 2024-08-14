@@ -13,4 +13,5 @@ apollo-rust-lie = { path = "../apollo-rust-lie" }
 apollo-rust-robot-modules = { path = "../apollo-rust-modules" }
 apollo-rust-robotics-core = { path = "../apollo-rust-robotics-core" }
 bevy = { version = "0.14.0", features = ["dynamic_linking"] }
+bevy_egui = { version = "0.28.0" }
 
