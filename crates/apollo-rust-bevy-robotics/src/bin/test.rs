@@ -16,7 +16,7 @@ use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 
 fn main() {
     let r = ResourcesRootDirectory::new(PathBuf::new_from_default_apollo_robots_dir());
-    let s = r.get_subdirectory("ur5");
+    let s = r.get_subdirectory("b1");
     let chain = s.to_chain_nalgebra();
     let chain_arc = Arc::new(chain.clone());
 

@@ -8,6 +8,7 @@ use apollo_rust_robotics_core::modules_runtime::urdf_nalgebra_module::ApolloURDF
 use apollo_rust_robotics_core::modules_runtime::link_shapes_simple_skips_nalgebra_module::ApolloLinkShapesSimpleSkipsNalgebraModule;
 use apollo_rust_preprocessor::{PreprocessorModule};
 use apollo_rust_robot_modules::{ResourcesRootDirectory, ResourcesSubDirectory};
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_approximations_module::ApolloLinkShapesApproximationsModule;
 use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::ApolloLinkShapesDistanceStatisticsModule;
 use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
 use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_simple_skips_module::ApolloLinkShapesSimpleSkipsModule;
@@ -34,6 +35,7 @@ impl ChainBuildersTrait for ChainNalgebra {
         let convex_hull_meshes_module = ApolloConvexHullMeshesModule::load_or_build(&s, false).expect("error");
         let convex_decomposition_meshes_module = ApolloConvexDecompositionMeshesModule::load_or_build(&s, false).expect("error");
         let link_shapes_module = ApolloLinkShapesModule::from_mesh_modules(&s, &convex_hull_meshes_module, &convex_decomposition_meshes_module);
+        let link_shapes_approximations_module = ApolloLinkShapesApproximationsModule::load_or_build(&s, false).expect("error");
         let link_shapes_max_distance_from_origin_module = ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(&s, false).expect("error");
         let link_shapes_distance_statistics_module = ApolloLinkShapesDistanceStatisticsModule::load_or_build(&s, false).expect("error");
         let link_shapes_simple_skips_module = ApolloLinkShapesSimpleSkipsModule::load_or_build(&s, false).expect("error");
@@ -51,6 +53,7 @@ impl ChainBuildersTrait for ChainNalgebra {
             convex_hull_meshes_module,
             convex_decomposition_meshes_module,
             link_shapes_module,
+            link_shapes_approximations_module,
             link_shapes_max_distance_from_origin_module,
             link_shapes_distance_statistics_module,
             link_shapes_simple_skips_nalgebra_module,

@@ -28,7 +28,7 @@ pub fn spawn_gltf(file_path_relative_to_assets: PathBuf, pose: Option<&ISE3q>, c
         },
         mode: OutlineMode::RealVertex,
         ..default()
-    }).insert(AsyncSceneInheritOutline);
+    });
 
     res.insert(GLTF);
 

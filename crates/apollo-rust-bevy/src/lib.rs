@@ -10,6 +10,7 @@ use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_robot_modules::ResourcesSubDirectory;
 use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
 use apollo_rust_robot_modules::robot_modules::dof_module::ApolloDOFModule;
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_approximations_module::ApolloLinkShapesApproximationsModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
@@ -17,7 +18,7 @@ use apollo_rust_robotics_core::ChainNalgebra;
 use apollo_rust_robotics_core::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModule;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::apollo_bevy_utils::camera::CameraSystems;
-use crate::apollo_bevy_utils::chain::{BevyChainStateUpdaterLoopRaw, BevySpawnChainMeshesRaw, ChainMeshesRepresentation, ChainState};
+use crate::apollo_bevy_utils::chain::{BevyChainStateUpdaterLoopRaw, BevySpawnChainLinkApproximationsRaw, BevySpawnChainMeshesRaw, ChainMeshesRepresentation, ChainState};
 use crate::apollo_bevy_utils::colors::{ColorChangeEngine, ColorChangeSystems};
 use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, reset_cursor_is_over_egui};
 use crate::apollo_bevy_utils::meshes::MeshType;
@@ -25,7 +26,8 @@ use crate::apollo_bevy_utils::viewport_visuals::ViewportVisualsActions;
 use crate::apollo_bevy_utils::visibility::{BaseVisibility, VisibilityChangeEngine, VisibilityChangeSystems};
 
 pub trait ApolloBevyTrait {
-    fn apollo_bevy_base(self) -> Self;
+    fn apollo_bevy_base(self, disable_log: bool) -> Self;
+    fn apollo_bevy_robotics_base(self, disable_log: bool) -> Self;
     fn apollo_bevy_pan_orbit_camera(self) -> Self;
     fn apollo_bevy_pan_orbit_three_style_camera(self) -> Self;
     fn apollo_bevy_starter_lights(self) -> Self;
@@ -39,27 +41,43 @@ pub trait ApolloBevyTrait {
                                    plain_meshes_module: &ApolloPlainMeshesModule,
                                    convex_hull_meshes_module: &ApolloConvexHullMeshesModule,
                                    convex_decomposition_meshes_module: &ApolloConvexDecompositionMeshesModule,
+                                   link_shape_approximations_module: &ApolloLinkShapesApproximationsModule,
                                    chain_instance_idx: usize,
                                    global_offset: ISE3q,
                                    mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>,
                                    path_to_bevy_assets: &PathBuf) -> Self;
 }
 impl ApolloBevyTrait for App {
-    fn apollo_bevy_base(self) -> Self {
+    fn apollo_bevy_base(self, disable_log: bool) -> Self {
         let mut out = App::from(self);
+
+        if disable_log {
+            out
+                .add_plugins(DefaultPlugins.build().disable::<LogPlugin>()
+                    .set(WindowPlugin {
+                        primary_window: Some(Window {
+                            title: "APOLLO TOOLBOX".to_string(),
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    })
+                );
+        } else {
+            out
+                .add_plugins(DefaultPlugins.build()
+                    .set(WindowPlugin {
+                        primary_window: Some(Window {
+                            title: "APOLLO TOOLBOX".to_string(),
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    })
+                );
+        }
 
         out
             .insert_resource(ClearColor(Color::srgb(0.9, 0.9, 0.92)))
             .insert_resource(Msaa::default())
-            .add_plugins(DefaultPlugins.build().disable::<LogPlugin>()
-                .set(WindowPlugin {
-                    primary_window: Some(Window {
-                        title: "APOLLO TOOLBOX".to_string(),
-                        ..Default::default()
-                    }),
-                    ..Default::default()
-                })
-            )
             .add_plugins(EguiPlugin)
             .add_plugins(ObjPlugin)
             .add_plugins((OutlinePlugin, AutoGenerateOutlineNormalsPlugin, AsyncSceneInheritOutlinePlugin))
@@ -77,6 +95,16 @@ impl ApolloBevyTrait for App {
             .add_systems(Last, reset_cursor_is_over_egui);
 
         out
+    }
+
+    fn apollo_bevy_robotics_base(self, disable_log: bool) -> Self {
+        let out = App::new()
+            .apollo_bevy_base(disable_log)
+            .apollo_bevy_pan_orbit_three_style_camera()
+            .apollo_bevy_robotics_scene_visuals_start()
+            .apollo_bevy_starter_lights();
+
+        return out;
     }
 
     fn apollo_bevy_pan_orbit_camera(self) -> Self {
@@ -141,6 +169,7 @@ impl ApolloBevyTrait for App {
                                                 &chain.plain_meshes_module,
                                                 &chain.convex_hull_meshes_module,
                                                 &chain.convex_decomposition_meshes_module,
+                                                &chain.link_shapes_approximations_module,
                                                 chain_instance_idx,
                                                 global_offset,
                                                 mesh_specs,
@@ -155,6 +184,7 @@ impl ApolloBevyTrait for App {
                                    plain_meshes_module: &ApolloPlainMeshesModule,
                                    convex_hull_meshes_module: &ApolloConvexHullMeshesModule,
                                    convex_decomposition_meshes_module: &ApolloConvexDecompositionMeshesModule,
+                                   link_shape_approximations_module: &ApolloLinkShapesApproximationsModule,
                                    chain_instance_idx: usize,
                                    global_offset: ISE3q,
                                    mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>,
@@ -185,6 +215,7 @@ impl ApolloBevyTrait for App {
                 plain_meshes_module: plain_meshes_module.clone(),
                 convex_hull_meshes_module: convex_hull_meshes_module.clone(),
                 convex_decomposition_meshes_module: convex_decomposition_meshes_module.clone(),
+                link_shapes_approximations_module: link_shape_approximations_module.clone(),
                 path_to_bevy_assets: path_to_bevy_assets.clone(),
                 state: zero_state.clone(),
                 base_visibility_mode: z.clone(),
@@ -192,13 +223,26 @@ impl ApolloBevyTrait for App {
             out.add_systems(Startup, c.get_system());
         });
 
+        let c = BevySpawnChainLinkApproximationsRaw {
+            chain_instance_idx,
+            resources_sub_directory: resources_sub_directory.clone(),
+            urdf_module: urdf_module.clone(),
+            chain_module: chain_module.clone(),
+            dof_module: dof_module.clone(),
+            link_shapes_approximations_module: link_shape_approximations_module.clone(),
+            state: zero_state.clone(),
+            base_visibility_mode: BaseVisibility::Off,
+        };
+        out.add_systems(Startup, c.get_system());
+
         let c = BevyChainStateUpdaterLoopRaw {
             chain_instance_idx,
             urdf_module: urdf_module.clone(),
             chain_module: chain_module.clone(),
             dof_module: dof_module.clone(),
         };
-        out.add_systems(PostUpdate, c.get_system());
+        out.add_systems(PostUpdate, c.clone().get_system1());
+        out.add_systems(PostUpdate, c.get_system2());
 
         out
     }
