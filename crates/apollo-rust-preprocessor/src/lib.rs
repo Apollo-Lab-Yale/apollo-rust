@@ -6,6 +6,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_robot_modules::{ResourcesRootDirectory, ResourcesSubDirectory};
+use apollo_rust_robot_modules::robot_modules::bevy_modules::first_look_vis_module::ApolloFirstLookVisModule;
 use apollo_rust_robot_modules::robot_modules::bounds_module::ApolloBoundsModule;
 use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
 use apollo_rust_robot_modules::robot_modules::connections_module::ApolloConnectionsModule;
@@ -205,6 +206,7 @@ impl ResourcesSubDirectoryTrait for ResourcesSubDirectory {
         ApolloLinkShapesDistanceStatisticsModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesSimpleSkipsModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesApproximationsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloFirstLookVisModule::load_or_build(self, force_build_on_all).expect("error");
     }
 
     fn preprocess_environment(&self, force_build_on_all: bool) {
@@ -221,5 +223,6 @@ impl ResourcesSubDirectoryTrait for ResourcesSubDirectory {
         ApolloLinkShapesDistanceStatisticsModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesSimpleSkipsModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesApproximationsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloFirstLookVisModule::load_or_build(self, force_build_on_all).expect("error");
     }
 }

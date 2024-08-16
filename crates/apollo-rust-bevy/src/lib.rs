@@ -1,7 +1,7 @@
 pub mod apollo_bevy_utils;
 
 use std::path::PathBuf;
-use std::sync::Arc;
+use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy_egui::{EguiPlugin};
 use bevy_mod_outline::{AsyncSceneInheritOutlinePlugin, AutoGenerateOutlineNormalsPlugin, OutlinePlugin};
@@ -17,7 +17,7 @@ use apollo_rust_robotics_core::ChainNalgebra;
 use apollo_rust_robotics_core::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModule;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::apollo_bevy_utils::camera::CameraSystems;
-use crate::apollo_bevy_utils::chain::{BevyChainStateUpdaterLoop, BevyChainStateUpdaterLoopRaw, BevySpawnChainMeshes, BevySpawnChainMeshesRaw, ChainMeshesRepresentation, ChainState};
+use crate::apollo_bevy_utils::chain::{BevyChainStateUpdaterLoopRaw, BevySpawnChainMeshesRaw, ChainMeshesRepresentation, ChainState};
 use crate::apollo_bevy_utils::colors::{ColorChangeEngine, ColorChangeSystems};
 use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, reset_cursor_is_over_egui};
 use crate::apollo_bevy_utils::meshes::MeshType;
@@ -51,7 +51,7 @@ impl ApolloBevyTrait for App {
         out
             .insert_resource(ClearColor(Color::srgb(0.9, 0.9, 0.92)))
             .insert_resource(Msaa::default())
-            .add_plugins(DefaultPlugins
+            .add_plugins(DefaultPlugins.build().disable::<LogPlugin>()
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "APOLLO TOOLBOX".to_string(),

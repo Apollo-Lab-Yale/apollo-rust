@@ -1,10 +1,9 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 use bevy::app::{App, AppExit};
-use bevy::prelude::{ButtonInput, KeyCode, Res, ResMut, Update};
-use bevy_egui::egui::Ui;
+use bevy::prelude::{ButtonInput, EventWriter, KeyCode, Res, ResMut, Update};
 use apollo_rust_bevy::{ApolloBevyTrait};
-use apollo_rust_bevy::apollo_bevy_utils::chain::{BevyChainSlidersEgui, BevyChainSlidersEguiRaw, ChainMeshesRepresentation};
+use apollo_rust_bevy::apollo_bevy_utils::chain::{BevyChainSlidersEgui, ChainMeshesRepresentation};
 use apollo_rust_bevy::apollo_bevy_utils::colors::{ColorChangeEngine, ColorChangeRequest, ColorChangeRequestType};
 use apollo_rust_bevy::apollo_bevy_utils::meshes::MeshType;
 use apollo_rust_bevy::apollo_bevy_utils::signatures::{ChainMeshComponent, ChainMeshComponents, Signature};
@@ -38,9 +37,9 @@ fn main() {
     app.add_systems(Update, BevyChainSlidersEgui {
         chain_instance_idx: 1,
         chain: chain_arc.clone(),
-    }.get_system_side_panel_left(|ui, b| { ui.label("what's up!"); }));
+    }.get_system_side_panel_left(|ui, _b| { ui.label("what's up!"); }));
 
-    app.add_systems(Update, |keys: Res<ButtonInput<KeyCode>>, _engine: ResMut<VisibilityChangeEngine>, mut color: ResMut<ColorChangeEngine>| {
+    app.add_systems(Update, |keys: Res<ButtonInput<KeyCode>>, _engine: ResMut<VisibilityChangeEngine>, mut color: ResMut<ColorChangeEngine>, mut exit: EventWriter<AppExit>| {
         if keys.pressed(KeyCode::KeyM) {
             // engine.add_base_change_request(VisibilityRequest::new(VisibilityRequestType::Toggle, Signature::ChainLinkConvexDecompositionMeshInstance { chain_instance_idx: 1 }));
             // engine.add_base_change_request(VisibilityRequest::new(VisibilityRequestType::Toggle, Signature::ChainLinkPlainMeshInstance { chain_instance_idx: 1 }));
@@ -48,7 +47,13 @@ fn main() {
             // engine.add_base_change_request(VisibilityChangeRequest::new(VisibilityChangeRequestType::Toggle, Signature::ChainLinkMesh { components: ChainMeshComponents::new(vec![ChainMeshComponent::ChainInstanceIdx(1), ChainMeshComponent::LinkIdx(3), ChainMeshComponent::SubcomponentIdx(0), ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::Plain)]) }));
             color.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::HighPriorityAlpha(0.2), Signature::ChainLinkMesh { components: ChainMeshComponents(vec![ ChainMeshComponent::ChainInstanceIdx(1)]) }));
         }
+
+        if keys.just_pressed(KeyCode::Escape) {
+            exit.send(AppExit::Success);
+        }
     });
 
     app.run();
+
+    // println!("got here!");
 }
