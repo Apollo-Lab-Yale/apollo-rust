@@ -31,5 +31,11 @@ crate-type = ["cdylib", "rlib"]
 opt-level = 3
 
 [profile.release]
+lto = true
 opt-level = 3
-# lto = "thin"
+codegen-units = 1
+incremental = false
+debug = false
+
+[profile.dev.package."*"]
+opt-level = 3

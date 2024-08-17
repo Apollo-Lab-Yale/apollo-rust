@@ -73,6 +73,14 @@ pub enum VisibilityChangeRequestType {
     On,
     Off
 }
+impl VisibilityChangeRequestType {
+    pub fn new_from_bool(b: bool) -> Self {
+        match b {
+            true => { Self::On }
+            false => { Self::Off }
+        }
+    }
+}
 
 pub struct VisibilityChangeSystems;
 impl VisibilityChangeSystems {

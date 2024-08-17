@@ -33,6 +33,11 @@ pub enum Signature {
 pub enum Signature {
     ChainLinkMesh { components: ChainMeshComponents }
 }
+impl Signature {
+    pub fn new_chain_link_mesh(c: Vec<ChainMeshComponent>) -> Self {
+        Self::ChainLinkMesh { components: ChainMeshComponents::new(c) }
+    }
+}
 
 #[derive(Debug, Clone, Eq, PartialOrd, Ord)]
 pub struct ChainMeshComponents(pub Vec<ChainMeshComponent>);
@@ -40,7 +45,11 @@ impl ChainMeshComponents {
     pub fn new(field0: Vec<ChainMeshComponent>) -> Self {
         Self(field0)
     }
-    pub fn get_power_set(chain_meshes_representation: ChainMeshesRepresentation, mesh_type: MeshType, chain_instance_idx: usize, link_idx: usize, subcomponent_idx: usize) -> Vec<Self> {
+    pub fn get_power_set_general(original_set: Vec<ChainMeshComponent>) -> Vec<Self> {
+        let p = power_set(original_set);
+        p.iter().map(|x| ChainMeshComponents(x.clone())).collect()
+    }
+    pub fn get_power_set_default(chain_meshes_representation: ChainMeshesRepresentation, mesh_type: MeshType, chain_instance_idx: usize, link_idx: usize, subcomponent_idx: usize) -> Vec<Self> {
         let v = vec![
             ChainMeshComponent::ChainMeshesRepresentation(chain_meshes_representation.clone()),
             ChainMeshComponent::MeshType(mesh_type.clone()),

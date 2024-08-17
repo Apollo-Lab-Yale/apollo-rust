@@ -74,11 +74,38 @@ pub enum ColorChangeRequestType {
     HighPriorityColor { r: f32, g: f32, b: f32, a: f32 },
     HighPriorityAlpha(f32),
 }
+impl ColorChangeRequestType {
+    pub fn low_priority_color(r: f32, g: f32, b: f32, a: f32) -> Self {
+        ColorChangeRequestType::LowPriorityColor { r, g, b, a }
+    }
+
+    pub fn low_priority_alpha(alpha: f32) -> Self {
+        ColorChangeRequestType::LowPriorityAlpha(alpha)
+    }
+
+    pub fn medium_priority_color(r: f32, g: f32, b: f32, a: f32) -> Self {
+        ColorChangeRequestType::MediumPriorityColor { r, g, b, a }
+    }
+
+    pub fn medium_priority_alpha(alpha: f32) -> Self {
+        ColorChangeRequestType::MediumPriorityAlpha(alpha)
+    }
+
+    pub fn high_priority_color(r: f32, g: f32, b: f32, a: f32) -> Self {
+        ColorChangeRequestType::HighPriorityColor { r, g, b, a }
+    }
+
+    pub fn high_priority_alpha(alpha: f32) -> Self {
+        ColorChangeRequestType::HighPriorityAlpha(alpha)
+    }
+}
 
 pub struct ColorChangeSystems;
 impl ColorChangeSystems {
     pub fn system_set_momentary_color_request_changes(engine: Res<ColorChangeEngine>, mut materials: ResMut<Assets<StandardMaterial>>, query_materials: Query<&Handle<StandardMaterial>>, query_signatures: Query<(&Signatures, Entity)>) {
-        for momentary_request in &engine.momentary_requests {
+        let mut requests = engine.momentary_requests.clone();
+        requests.sort_by(|x, y| x.color_change_request_type.partial_cmp(&y.color_change_request_type).unwrap() );
+        for momentary_request in &requests {
             let e = query_signatures.get_all_entities_with_signature(momentary_request.signature.clone());
             for ee in e {
                 let x = query_materials.get(ee);
@@ -116,7 +143,9 @@ impl ColorChangeSystems {
     }
 
     pub fn system_set_base_color_request_changes(engine: Res<ColorChangeEngine>, mut query_base_colors: Query<&mut BaseColor>, query_signatures: Query<(&Signatures, Entity)>) {
-        for request in &engine.base_change_requests {
+        let mut requests = engine.base_change_requests.clone();
+        requests.sort_by(|x, y| x.color_change_request_type.partial_cmp(&y.color_change_request_type).unwrap() );
+        for request in &requests {
             let e = query_signatures.get_all_entities_with_signature(request.signature.clone());
             for ee in e {
                 let mut x = query_base_colors.get_mut(ee).expect("error");

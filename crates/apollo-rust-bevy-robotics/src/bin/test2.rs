@@ -1,9 +1,12 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
-use bevy::prelude::{App, Update};
+use bevy::prelude::{App, AppExit, ButtonInput, EventWriter, KeyCode, Res, ResMut, Update};
 use apollo_rust_bevy::{ApolloBevyTrait, get_default_mesh_specs};
-use apollo_rust_bevy::apollo_bevy_utils::chain::BevyChainSlidersEgui;
+use apollo_rust_bevy::apollo_bevy_utils::chain::{BevyChainLinkVisibilitySelector, BevyChainSlidersEgui, ChainMeshesRepresentation};
+use apollo_rust_bevy::apollo_bevy_utils::colors::{ColorChangeEngine};
+use apollo_rust_bevy::apollo_bevy_utils::signatures::{ChainMeshComponent, ChainMeshComponents, Signature};
+use apollo_rust_bevy::apollo_bevy_utils::visibility::{VisibilityChangeEngine, VisibilityChangeRequest, VisibilityChangeRequestType};
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_robot_modules::ResourcesRootDirectory;
 use apollo_rust_robotics::ToChainNalgebra;
@@ -27,9 +30,27 @@ fn main() {
         chain: chain_arc.clone(),
     }.get_system_side_panel_left(|_, _| { }));
 
+    app.add_systems(Update, BevyChainLinkVisibilitySelector {
+        chain_instance_idx: 0,
+        chain: chain_arc.clone(),
+    }.get_system_side_panel_left());
 
     app.add_plugins(FrameTimeDiagnosticsPlugin::default());
     app.add_plugins(LogDiagnosticsPlugin::default());
+
+    app.add_systems(Update, |keys: Res<ButtonInput<KeyCode>>, mut engine: ResMut<VisibilityChangeEngine>, _color: ResMut<ColorChangeEngine>, mut exit: EventWriter<AppExit>| {
+        if keys.just_pressed(KeyCode::KeyM) {
+            // engine.add_base_change_request(VisibilityRequest::new(VisibilityRequestType::Toggle, Signature::ChainLinkConvexDecompositionMeshInstance { chain_instance_idx: 1 }));
+            // engine.add_base_change_request(VisibilityRequest::new(VisibilityRequestType::Toggle, Signature::ChainLinkPlainMeshInstance { chain_instance_idx: 1 }));
+
+            engine.add_base_change_request(VisibilityChangeRequest::new(VisibilityChangeRequestType::Toggle, Signature::ChainLinkMesh { components: ChainMeshComponents::new(vec![ChainMeshComponent::ChainInstanceIdx(0), ChainMeshComponent::LinkIdx(3), ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::OBBFull)]) }));
+            // color.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::HighPriorityAlpha(0.2), Signature::ChainLinkMesh { components: ChainMeshComponents(vec![ ChainMeshComponent::ChainInstanceIdx(1)]) }));
+        }
+
+        if keys.just_pressed(KeyCode::Escape) {
+            exit.send(AppExit::Success);
+        }
+    });
 
     // app.add_systems(Update, BevyChainSlidersEgui {
     //     chain_instance_idx: 1,
