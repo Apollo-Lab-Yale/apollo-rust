@@ -36,14 +36,15 @@ impl RobotProximityFunctions {
                                   link_shape_mode_b: LinkShapeMode,
                                   link_shape_rep_b: LinkShapeRep,
                                   skips: Option<&DMatrix<bool>>,
-                                  early_stop: bool) -> DoubleGroupProximityQueryOutput<bool> {
+                                  early_stop: bool,
+                                  double_group_proximity_query_mode: &DoubleGroupProximityQueryMode) -> DoubleGroupProximityQueryOutput<bool> {
         let shapes_a = link_shapes_module_a.get_shapes(link_shape_mode_a, link_shape_rep_a);
         let poses_a = link_shapes_module_a.link_poses_to_shape_poses(link_poses_a, link_shape_mode_a);
 
         let shapes_b = link_shapes_module_b.get_shapes(link_shape_mode_b, link_shape_rep_b);
         let poses_b = link_shapes_module_b.link_poses_to_shape_poses(link_poses_b, link_shape_mode_b);
 
-        pairwise_group_query_intersection(shapes_a, &poses_a, shapes_b, &poses_b, &DoubleGroupProximityQueryMode::AllPossiblePairs, skips, early_stop, ())
+        pairwise_group_query_intersection(shapes_a, &poses_a, shapes_b, &poses_b, double_group_proximity_query_mode, skips, early_stop, ())
     }
 
     pub fn double_chain_distance(link_shapes_module_a: &ApolloLinkShapesModule,
@@ -55,14 +56,15 @@ impl RobotProximityFunctions {
                                   link_shape_mode_b: LinkShapeMode,
                                   link_shape_rep_b: LinkShapeRep,
                                   skips: Option<&DMatrix<bool>>,
-                                  early_stop: bool) -> DoubleGroupProximityQueryOutput<f64> {
+                                  early_stop: bool,
+                                 double_group_proximity_query_mode: &DoubleGroupProximityQueryMode) -> DoubleGroupProximityQueryOutput<f64> {
         let shapes_a = link_shapes_module_a.get_shapes(link_shape_mode_a, link_shape_rep_a);
         let poses_a = link_shapes_module_a.link_poses_to_shape_poses(link_poses_a, link_shape_mode_a);
 
         let shapes_b = link_shapes_module_b.get_shapes(link_shape_mode_b, link_shape_rep_b);
         let poses_b = link_shapes_module_b.link_poses_to_shape_poses(link_poses_b, link_shape_mode_b);
 
-        pairwise_group_query_distance(shapes_a, &poses_a, shapes_b, &poses_b, &DoubleGroupProximityQueryMode::AllPossiblePairs, skips, early_stop, ())
+        pairwise_group_query_distance(shapes_a, &poses_a, shapes_b, &poses_b, double_group_proximity_query_mode, skips, early_stop, ())
     }
 
     pub fn double_chain_contact(link_shapes_module_a: &ApolloLinkShapesModule,
@@ -75,13 +77,14 @@ impl RobotProximityFunctions {
                                 link_shape_rep_b: LinkShapeRep,
                                 skips: Option<&DMatrix<bool>>,
                                 early_stop: bool,
-                                margin: f64) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
+                                margin: f64,
+                                double_group_proximity_query_mode: &DoubleGroupProximityQueryMode) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
         let shapes_a = link_shapes_module_a.get_shapes(link_shape_mode_a, link_shape_rep_a);
         let poses_a = link_shapes_module_a.link_poses_to_shape_poses(link_poses_a, link_shape_mode_a);
 
         let shapes_b = link_shapes_module_b.get_shapes(link_shape_mode_b, link_shape_rep_b);
         let poses_b = link_shapes_module_b.link_poses_to_shape_poses(link_poses_b, link_shape_mode_b);
 
-        pairwise_group_query_contact(shapes_a, &poses_a, shapes_b, &poses_b, &DoubleGroupProximityQueryMode::AllPossiblePairs, skips, early_stop, margin)
+        pairwise_group_query_contact(shapes_a, &poses_a, shapes_b, &poses_b, double_group_proximity_query_mode, skips, early_stop, margin)
     }
 }

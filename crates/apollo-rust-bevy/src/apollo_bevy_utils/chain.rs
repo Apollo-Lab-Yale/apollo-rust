@@ -6,13 +6,16 @@ use bevy::color::Color;
 use bevy::pbr::{PbrBundle, StandardMaterial};
 use bevy::prelude::{Changed, Commands, Component, Cuboid, default, Entity, Mesh, Query, Res, ResMut, Sphere, Transform, Window as Window1, With, Without};
 use bevy::window::PrimaryWindow;
-use bevy_egui::egui::{ScrollArea, SidePanel, Slider, Ui};
+use bevy_egui::egui::{ComboBox, ScrollArea, SidePanel, Slider, Ui};
 use bevy_egui::EguiContexts;
 use bevy_mod_outline::{OutlineBundle, OutlineMode, OutlineVolume};
+use nalgebra::DMatrix;
+use parry3d_f64::query::Contact;
 use apollo_rust_algs::VecOfOptionsToVecOfVecsTrait;
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_lie::LieGroupElement;
 use apollo_rust_linalg::{V};
+use apollo_rust_proximity::double_group_queries::{ConvertToAverageDistancesTrait, DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput, SortDoubleGroupProximityQueryOutputTrait};
 use apollo_rust_robot_modules::ResourcesSubDirectory;
 use apollo_rust_robot_modules::robot_modules::bounds_module::ApolloBoundsModule;
 use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
@@ -26,8 +29,10 @@ use apollo_rust_robotics_core::modules::mesh_modules::convex_decomposition_meshe
 use apollo_rust_robotics_core::modules::mesh_modules::convex_hulls_meshes_module::ConvexHullMeshesModuleGetFullPaths;
 use apollo_rust_robotics_core::modules::mesh_modules::plain_meshes_module::PlainMeshesModuleGetFullPaths;
 use apollo_rust_robotics_core::modules::mesh_modules::VecOfPathBufOptionsToVecOfVecTrait;
+use apollo_rust_robotics_core::modules_runtime::link_shapes_module::{ApolloLinkShapesModule, LinkShapeMode, LinkShapeRep};
 use apollo_rust_robotics_core::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModule;
 use apollo_rust_robotics_core::robot_functions::robot_kinematics_functions::RobotKinematicsFunctions;
+use apollo_rust_robotics_core::robot_functions::robot_proximity_functions::RobotProximityFunctions;
 use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, I3};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use apollo_rust_spatial::vectors::V3;
@@ -158,7 +163,7 @@ impl BevySpawnChainLinkApproximationsRaw {
 
         e.iter().enumerate().for_each(|(link_idx, x)| {
             x.iter().enumerate().for_each(|(s, y)| {
-                let original_set = vec![ ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::BoundingSphereFull), ChainMeshComponent::ChainInstanceIdx(self.chain_instance_idx), ChainMeshComponent::LinkIdx(link_idx), ChainMeshComponent::SubcomponentIdx(s) ];
+                let original_set = vec![ ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::BoundingSphereFull), ChainMeshComponent::ChainInstanceIdx(self.chain_instance_idx), ChainMeshComponent::LinkIdx(link_idx), ChainMeshComponent::SubcomponentIdx(s), ChainMeshComponent::MeshType(MeshType::OBJ), ChainMeshComponent::MeshType(MeshType::GLB) ];
                 let p = ChainMeshComponents::get_power_set_general(original_set);
                 let mut m = HashMap::new();
                 p.iter().for_each(|x| { m.insert(Signature::ChainLinkMesh { components: x.clone() }, () ); });
@@ -171,7 +176,7 @@ impl BevySpawnChainLinkApproximationsRaw {
 
         e.iter().enumerate().for_each(|(link_idx, x)| {
             x.iter().enumerate().for_each(|(s, y)| {
-                let original_set = vec![ ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::BoundingSphereDecomposition), ChainMeshComponent::ChainInstanceIdx(self.chain_instance_idx), ChainMeshComponent::LinkIdx(link_idx), ChainMeshComponent::SubcomponentIdx(s) ];
+                let original_set = vec![ ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::BoundingSphereDecomposition), ChainMeshComponent::ChainInstanceIdx(self.chain_instance_idx), ChainMeshComponent::LinkIdx(link_idx), ChainMeshComponent::SubcomponentIdx(s), ChainMeshComponent::MeshType(MeshType::OBJ), ChainMeshComponent::MeshType(MeshType::GLB) ];
                 let p = ChainMeshComponents::get_power_set_general(original_set);
                 let mut m = HashMap::new();
                 p.iter().for_each(|x| { m.insert(Signature::ChainLinkMesh { components: x.clone() }, () ); });
@@ -184,7 +189,7 @@ impl BevySpawnChainLinkApproximationsRaw {
 
         e.iter().enumerate().for_each(|(link_idx, x)| {
             x.iter().enumerate().for_each(|(s, y)| {
-                let original_set = vec![ ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::OBBFull), ChainMeshComponent::ChainInstanceIdx(self.chain_instance_idx), ChainMeshComponent::LinkIdx(link_idx), ChainMeshComponent::SubcomponentIdx(s) ];
+                let original_set = vec![ ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::OBBFull), ChainMeshComponent::ChainInstanceIdx(self.chain_instance_idx), ChainMeshComponent::LinkIdx(link_idx), ChainMeshComponent::SubcomponentIdx(s), ChainMeshComponent::MeshType(MeshType::OBJ), ChainMeshComponent::MeshType(MeshType::GLB) ];
                 let p = ChainMeshComponents::get_power_set_general(original_set);
                 let mut m = HashMap::new();
                 p.iter().for_each(|x| { m.insert(Signature::ChainLinkMesh { components: x.clone() }, () ); });
@@ -197,7 +202,7 @@ impl BevySpawnChainLinkApproximationsRaw {
 
         e.iter().enumerate().for_each(|(link_idx, x)| {
             x.iter().enumerate().for_each(|(s, y)| {
-                let original_set = vec![ ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::OBBDecomposition), ChainMeshComponent::ChainInstanceIdx(self.chain_instance_idx), ChainMeshComponent::LinkIdx(link_idx), ChainMeshComponent::SubcomponentIdx(s) ];
+                let original_set = vec![ ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::OBBDecomposition), ChainMeshComponent::ChainInstanceIdx(self.chain_instance_idx), ChainMeshComponent::LinkIdx(link_idx), ChainMeshComponent::SubcomponentIdx(s), ChainMeshComponent::MeshType(MeshType::OBJ), ChainMeshComponent::MeshType(MeshType::GLB) ];
                 let p = ChainMeshComponents::get_power_set_general(original_set);
                 let mut m = HashMap::new();
                 p.iter().for_each(|x| { m.insert(Signature::ChainLinkMesh { components: x.clone() }, () ); });
@@ -885,6 +890,177 @@ impl BevyChainStateUpdaterLoop {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+pub struct BevyChainProximityVisualizerRaw {
+    pub chain_instance_idx_a: usize,
+    pub chain_instance_idx_b: usize,
+    pub urdf_module_a: ApolloURDFNalgebraModule,
+    pub urdf_module_b: ApolloURDFNalgebraModule,
+    pub chain_module_a: ApolloChainModule,
+    pub chain_module_b: ApolloChainModule,
+    pub dof_module_a: ApolloDOFModule,
+    pub dof_module_b: ApolloDOFModule,
+    pub link_shapes_module_a: ApolloLinkShapesModule,
+    pub link_shapes_module_b: ApolloLinkShapesModule,
+    pub double_group_proximity_query_mode: DoubleGroupProximityQueryMode
+}
+impl BevyChainProximityVisualizerRaw {
+    pub fn action_chain_proximity_visualizer_static(ui: &mut Ui,
+                                                    state_a: &V,
+                                                    state_b: &V,
+                                                    chain_instance_idx_a: usize,
+                                                    chain_instance_idx_b: usize,
+                                                    urdf_module_a: &ApolloURDFNalgebraModule,
+                                                    urdf_module_b: &ApolloURDFNalgebraModule,
+                                                    chain_module_a: &ApolloChainModule,
+                                                    chain_module_b: &ApolloChainModule,
+                                                    dof_module_a: &ApolloDOFModule,
+                                                    dof_module_b: &ApolloDOFModule,
+                                                    link_shapes_module_a: &ApolloLinkShapesModule,
+                                                    link_shapes_module_b: &ApolloLinkShapesModule,
+                                                    double_group_proximity_query_mode: DoubleGroupProximityQueryMode,
+                                                    link_shape_mode_a: &LinkShapeMode,
+                                                    link_shape_mode_b: &LinkShapeMode,
+                                                    link_shape_rep_a: &LinkShapeRep,
+                                                    link_shape_rep_b: &LinkShapeRep,
+                                                    skips: Option<&DMatrix<bool>>,
+                                                    average_distances: Option<&DMatrix<f64>>,
+                                                    color_change_engine: &mut ResMut<ColorChangeEngine>) {
+        let fk_res_a = RobotKinematicsFunctions::fk(state_a, urdf_module_a, chain_module_a, dof_module_a);
+        let fk_res_b = RobotKinematicsFunctions::fk(state_b, urdf_module_b, chain_module_b, dof_module_b);
+        let res = RobotProximityFunctions::double_chain_contact(link_shapes_module_a, &fk_res_a, link_shape_mode_a.clone(), link_shape_rep_a.clone(), link_shapes_module_b, &fk_res_b, link_shape_mode_b.clone(), link_shape_rep_b.clone(), skips, false, f64::INFINITY, &double_group_proximity_query_mode);
+        let res = res.sort();
+        let average_res = match average_distances {
+            None => { None }
+            Some(average_distances) => { Some(res.to_average_distances(average_distances).sort()) }
+        };
+
+        ScrollArea::vertical().id_source("proximity_visualizer1").max_height(400.0).show(ui, |ui| {
+            Self::action_chain_proximity_visualizer_panel(ui, &res, chain_instance_idx_a, chain_instance_idx_b, link_shapes_module_a, link_shapes_module_b, link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, color_change_engine);
+        });
+
+        match average_res {
+            Some(average_res) => {
+                ui.heading("Pairwise Distances wrt Average");
+                ScrollArea::vertical().id_source("proximity_visualizer2").max_height(400.0).show(ui, |ui| {
+                    Self::action_chain_proximity_visualizer_panel(ui, &average_res, chain_instance_idx_a, chain_instance_idx_b, link_shapes_module_a, link_shapes_module_b, link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, color_change_engine);
+                });
+            }
+            _ => { }
+        }
+    }
+
+    pub fn action_chain_proximity_visualizer(&self,
+                                             ui: &mut Ui,
+                                             state_a: &V,
+                                             state_b: &V,
+                                             link_shape_mode_a: &LinkShapeMode,
+                                             link_shape_mode_b: &LinkShapeMode,
+                                             link_shape_rep_a: &LinkShapeRep,
+                                             link_shape_rep_b: &LinkShapeRep,
+                                             skips: Option<&DMatrix<bool>>,
+                                             average_distances: Option<&DMatrix<f64>>,
+                                             color_change_engine: &mut ResMut<ColorChangeEngine>) {
+        Self::action_chain_proximity_visualizer_static(ui, state_a, state_b, self.chain_instance_idx_a, self.chain_instance_idx_b, &self.urdf_module_a, &self.urdf_module_b, &self.chain_module_a, &self.chain_module_b, &self.dof_module_a, &self.dof_module_b, &self.link_shapes_module_a, &self.link_shapes_module_b, self.double_group_proximity_query_mode.clone(), link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, skips, average_distances, color_change_engine);
+    }
+
+    pub fn action_chain_proximity_visualizer_panel(ui: &mut Ui,
+                                                   res: &DoubleGroupProximityQueryOutput<Option<Contact>>,
+                                                   chain_instance_idx_a: usize,
+                                                   chain_instance_idx_b: usize,
+                                                   link_shapes_module_a: &ApolloLinkShapesModule,
+                                                   link_shapes_module_b: &ApolloLinkShapesModule,
+                                                   link_shape_mode_a: &LinkShapeMode,
+                                                   link_shape_mode_b: &LinkShapeMode,
+                                                   link_shape_rep_a: &LinkShapeRep,
+                                                   link_shape_rep_b: &LinkShapeRep,
+                                                   color_change_engine: &mut ResMut<ColorChangeEngine>) {
+        res.outputs.iter().zip(res.shape_idxs.iter()).for_each(|(c, (i, j))| {
+            let c = c.as_ref().unwrap();
+            let link_idxs_a = link_shapes_module_a.get_link_idx_and_subcomponent_idx(*i, link_shape_mode_a);
+            let link_idxs_b = link_shapes_module_b.get_link_idx_and_subcomponent_idx(*j, link_shape_mode_b);
+
+            ui.label(format!("link {:?} <--> link {:?}", link_idxs_a, link_idxs_b));
+            ui.label(format!("distance: {:?}", c.dist));
+            if ui.radio(false, "Display").hovered() {
+                color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::low_priority_alpha(0.2), Signature::new_chain_link_mesh(vec![])));
+                color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::high_priority_color(0.5, 0.7, 0.8, 0.95), Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::from_link_shape_mode_and_link_shape_rep(link_shape_mode_a, link_shape_rep_a)), ChainMeshComponent::ChainInstanceIdx(chain_instance_idx_a), ChainMeshComponent::LinkIdx(link_idxs_a.0), ChainMeshComponent::SubcomponentIdx(link_idxs_a.1)])));
+                color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::high_priority_color(0.8, 0.7, 0.4, 0.95), Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::from_link_shape_mode_and_link_shape_rep(link_shape_mode_b, link_shape_rep_b)), ChainMeshComponent::ChainInstanceIdx(chain_instance_idx_b), ChainMeshComponent::LinkIdx(link_idxs_b.0), ChainMeshComponent::SubcomponentIdx(link_idxs_b.1)])));
+                // color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::medium_priority_color(0.5, 0.7, 0.8, 0.75), Signature::new_chain_link_mesh( vec![ChainMeshComponent::ChainInstanceIdx(chain_instance_idx_a), ChainMeshComponent::LinkIdx(link_idxs_a.0)] )));
+                // color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::medium_priority_color(0.8, 0.7, 0.4, 0.75), Signature::new_chain_link_mesh( vec![ChainMeshComponent::ChainInstanceIdx(chain_instance_idx_b), ChainMeshComponent::LinkIdx(link_idxs_b.0)] )));
+            };
+            ui.separator();
+        });
+    }
+
+    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<ColorChangeEngine>, ResMut<VisibilityChangeEngine>, Query<&ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>) + 'static {
+        let mut link_shape_mode_a = LinkShapeMode::Full;
+        let mut link_shape_mode_b = LinkShapeMode::Full;
+        let mut link_shape_rep_a = LinkShapeRep::ConvexHull;
+        let mut link_shape_rep_b = LinkShapeRep::ConvexHull;
+
+        move |mut egui_contexts: EguiContexts, mut color_change_engine: ResMut<ColorChangeEngine>, mut visibility_change_engine: ResMut<VisibilityChangeEngine>, query: Query<&ChainState>, mut cursor_is_over_egui: ResMut<CursorIsOverEgui>, query2: Query<&Window1, With<PrimaryWindow>>| {
+            let chain_state_a = query.iter().find(|x| x.chain_instance_idx == self.chain_instance_idx_a).expect("error");
+            let chain_state_b = query.iter().find(|x| x.chain_instance_idx == self.chain_instance_idx_b).expect("error");
+
+            visibility_change_engine.add_momentary_request(VisibilityChangeRequest::new(VisibilityChangeRequestType::Off, Signature::new_chain_link_mesh(vec![ ])));
+            visibility_change_engine.add_momentary_request(VisibilityChangeRequest::new(VisibilityChangeRequestType::On, Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::from_link_shape_mode_and_link_shape_rep(&link_shape_mode_a, &link_shape_rep_a)), ChainMeshComponent::ChainInstanceIdx(self.chain_instance_idx_a), ChainMeshComponent::MeshType(MeshType::OBJ)])));
+            visibility_change_engine.add_momentary_request(VisibilityChangeRequest::new(VisibilityChangeRequestType::On, Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::from_link_shape_mode_and_link_shape_rep(&link_shape_mode_b, &link_shape_rep_b)), ChainMeshComponent::ChainInstanceIdx(self.chain_instance_idx_b), ChainMeshComponent::MeshType(MeshType::OBJ)])));
+
+            SidePanel::left("proximity_visualizer").show(egui_contexts.ctx_mut(), |ui| {
+                ui.heading("Pairwise Distances Raw");
+                self.action_chain_proximity_visualizer(ui, &chain_state_a.state, &chain_state_b.state, &link_shape_mode_a, &link_shape_mode_b, &link_shape_rep_a, &link_shape_rep_b, None, None, &mut color_change_engine);
+
+                ui.separator();
+
+                ComboBox::from_label("Link shape mode A").selected_text(format!("{:?}", link_shape_mode_a)).show_ui(ui, |ui| {
+                    ui.selectable_value(&mut link_shape_mode_a, LinkShapeMode::Full, "Full");
+                    ui.selectable_value(&mut link_shape_mode_a, LinkShapeMode::Decomposition, "Decomposition");
+                });
+                ComboBox::from_label("Link shape mode B").selected_text(format!("{:?}", link_shape_mode_b)).show_ui(ui, |ui| {
+                    ui.selectable_value(&mut link_shape_mode_b, LinkShapeMode::Full, "Full");
+                    ui.selectable_value(&mut link_shape_mode_b, LinkShapeMode::Decomposition, "Decomposition");
+                });
+                ComboBox::from_label("Link shape rep A").selected_text(format!("{:?}", link_shape_rep_a)).show_ui(ui, |ui| {
+                    ui.selectable_value(&mut link_shape_rep_a, LinkShapeRep::ConvexHull, "Convex Hull");
+                    ui.selectable_value(&mut link_shape_rep_a, LinkShapeRep::OBB, "OBB");
+                    ui.selectable_value(&mut link_shape_rep_a, LinkShapeRep::BoundingSphere, "Bounding Sphere");
+                });
+                ComboBox::from_label("Link shape rep B").selected_text(format!("{:?}", link_shape_rep_b)).show_ui(ui, |ui| {
+                    ui.selectable_value(&mut link_shape_rep_b, LinkShapeRep::ConvexHull, "Convex Hull");
+                    ui.selectable_value(&mut link_shape_rep_b, LinkShapeRep::OBB, "OBB");
+                    ui.selectable_value(&mut link_shape_rep_b, LinkShapeRep::BoundingSphere, "Bounding Sphere");
+                });
+
+                set_cursor_is_over_egui_default(ui, &mut cursor_is_over_egui, &query2);
+            });
+        }
+    }
+}
+
+pub struct BevyChainProximityVisualizer {
+    pub chain_instance_idx_a: usize,
+    pub chain_a: Arc<ChainNalgebra>,
+    pub chain_instance_idx_b: usize,
+    pub chain_b: Arc<ChainNalgebra>,
+}
+impl BevyChainProximityVisualizer {
+    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<ColorChangeEngine>, ResMut<VisibilityChangeEngine>, Query<&ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>) + 'static {
+        let c = BevyChainProximityVisualizerRaw {
+            chain_instance_idx_a: self.chain_instance_idx_a,
+            chain_instance_idx_b: self.chain_instance_idx_b,
+            urdf_module_a: self.chain_a.urdf_module.clone(),
+            urdf_module_b: self.chain_b.urdf_module.clone(),
+            chain_module_a: self.chain_a.chain_module.clone(),
+            chain_module_b: self.chain_b.chain_module.clone(),
+            dof_module_a: self.chain_a.dof_module.clone(),
+            dof_module_b: self.chain_b.dof_module.clone(),
+            link_shapes_module_a: self.chain_a.link_shapes_module.clone(),
+            link_shapes_module_b: self.chain_b.link_shapes_module.clone(),
+            double_group_proximity_query_mode: if self.chain_instance_idx_a == self.chain_instance_idx_b { DoubleGroupProximityQueryMode::SkipSymmetricalPairs } else { DoubleGroupProximityQueryMode::AllPossiblePairs }
+        };
+        c.get_system_side_panel_left()
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -904,6 +1080,38 @@ pub enum ChainMeshesRepresentation {
     Plain,
     ConvexHull,
     ConvexDecomposition
+}
+impl ChainMeshesRepresentation {
+    pub fn from_link_shape_mode_and_link_shape_rep(link_shape_mode: &LinkShapeMode, link_shape_rep: &LinkShapeRep) -> Self {
+        match link_shape_mode {
+            LinkShapeMode::Full => {
+                match link_shape_rep {
+                    LinkShapeRep::ConvexHull => {
+                        Self::ConvexHull
+                    }
+                    LinkShapeRep::OBB => {
+                        Self::OBBFull
+                    }
+                    LinkShapeRep::BoundingSphere => {
+                        Self::BoundingSphereFull
+                    }
+                }
+            }
+            LinkShapeMode::Decomposition => {
+                match link_shape_rep {
+                    LinkShapeRep::ConvexHull => {
+                        Self::ConvexDecomposition
+                    }
+                    LinkShapeRep::OBB => {
+                        Self::OBBDecomposition
+                    }
+                    LinkShapeRep::BoundingSphere => {
+                        Self::BoundingSphereDecomposition
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, Component)]

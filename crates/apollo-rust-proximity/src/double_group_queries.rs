@@ -1,4 +1,4 @@
-
+use std::cmp::Ordering;
 use nalgebra::DMatrix;
 use parry3d_f64::query::{Contact, contact, distance, intersection_test};
 use parry3d_f64::shape::Shape;
@@ -52,6 +52,128 @@ impl IntersectionFoundTrait for DoubleGroupProximityQueryOutput<Option<f64>> {
         false
     }
 }
+impl IntersectionFoundTrait for DoubleGroupProximityQueryOutput<Option<Contact>> {
+    #[inline(always)]
+    fn intersection_found(&self) -> bool {
+        for res in &self.outputs {
+            match res {
+                None => { }
+                Some(res) => { if res.dist <= 0.0 { return true; } }
+            }
+        }
+        false
+    }
+}
+
+pub trait ConvertToAverageDistancesTrait {
+    fn convert_to_average_distances_in_place(&mut self, average_distances: &DMatrix<f64>);
+    fn to_average_distances(&self, average_distances: &DMatrix<f64>) -> Self;
+}
+impl ConvertToAverageDistancesTrait for DoubleGroupProximityQueryOutput<f64> {
+    fn convert_to_average_distances_in_place(&mut self, average_distances: &DMatrix<f64>) {
+        self.outputs.iter_mut().zip(self.shape_idxs.iter()).for_each(|(x, (i, j))| {
+            let average = average_distances[(*i, *j)].max(0.0001);
+            *x /= average;
+        });
+    }
+
+    fn to_average_distances(&self, average_distances: &DMatrix<f64>) -> Self {
+        let outputs: Vec<f64> = self.outputs.iter().zip(self.shape_idxs.iter()).map(|(x, (i, j))| {
+            let average = average_distances[(*i, *j)].max(0.0001);
+            *x / average
+        }).collect();
+
+        Self {
+            outputs,
+            shape_idxs: self.shape_idxs.clone(),
+            num_ground_truth_checks: self.num_ground_truth_checks,
+        }
+    }
+}
+impl ConvertToAverageDistancesTrait for DoubleGroupProximityQueryOutput<Option<Contact>> {
+    fn convert_to_average_distances_in_place(&mut self, average_distances: &DMatrix<f64>) {
+        self.outputs.iter_mut().zip(self.shape_idxs.iter()).for_each(|(x, (i, j))| {
+            match x {
+                None => { }
+                Some(x) => {
+                    let average = average_distances[(*i, *j)].max(0.0001);
+                    x.dist /= average;
+                }
+            }
+        });
+    }
+
+    fn to_average_distances(&self, average_distances: &DMatrix<f64>) -> Self {
+        let outputs: Vec<Option<Contact>> = self.outputs.iter().zip(self.shape_idxs.iter()).map(|(x, (i, j))| {
+            match x {
+                None => { None }
+                Some(x) => {
+                    let mut c = x.clone();
+                    let average = average_distances[(*i, *j)].max(0.0001);
+                    c.dist /= average;
+                    Some(c)
+                }
+            }
+        }).collect();
+
+        Self {
+            outputs,
+            shape_idxs: self.shape_idxs.clone(),
+            num_ground_truth_checks: self.num_ground_truth_checks,
+        }
+    }
+}
+
+pub trait SortDoubleGroupProximityQueryOutputTrait {
+    fn sort(&self) -> Self;
+}
+impl SortDoubleGroupProximityQueryOutputTrait for DoubleGroupProximityQueryOutput<f64> {
+    fn sort(&self) -> Self {
+        let mut idxs: Vec<usize> = (0..self.outputs.len()).collect();
+
+        idxs.sort_by(|x, y| self.outputs[*x].partial_cmp(&self.outputs[*y]).unwrap() );
+        let shape_idxs = idxs.iter().map(|x| self.shape_idxs[*x].clone() ).collect();
+        let outputs = idxs.iter().map(|x| self.outputs[*x].clone()).collect();
+
+        DoubleGroupProximityQueryOutput {
+            outputs,
+            shape_idxs,
+            num_ground_truth_checks: self.num_ground_truth_checks,
+        }
+    }
+}
+impl SortDoubleGroupProximityQueryOutputTrait for DoubleGroupProximityQueryOutput<Option<Contact>> {
+    fn sort(&self) -> Self {
+        let mut idxs: Vec<usize> = (0..self.outputs.len()).collect();
+
+        idxs.sort_by(|x, y| {
+           match &self.outputs[*x] {
+               None => {
+                  match &self.outputs[*y] {
+                      None => { Ordering::Equal }
+                      Some(_) => { Ordering::Greater }
+                  }
+               }
+               Some(cx) => {
+                   match &self.outputs[*y] {
+                       None => { Ordering::Less }
+                       Some(cy) => { return cx.dist.partial_cmp(&cy.dist).unwrap() }
+                   }
+               }
+           }
+        });
+
+        let shape_idxs = idxs.iter().map(|x| self.shape_idxs[*x].clone() ).collect();
+        let outputs = idxs.iter().map(|x| self.outputs[*x].clone()).collect();
+
+        DoubleGroupProximityQueryOutput {
+            outputs,
+            shape_idxs,
+            num_ground_truth_checks: self.num_ground_truth_checks,
+        }
+    }
+}
+
 
 macro_rules! create_double_group_query {
     ($func_name: ident, $output_type: ty, $query_func_code: expr, $push_code: expr, $early_stop_code: expr, $extra_args: ty) => {
@@ -182,7 +304,7 @@ create_double_group_query!(
 );
 
 
-
+/*
 pub trait ToAverageDistancesF64 {
     fn to_average_distances(&self, average_distances: &DMatrix<f64>) -> Vec<((usize, usize), f64)>;
 }
@@ -226,3 +348,4 @@ impl ToAverageDistancesContactOption for Vec<((usize, usize), Option<Contact>)> 
         out
     }
 }
+*/

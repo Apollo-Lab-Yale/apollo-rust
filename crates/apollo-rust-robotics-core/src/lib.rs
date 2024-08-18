@@ -1,6 +1,6 @@
 use parry3d_f64::query::Contact;
 use apollo_rust_linalg::V;
-use apollo_rust_proximity::double_group_queries::DoubleGroupProximityQueryOutput;
+use apollo_rust_proximity::double_group_queries::{DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput};
 use apollo_rust_robot_modules::{ResourcesSubDirectory};
 use apollo_rust_robot_modules::robot_modules::bounds_module::ApolloBoundsModule;
 use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
@@ -281,7 +281,7 @@ impl ChainNalgebra {
                                  other_link_shape_mode: LinkShapeMode,
                                  other_link_shape_rep: LinkShapeRep,
                                  early_stop: bool) -> DoubleGroupProximityQueryOutput<bool> {
-        RobotProximityFunctions::double_chain_intersect(&self.link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_chain.link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, None, early_stop)
+        RobotProximityFunctions::double_chain_intersect(&self.link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_chain.link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, None, early_stop, &DoubleGroupProximityQueryMode::AllPossiblePairs)
     }
 
     pub fn other_chain_intersect_from_states(&self,
@@ -308,7 +308,7 @@ impl ChainNalgebra {
                                 other_link_shape_mode: LinkShapeMode,
                                 other_link_shape_rep: LinkShapeRep,
                                 early_stop: bool) -> DoubleGroupProximityQueryOutput<f64> {
-        RobotProximityFunctions::double_chain_distance(&self.link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_chain.link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, None, early_stop)
+        RobotProximityFunctions::double_chain_distance(&self.link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_chain.link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, None, early_stop, &DoubleGroupProximityQueryMode::AllPossiblePairs)
     }
 
     pub fn other_chain_distance_from_states(&self,
@@ -336,7 +336,7 @@ impl ChainNalgebra {
                                other_link_shape_rep: LinkShapeRep,
                                early_stop: bool,
                                margin: f64) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
-        RobotProximityFunctions::double_chain_contact(&self.link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_chain.link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, None, early_stop, margin)
+        RobotProximityFunctions::double_chain_contact(&self.link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_chain.link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, None, early_stop, margin, &DoubleGroupProximityQueryMode::AllPossiblePairs)
     }
 
     pub fn other_chain_contact_from_states(&self,

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::{App, AppExit, ButtonInput, EventWriter, KeyCode, Res, ResMut, Update};
 use apollo_rust_bevy::{ApolloBevyTrait, get_default_mesh_specs};
-use apollo_rust_bevy::apollo_bevy_utils::chain::{BevyChainLinkVisibilitySelector, BevyChainSlidersEgui, ChainMeshesRepresentation};
+use apollo_rust_bevy::apollo_bevy_utils::chain::{BevyChainLinkVisibilitySelector, BevyChainProximityVisualizer, BevyChainSlidersEgui, ChainMeshesRepresentation};
 use apollo_rust_bevy::apollo_bevy_utils::colors::{ColorChangeEngine};
 use apollo_rust_bevy::apollo_bevy_utils::signatures::{ChainMeshComponent, ChainMeshComponents, Signature};
 use apollo_rust_bevy::apollo_bevy_utils::visibility::{VisibilityChangeEngine, VisibilityChangeRequest, VisibilityChangeRequestType};
@@ -30,9 +30,16 @@ fn main() {
         chain: chain_arc.clone(),
     }.get_system_side_panel_left(|_, _| { }));
 
-    app.add_systems(Update, BevyChainLinkVisibilitySelector {
-        chain_instance_idx: 0,
-        chain: chain_arc.clone(),
+    // app.add_systems(Update, BevyChainLinkVisibilitySelector {
+    //     chain_instance_idx: 0,
+    //     chain: chain_arc.clone(),
+    // }.get_system_side_panel_left());
+
+    app.add_systems(Update, BevyChainProximityVisualizer {
+        chain_instance_idx_a: 0,
+        chain_a: chain_arc.clone(),
+        chain_instance_idx_b: 0,
+        chain_b: chain_arc.clone(),
     }.get_system_side_panel_left());
 
     app.add_plugins(FrameTimeDiagnosticsPlugin::default());

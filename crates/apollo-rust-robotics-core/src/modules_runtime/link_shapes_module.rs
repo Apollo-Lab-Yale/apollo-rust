@@ -191,6 +191,18 @@ impl ApolloLinkShapesModule {
             (LinkShapeMode::Decomposition, LinkShapeRep::BoundingSphere) => { &self.decomposition_bounding_spheres }
         }
     }
+
+    #[inline(always)]
+    pub fn get_link_idx_and_subcomponent_idx(&self, idx: usize, link_shape_mode: &LinkShapeMode) -> (usize, usize) {
+        return match link_shape_mode {
+            LinkShapeMode::Full => {
+                (self.full_shape_idx_to_link_idx[idx].clone(), 0)
+            }
+            LinkShapeMode::Decomposition => {
+                self.decomposition_shape_idx_to_link_idx_and_link_sub_idx[idx].clone()
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

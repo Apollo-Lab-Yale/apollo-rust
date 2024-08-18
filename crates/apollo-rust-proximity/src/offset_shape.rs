@@ -34,7 +34,7 @@ impl OffsetShape {
                 Cow::Borrowed(variable_transform)
             }
             Some(offset) => {
-                Cow::Owned( offset.group_operator(variable_transform) )
+                Cow::Owned( variable_transform.group_operator(offset) )
             }
         }
     }

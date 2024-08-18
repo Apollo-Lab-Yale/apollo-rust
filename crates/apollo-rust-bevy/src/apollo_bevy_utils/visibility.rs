@@ -18,7 +18,12 @@ impl VisibilityChangeEngine {
         let idx = self.momentary_requests.iter().position(|x| x.signature == request.signature);
         match idx {
             None => {
-                self.momentary_requests.push(request);
+                let res = self.momentary_requests.binary_search_by(|x| x.visibility_change_request_type.partial_cmp(&request.visibility_change_request_type).unwrap());
+                let idx = match res {
+                    Ok(i) => { i }
+                    Err(i) => { i }
+                };
+                self.momentary_requests.insert(idx, request);
             }
             Some(idx) => {
                 let curr_request = &self.momentary_requests[idx];
@@ -33,7 +38,12 @@ impl VisibilityChangeEngine {
         let idx = self.base_change_requests.iter().position(|x| x.signature == request.signature);
         match idx {
             None => {
-                self.base_change_requests.push(request);
+                let res = self.base_change_requests.binary_search_by(|x| x.visibility_change_request_type.partial_cmp(&request.visibility_change_request_type).unwrap());
+                let idx = match res {
+                    Ok(i) => { i }
+                    Err(i) => { i }
+                };
+                self.base_change_requests.insert(idx, request);
             }
             Some(idx) => {
                 let curr_request = &self.base_change_requests[idx];
@@ -69,9 +79,9 @@ pub enum BaseVisibility {
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum VisibilityChangeRequestType {
+    Off,
     Toggle,
     On,
-    Off
 }
 impl VisibilityChangeRequestType {
     pub fn new_from_bool(b: bool) -> Self {
