@@ -7,13 +7,13 @@ use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
 use apollo_rust_robot_modules::robot_modules::connections_module::ApolloConnectionsModule;
 use apollo_rust_robot_modules::robot_modules::dof_module::ApolloDOFModule;
 use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_approximations_module::ApolloLinkShapesApproximationsModule;
-use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::ApolloLinkShapesDistanceStatisticsModule;
 use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
+use crate::modules_runtime::link_shapes_distance_statistics_nalgebra_module::ApolloLinkShapesDistanceStatisticsNalgebraModule;
 use crate::modules_runtime::link_shapes_module::{ApolloLinkShapesModule, LinkShapeMode, LinkShapeRep};
 use crate::modules_runtime::link_shapes_simple_skips_nalgebra_module::ApolloLinkShapesSimpleSkipsNalgebraModule;
 use crate::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModule;
@@ -148,7 +148,7 @@ pub struct ChainNalgebra {
     pub link_shapes_module: ApolloLinkShapesModule,
     pub link_shapes_approximations_module: ApolloLinkShapesApproximationsModule,
     pub link_shapes_max_distance_from_origin_module: ApolloLinkShapesMaxDistanceFromOriginModule,
-    pub link_shapes_distance_statistics_module: ApolloLinkShapesDistanceStatisticsModule,
+    pub link_shapes_distance_statistics_module: ApolloLinkShapesDistanceStatisticsNalgebraModule,
     pub link_shapes_simple_skips_nalgebra_module: ApolloLinkShapesSimpleSkipsNalgebraModule,
     pub bounds_module: ApolloBoundsModule
 }
@@ -212,7 +212,7 @@ impl ChainNalgebra {
     }
 
     #[inline(always)]
-    pub fn link_shapes_distance_statistics_module(&self) -> &ApolloLinkShapesDistanceStatisticsModule {
+    pub fn link_shapes_distance_statistics_module(&self) -> &ApolloLinkShapesDistanceStatisticsNalgebraModule {
         &self.link_shapes_distance_statistics_module
     }
 

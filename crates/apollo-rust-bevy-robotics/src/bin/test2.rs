@@ -32,7 +32,7 @@ fn main() {
         chain_instance_idx: 0,
         chain: chain_arc.clone(),
         color_changes: false,
-    }.get_system_side_panel_left(|_, _| { });
+    }.get_system_side_panel_left();
     app.add_systems(Update, s1.in_set(S));
 
     // app.add_systems(Update, BevyChainLinkVisibilitySelector {

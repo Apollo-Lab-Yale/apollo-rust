@@ -21,7 +21,7 @@ impl ProximityLossFunction {
 
 
 pub trait ToProximityValue {
-    fn to_proximity_value(&self, p_norm: f64) -> f64;
+    fn to_proximity_value(&self, loss: &ProximityLossFunction, p_norm: f64) -> f64;
 }
 
 pub trait ToIntersectionResult {

@@ -15,7 +15,7 @@ pub fn spawn_gltf(file_path_relative_to_assets: PathBuf, pose: Option<&ISE3q>, c
         scene:asset_server.load(GltfAssetLabel::Scene(0).from_asset(file_path_relative_to_assets)),
         transform: match pose {
             None => { Transform::default() }
-            Some(pose) => { TransformUtils::util_convert_pose_to_y_up_bevy_transform(&pose) }
+            Some(pose) => { TransformUtils::util_convert_pose_to_y_up_bevy_transform(&pose.add_tiny_bit_of_noise()) }
         },
         ..default()
     });

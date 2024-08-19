@@ -17,7 +17,7 @@ use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_lie::LieGroupElement;
 use apollo_rust_linalg::{V};
 use apollo_rust_proximity::double_group_queries::{ConvertToAverageDistancesTrait, DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput, SortDoubleGroupProximityQueryOutputTrait};
-use apollo_rust_proximity::{ToIntersectionResult, ToProximityValue};
+use apollo_rust_proximity::{ProximityLossFunction, ToIntersectionResult, ToProximityValue};
 use apollo_rust_robot_modules::ResourcesSubDirectory;
 use apollo_rust_robot_modules::robot_modules::bounds_module::ApolloBoundsModule;
 use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
@@ -548,6 +548,10 @@ impl BevyChainSlidersEguiRaw {
                     if ui.button("Reset").clicked() {
                         robot_state.iter_mut().for_each(|x| *x = 0.0);
                     }
+                    if ui.button("Random").clicked() {
+                        let random = bounds_module.sample_random_state();
+                        robot_state.iter_mut().enumerate().for_each(|(i, x)| *x = random[i]);
+                    }
                 });
             }
         });
@@ -557,13 +561,12 @@ impl BevyChainSlidersEguiRaw {
         Self::action_chain_sliders_egui_static(self.chain_instance_idx, &self.urdf_module, &self.chain_module, &self.dof_module, &self.bounds_module, self.color_changes, color_change_engine, query, ui);
     }
 
-    pub fn get_system_side_panel_left<F: FnMut(&mut Ui, &BevyChainSlidersEguiRaw) + 'static>(self, mut f: F) -> impl FnMut(EguiContexts, Query<&mut ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, ResMut<ColorChangeEngine>) + 'static {
+    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, Query<&mut ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, ResMut<ColorChangeEngine>) + 'static {
         return move |mut egui_contexts: EguiContexts, mut query: Query<&mut ChainState>, mut cursor_is_over_egui: ResMut<CursorIsOverEgui>, query2: Query<&Window1, With<PrimaryWindow>>, mut color_change_engine: ResMut<ColorChangeEngine>| {
             let self_clone = self.clone();
             SidePanel::left(format!("chain_sliders_side_panel_chain_instance_idx_{}", self.chain_instance_idx))
                 .show(egui_contexts.ctx_mut(),  |ui| {
                     self_clone.action_chain_sliders_egui(&mut color_change_engine, &mut query, ui);
-                    f(ui, &self_clone);
                     set_cursor_is_over_egui_default(ui, &mut cursor_is_over_egui, &query2);
                 });
         }
@@ -580,7 +583,7 @@ impl BevyChainSlidersEgui {
     pub fn action_chain_sliders_egui(&self, color_change_engine: &mut ResMut<ColorChangeEngine>, query: &mut Query<&mut ChainState>, ui: &mut Ui) {
         BevyChainSlidersEguiRaw::action_chain_sliders_egui_static(self.chain_instance_idx, &self.chain.urdf_module, &self.chain.chain_module, &self.chain.dof_module, &self.chain.bounds_module, self.color_changes, color_change_engine, query, ui);
     }
-    pub fn get_system_side_panel_left<F: FnMut(&mut Ui, &BevyChainSlidersEguiRaw) + 'static>(self, f: F) -> impl FnMut(EguiContexts, Query<&mut ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, ResMut<ColorChangeEngine>) + 'static {
+    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, Query<&mut ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, ResMut<ColorChangeEngine>) + 'static {
         let raw = BevyChainSlidersEguiRaw {
             chain_instance_idx: self.chain_instance_idx,
             urdf_module: self.chain.urdf_module.clone(),
@@ -590,7 +593,7 @@ impl BevyChainSlidersEgui {
             color_changes: self.color_changes,
         };
 
-        return raw.get_system_side_panel_left(f)
+        return raw.get_system_side_panel_left();
     }
 }
 
@@ -932,6 +935,7 @@ impl BevyChainProximityVisualizerRaw {
                                                     selected_idxs: &mut Option<((usize, usize), (usize, usize))>,
                                                     color_change_engine: &mut ResMut<ColorChangeEngine>,
                                                     gizmos: &mut Gizmos) {
+        
         let fk_res_a = RobotKinematicsFunctions::fk(state_a, urdf_module_a, chain_module_a, dof_module_a);
         let fk_res_b = RobotKinematicsFunctions::fk(state_b, urdf_module_b, chain_module_b, dof_module_b);
         let res = RobotProximityFunctions::double_chain_contact(link_shapes_module_a, &fk_res_a, link_shape_mode_a.clone(), link_shape_rep_a.clone(), link_shapes_module_b, &fk_res_b, link_shape_mode_b.clone(), link_shape_rep_b.clone(), skips, false, f64::INFINITY, &double_group_proximity_query_mode);
@@ -947,8 +951,9 @@ impl BevyChainProximityVisualizerRaw {
 
         match &average_res {
             Some(average_res) => {
+                ui.separator();
                 ui.heading("Pairwise Distances wrt Average");
-                ScrollArea::vertical().id_source("proximity_visualizer2").max_height(400.0).show(ui, |ui| {
+                ScrollArea::vertical().id_source("proximity_visualizer2").max_height(200.0).show(ui, |ui| {
                     Self::action_chain_proximity_visualizer_panel(ui, &fk_res_a, &fk_res_b, &average_res, chain_instance_idx_a, chain_instance_idx_b, link_shapes_module_a, link_shapes_module_b, link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, selected_idxs, color_change_engine, gizmos);
                 });
             }
@@ -956,7 +961,7 @@ impl BevyChainProximityVisualizerRaw {
         }
 
         let intersection_found = res.to_intersection_result();
-        let proximity_value = res.to_proximity_value(10.0);
+        let proximity_value = res.to_proximity_value(&ProximityLossFunction::Hinge { threshold: 0.7 }, 10.0);
         ui.separator();
         ui.horizontal(|ui| {
            ui.label("intersection found: ");
@@ -982,7 +987,7 @@ impl BevyChainProximityVisualizerRaw {
             None => {  }
             Some(average_res) => {
                 ui.separator();
-                let proximity_value = average_res.to_proximity_value(10.0);
+                let proximity_value = average_res.to_proximity_value(&ProximityLossFunction::Hinge { threshold: 0.7 }, 10.0);
                 let color = if proximity_value < 0.33 {
                     Color32::GREEN
                 } else if proximity_value <= 0.66 {
@@ -990,10 +995,13 @@ impl BevyChainProximityVisualizerRaw {
                 } else {
                     Color32::RED
                 };
-                ui.label("proximity value wrt average: ");
-                ui.label(RichText::new(format!("{:.3?}", proximity_value)).color(color));
+                ui.horizontal(|ui| {
+                    ui.label("proximity value wrt average: ");
+                    ui.label(RichText::new(format!("{:.3?}", proximity_value)).color(color));
+                });
             }
         }
+
     }
 
     pub fn action_chain_proximity_visualizer(&self,
@@ -1009,7 +1017,7 @@ impl BevyChainProximityVisualizerRaw {
                                              selected_idxs: &mut Option<((usize, usize), (usize, usize))>,
                                              color_change_engine: &mut ResMut<ColorChangeEngine>,
                                              gizmos: &mut Gizmos) {
-        Self::action_chain_proximity_visualizer_static(ui, state_a, state_b, self.chain_instance_idx_a, self.chain_instance_idx_b, &self.urdf_module_a, &self.urdf_module_b, &self.chain_module_a, &self.chain_module_b, &self.dof_module_a, &self.dof_module_b, &self.link_shapes_module_a, &self.link_shapes_module_b, self.double_group_proximity_query_mode.clone(), link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, skips, average_distances, selected_idxs, color_change_engine, gizmos);
+        Self::action_chain_proximity_visualizer_static(ui, state_a, state_b, self.chain_instance_idx_a, self.chain_instance_idx_b, &self.urdf_module_a, &self.urdf_module_b, &self.chain_module_a, &self.chain_module_b, &self.dof_module_a, &self.dof_module_b, &self.link_shapes_module_a, &self.link_shapes_module_b, self.double_group_proximity_query_mode.clone(), link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, skips, average_distances, selected_idxs, color_change_engine, gizmos)
     }
 
     pub fn action_chain_proximity_visualizer_panel(ui: &mut Ui,
@@ -1027,6 +1035,7 @@ impl BevyChainProximityVisualizerRaw {
                                                    selected_idxs: &mut Option<((usize, usize), (usize, usize))>,
                                                    color_change_engine: &mut ResMut<ColorChangeEngine>,
                                                    gizmos: &mut Gizmos) {
+        
         res.outputs.iter().zip(res.shape_idxs.iter()).enumerate().for_each(|(_idx, (c, (i, j)))| {
             let c = c.as_ref().unwrap();
             let link_idxs_a = link_shapes_module_a.get_link_idx_and_subcomponent_idx(*i, link_shape_mode_a);
@@ -1038,16 +1047,20 @@ impl BevyChainProximityVisualizerRaw {
             } else {
                 Color32::GREEN
             };
-            ui.horizontal(|ui| {
-                ui.label("distance: ");
-                ui.label(RichText::new(format!("{:.3?}", c.dist)).color(color));
-            });
-
-            if ui.radio(selected_idxs.is_some() && selected_idxs.unwrap() == (link_idxs_a, link_idxs_b), "Display").clicked() {
+            if ui.radio(selected_idxs.is_some() && selected_idxs.unwrap() == (link_idxs_a, link_idxs_b), "Select").clicked() {
                 if selected_idxs.is_none() { *selected_idxs = Some((link_idxs_a, link_idxs_b)); }
                 else if selected_idxs.unwrap() == ((link_idxs_a, link_idxs_b)) { *selected_idxs = None; }
                 else { *selected_idxs.as_mut().unwrap() = (link_idxs_a, link_idxs_b); }
             };
+            ui.horizontal(|ui| {
+                ui.label("distance: ");
+                ui.label(RichText::new(format!("{:.3?}", c.dist)).color(color));
+            });
+            // if include_skip_buttons && selected_idxs.is_some() && selected_idxs.unwrap() == (link_idxs_a, link_idxs_b) {
+            //     if ui.button(RichText::new("----Set as skip----").color(Color32::from_rgb(255, 165, 0))).clicked()  {
+            //         out = Some((link_idxs_a, link_idxs_b));
+            //     }
+            // }
             ui.separator();
 
             if selected_idxs.is_some() && selected_idxs.unwrap() == (link_idxs_a, link_idxs_b) {
@@ -1126,11 +1139,11 @@ pub struct BevyChainProximityVisualizer {
     pub chain_instance_idx_a: usize,
     pub chain_a: Arc<ChainNalgebra>,
     pub chain_instance_idx_b: usize,
-    pub chain_b: Arc<ChainNalgebra>,
+    pub chain_b: Arc<ChainNalgebra>
 }
 impl BevyChainProximityVisualizer {
-    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<ColorChangeEngine>, ResMut<VisibilityChangeEngine>, Query<&ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, Gizmos) + 'static {
-        let c = BevyChainProximityVisualizerRaw {
+    pub fn to_raw(&self) -> BevyChainProximityVisualizerRaw {
+        BevyChainProximityVisualizerRaw {
             chain_instance_idx_a: self.chain_instance_idx_a,
             chain_instance_idx_b: self.chain_instance_idx_b,
             urdf_module_a: self.chain_a.urdf_module.clone(),
@@ -1141,9 +1154,11 @@ impl BevyChainProximityVisualizer {
             dof_module_b: self.chain_b.dof_module.clone(),
             link_shapes_module_a: self.chain_a.link_shapes_module.clone(),
             link_shapes_module_b: self.chain_b.link_shapes_module.clone(),
-            double_group_proximity_query_mode: if self.chain_instance_idx_a == self.chain_instance_idx_b { DoubleGroupProximityQueryMode::SkipSymmetricalPairs } else { DoubleGroupProximityQueryMode::AllPossiblePairs }
-        };
-        c.get_system_side_panel_left()
+            double_group_proximity_query_mode: if self.chain_instance_idx_a == self.chain_instance_idx_b { DoubleGroupProximityQueryMode::SkipSymmetricalPairs } else { DoubleGroupProximityQueryMode::AllPossiblePairs },
+        }
+    }
+    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<ColorChangeEngine>, ResMut<VisibilityChangeEngine>, Query<&ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, Gizmos) + 'static {
+        self.to_raw().get_system_side_panel_left()
     }
 }
 

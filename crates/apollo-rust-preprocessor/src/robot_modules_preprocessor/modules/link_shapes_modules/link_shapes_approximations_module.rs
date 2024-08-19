@@ -15,7 +15,7 @@ impl PreprocessorModule for ApolloLinkShapesApproximationsModule {
     }
 
     fn current_version() -> String {
-        "0.0.2".to_string()
+        "0.0.3".to_string()
     }
 
     fn build_raw(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {

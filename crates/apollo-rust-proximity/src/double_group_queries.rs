@@ -4,7 +4,7 @@ use parry3d_f64::query::{Contact, contact, distance, intersection_test};
 use parry3d_f64::shape::Shape;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::offset_shape::OffsetShape;
-use crate::{ToIntersectionResult, ToProximityValue};
+use crate::{ProximityLossFunction, ToIntersectionResult, ToProximityValue};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DoubleGroupProximityQueryMode {
@@ -49,23 +49,23 @@ impl ToIntersectionResult for DoubleGroupProximityQueryOutput<Option<Contact>> {
 }
 
 impl ToProximityValue for DoubleGroupProximityQueryOutput<f64> {
-    fn to_proximity_value(&self, p_norm: f64) -> f64 {
+    fn to_proximity_value(&self, loss: &ProximityLossFunction, p_norm: f64) -> f64 {
         let mut out = 0.0;
 
-        self.outputs.iter().for_each(|x| out += x.powf(p_norm));
+        self.outputs.iter().for_each(|x| out += loss.loss(*x).powf(p_norm));
 
         out.powf(1.0/p_norm)
     }
 }
 impl ToProximityValue for DoubleGroupProximityQueryOutput<Option<Contact>> {
-    fn to_proximity_value(&self, p_norm: f64) -> f64 {
+    fn to_proximity_value(&self, loss: &ProximityLossFunction, p_norm: f64) -> f64 {
         let mut out = 0.0;
 
         self.outputs.iter().for_each(|x| {
             match x {
                 None => { }
                 Some(x) => {
-                    out += x.dist.powf(p_norm)
+                    out += loss.loss(x.dist).powf(p_norm)
                 }
             }
         });
@@ -81,14 +81,18 @@ pub trait ConvertToAverageDistancesTrait {
 impl ConvertToAverageDistancesTrait for DoubleGroupProximityQueryOutput<f64> {
     fn convert_to_average_distances_in_place(&mut self, average_distances: &DMatrix<f64>) {
         self.outputs.iter_mut().zip(self.shape_idxs.iter()).for_each(|(x, (i, j))| {
-            let average = average_distances[(*i, *j)].max(0.0001);
+            // let average = average_distances[(*i, *j)].max(0.1);
+            let mut average = average_distances[(*i, *j)];
+            if average < 0.0 { average = 1.0; }
             *x /= average;
         });
     }
 
     fn to_average_distances(&self, average_distances: &DMatrix<f64>) -> Self {
         let outputs: Vec<f64> = self.outputs.iter().zip(self.shape_idxs.iter()).map(|(x, (i, j))| {
-            let average = average_distances[(*i, *j)].max(0.0001);
+            // let average = average_distances[(*i, *j)].max(0.0001);
+            let mut average = average_distances[(*i, *j)];
+            if average < 0.0 { average = 1.0; }
             *x / average
         }).collect();
 
@@ -105,7 +109,9 @@ impl ConvertToAverageDistancesTrait for DoubleGroupProximityQueryOutput<Option<C
             match x {
                 None => { }
                 Some(x) => {
-                    let average = average_distances[(*i, *j)].max(0.0001);
+                    // let average = average_distances[(*i, *j)].max(0.0001);
+                    let mut average = average_distances[(*i, *j)];
+                    if average < 0.0 { average = 1.0; }
                     x.dist /= average;
                 }
             }
@@ -118,7 +124,9 @@ impl ConvertToAverageDistancesTrait for DoubleGroupProximityQueryOutput<Option<C
                 None => { None }
                 Some(x) => {
                     let mut c = x.clone();
-                    let average = average_distances[(*i, *j)].max(0.0001);
+                    // let average = average_distances[(*i, *j)].max(0.0001);
+                    let mut average = average_distances[(*i, *j)];
+                    if average < 0.0 { average = 1.0; }
                     c.dist /= average;
                     Some(c)
                 }
@@ -166,7 +174,10 @@ impl SortDoubleGroupProximityQueryOutputTrait for DoubleGroupProximityQueryOutpu
                Some(cx) => {
                    match &self.outputs[*y] {
                        None => { Ordering::Less }
-                       Some(cy) => { return cx.dist.partial_cmp(&cy.dist).unwrap() }
+                       Some(cy) => {
+                           if cx.dist.is_nan() || cy.dist.is_nan() { return Ordering::Equal }
+                           return cx.dist.partial_cmp(&cy.dist).expect(&format!("error {}, {}", cx.dist, cy.dist))
+                       }
                    }
                }
            }

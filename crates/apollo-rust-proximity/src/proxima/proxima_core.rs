@@ -154,12 +154,12 @@ pub trait ProximaTrait {
         let start = Instant::now();
         let mut proxima_outputs = self.get_all_proxima_outputs_for_proximity(cache, poses_a, poses_b, query_mode, skips, average_distances, cutoff_distance);
 
-        if frozen { return ( proxima_outputs.to_proximity_value(p_norm), 0 ) }
+        if frozen { return ( proxima_outputs.to_proximity_value(loss_function, p_norm), 0 ) }
 
         let sorted_idxs = get_sorted_indices_of_maximum_possible_loss_function_error(&proxima_outputs, &loss_function);
 
         let mut num_ground_truth_checks = 0;
-        let mut proximity_value = proxima_outputs.to_proximity_value(p_norm);
+        let mut proximity_value = proxima_outputs.to_proximity_value(loss_function, p_norm);
 
         'l: for k in 0..sorted_idxs.len() {
             match budget {
@@ -191,7 +191,7 @@ pub trait ProximaTrait {
             proxima_output.upper_bound_distance = new_distance;
 
             num_ground_truth_checks += 1;
-            proximity_value = proxima_outputs.to_proximity_value(p_norm);
+            proximity_value = proxima_outputs.to_proximity_value(loss_function, p_norm);
         }
 
         return (proximity_value, num_ground_truth_checks);
@@ -219,7 +219,7 @@ pub trait ProximaTrait {
                 let sorted_idxs = get_sorted_indices_of_maximum_possible_loss_function_error(&proxima_outputs, &loss_function);
 
                 let mut num_ground_truth_checks = 0;
-                let mut proximity_value = proxima_outputs.to_proximity_value(p_norm);
+                let mut proximity_value = proxima_outputs.to_proximity_value(loss_function, p_norm);
 
                 'l: for k in 0..sorted_idxs.len() {
                     match budget {
@@ -248,7 +248,7 @@ pub trait ProximaTrait {
                     proxima_output.upper_bound_distance = new_distance;
 
                     num_ground_truth_checks += 1;
-                    proximity_value = proxima_outputs.to_proximity_value(p_norm);
+                    proximity_value = proxima_outputs.to_proximity_value(loss_function, p_norm);
                 }
 
                 (false, num_ground_truth_checks)
@@ -301,10 +301,10 @@ impl ToAverageDistancesProximaOutput for Vec<ProximaOutput> {
 }
 
 impl ToProximityValue for Vec<ProximaOutput> {
-    fn to_proximity_value(&self, p_norm: f64) -> f64 {
+    fn to_proximity_value(&self, loss: &ProximityLossFunction, p_norm: f64) -> f64 {
         let mut out = 0.0;
 
-        self.iter().for_each(|x| out += x.approximate_distance.powf(p_norm));
+        self.iter().for_each(|x| out += loss.loss(x.approximate_distance).powf(p_norm));
 
         out.powf(1.0/p_norm)
     }
