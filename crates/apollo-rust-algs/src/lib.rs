@@ -17,6 +17,8 @@ pub fn power_set<T: Clone>(vec: Vec<T>) -> Vec<Vec<T>> {
     result
 }
 
+
+
 pub trait VecOfOptionsToVecOfVecsTrait<T> where T: Clone {
     fn to_vec_of_vecs(&self) -> Vec<Vec<T>>;
 }

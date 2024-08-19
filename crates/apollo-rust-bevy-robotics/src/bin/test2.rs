@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
-use bevy::prelude::{App, AppExit, ButtonInput, EventWriter, KeyCode, Res, ResMut, Update};
+use bevy::prelude::{App, AppExit, ButtonInput, EventWriter, IntoSystemConfigs, KeyCode, Res, ResMut, SystemSet, Update};
 use apollo_rust_bevy::{ApolloBevyTrait, get_default_mesh_specs};
-use apollo_rust_bevy::apollo_bevy_utils::chain::{BevyChainLinkVisibilitySelector, BevyChainProximityVisualizer, BevyChainSlidersEgui, ChainMeshesRepresentation};
+use apollo_rust_bevy::apollo_bevy_utils::chain::{BevyChainProximityVisualizer, BevyChainSlidersEgui, ChainMeshesRepresentation};
 use apollo_rust_bevy::apollo_bevy_utils::colors::{ColorChangeEngine};
 use apollo_rust_bevy::apollo_bevy_utils::signatures::{ChainMeshComponent, ChainMeshComponents, Signature};
 use apollo_rust_bevy::apollo_bevy_utils::visibility::{VisibilityChangeEngine, VisibilityChangeRequest, VisibilityChangeRequestType};
@@ -12,6 +12,9 @@ use apollo_rust_robot_modules::ResourcesRootDirectory;
 use apollo_rust_robotics::ToChainNalgebra;
 use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, I3};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
+
+#[derive(SystemSet, Clone, Eq, Debug, PartialEq, Hash)]
+pub struct S;
 
 fn main() {
     let r = ResourcesRootDirectory::new(PathBuf::new_from_default_apollo_robots_dir());
@@ -25,22 +28,25 @@ fn main() {
     app = app.apollo_bevy_spawn_robot(&chain, 0, ISE3q::new(I3::from_slices_euler_angles(&[0.,0.,0.], &[0.,0.,0.])), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
     // app = app.apollo_bevy_spawn_robot(&chain, 1, ISE3q::new(I3::from_slices_euler_angles(&[0.,1.,0.], &[-1.,0.,0.])), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
 
-    app.add_systems(Update, BevyChainSlidersEgui {
+    let s1 = BevyChainSlidersEgui {
         chain_instance_idx: 0,
         chain: chain_arc.clone(),
-    }.get_system_side_panel_left(|_, _| { }));
+        color_changes: false,
+    }.get_system_side_panel_left(|_, _| { });
+    app.add_systems(Update, s1.in_set(S));
 
     // app.add_systems(Update, BevyChainLinkVisibilitySelector {
     //     chain_instance_idx: 0,
     //     chain: chain_arc.clone(),
     // }.get_system_side_panel_left());
 
-    app.add_systems(Update, BevyChainProximityVisualizer {
+    let s2 = BevyChainProximityVisualizer {
         chain_instance_idx_a: 0,
         chain_a: chain_arc.clone(),
         chain_instance_idx_b: 0,
         chain_b: chain_arc.clone(),
-    }.get_system_side_panel_left());
+    }.get_system_side_panel_left();
+    app.add_systems(Update, s2.after(S));
 
     app.add_plugins(FrameTimeDiagnosticsPlugin::default());
     app.add_plugins(LogDiagnosticsPlugin::default());

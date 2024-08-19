@@ -15,7 +15,7 @@ use parry3d_f64::query::Contact;
 use apollo_rust_algs::VecOfOptionsToVecOfVecsTrait;
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_lie::LieGroupElement;
-use apollo_rust_linalg::{ApolloDVectorTrait, V};
+use apollo_rust_linalg::{V};
 use apollo_rust_proximity::double_group_queries::{ConvertToAverageDistancesTrait, DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput, SortDoubleGroupProximityQueryOutputTrait};
 use apollo_rust_robot_modules::ResourcesSubDirectory;
 use apollo_rust_robot_modules::robot_modules::bounds_module::ApolloBoundsModule;
@@ -44,7 +44,6 @@ use crate::apollo_bevy_utils::meshes::MeshType;
 use crate::apollo_bevy_utils::obj::spawn_obj;
 use crate::apollo_bevy_utils::signatures::{ChainMeshComponent, ChainMeshComponents, Signature, Signatures};
 use crate::apollo_bevy_utils::transform::TransformUtils;
-use crate::apollo_bevy_utils::viewport_visuals::ViewportVisualsActions;
 use crate::apollo_bevy_utils::visibility::{BaseVisibility, VisibilityChangeEngine, VisibilityChangeRequest, VisibilityChangeRequestType};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -482,7 +481,8 @@ pub struct BevyChainSlidersEguiRaw {
     pub urdf_module: ApolloURDFNalgebraModule,
     pub chain_module: ApolloChainModule,
     pub dof_module: ApolloDOFModule,
-    pub bounds_module: ApolloBoundsModule
+    pub bounds_module: ApolloBoundsModule,
+    pub color_changes: bool
 }
 impl BevyChainSlidersEguiRaw {
     pub fn action_chain_sliders_egui_static(
@@ -491,6 +491,7 @@ impl BevyChainSlidersEguiRaw {
         chain_module: &ApolloChainModule,
         dof_module: &ApolloDOFModule,
         bounds_module: &ApolloBoundsModule,
+        color_changes: bool,
         color_change_engine: &mut ResMut<ColorChangeEngine>,
         query: &mut Query<&mut ChainState>,
         ui: &mut Ui) {
@@ -532,9 +533,8 @@ impl BevyChainSlidersEguiRaw {
                                     if resp.clicked() { robot_state[*dof_idx] -= 0.1; }
                                 });
 
-                                if hovered {
+                                if hovered &&color_changes {
                                     color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::medium_priority_color(0.0, 0.2, 1.0, 0.8), Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainInstanceIdx(chain_instance_idx), ChainMeshComponent::LinkIdx(parent_link_idx)])));
-
                                     color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::medium_priority_color(0.2, 1.0, 0.0, 0.8), Signature::new_chain_link_mesh(vec![ChainMeshComponent::LinkIdx(child_link_idx), ChainMeshComponent::ChainInstanceIdx(chain_instance_idx)])));
                                 }
                             }
@@ -553,7 +553,7 @@ impl BevyChainSlidersEguiRaw {
     }
 
     pub fn action_chain_sliders_egui(&self, color_change_engine: &mut ResMut<ColorChangeEngine>, query: &mut Query<&mut ChainState>, ui: &mut Ui) {
-        Self::action_chain_sliders_egui_static(self.chain_instance_idx, &self.urdf_module, &self.chain_module, &self.dof_module, &self.bounds_module, color_change_engine, query, ui);
+        Self::action_chain_sliders_egui_static(self.chain_instance_idx, &self.urdf_module, &self.chain_module, &self.dof_module, &self.bounds_module, self.color_changes, color_change_engine, query, ui);
     }
 
     pub fn get_system_side_panel_left<F: FnMut(&mut Ui, &BevyChainSlidersEguiRaw) + 'static>(self, mut f: F) -> impl FnMut(EguiContexts, Query<&mut ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, ResMut<ColorChangeEngine>) + 'static {
@@ -573,10 +573,11 @@ impl BevyChainSlidersEguiRaw {
 pub struct BevyChainSlidersEgui {
     pub chain_instance_idx: usize,
     pub chain: Arc<ChainNalgebra>,
+    pub color_changes: bool
 }
 impl BevyChainSlidersEgui {
     pub fn action_chain_sliders_egui(&self, color_change_engine: &mut ResMut<ColorChangeEngine>, query: &mut Query<&mut ChainState>, ui: &mut Ui) {
-        BevyChainSlidersEguiRaw::action_chain_sliders_egui_static(self.chain_instance_idx, &self.chain.urdf_module, &self.chain.chain_module, &self.chain.dof_module, &self.chain.bounds_module, color_change_engine, query, ui);
+        BevyChainSlidersEguiRaw::action_chain_sliders_egui_static(self.chain_instance_idx, &self.chain.urdf_module, &self.chain.chain_module, &self.chain.dof_module, &self.chain.bounds_module, self.color_changes, color_change_engine, query, ui);
     }
     pub fn get_system_side_panel_left<F: FnMut(&mut Ui, &BevyChainSlidersEguiRaw) + 'static>(self, f: F) -> impl FnMut(EguiContexts, Query<&mut ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, ResMut<ColorChangeEngine>) + 'static {
         let raw = BevyChainSlidersEguiRaw {
@@ -585,6 +586,7 @@ impl BevyChainSlidersEgui {
             chain_module: self.chain.chain_module.clone(),
             dof_module: self.chain.dof_module.clone(),
             bounds_module: self.chain.bounds_module.clone(),
+            color_changes: self.color_changes,
         };
 
         return raw.get_system_side_panel_left(f)
@@ -938,7 +940,7 @@ impl BevyChainProximityVisualizerRaw {
             Some(average_distances) => { Some(res.to_average_distances(average_distances).sort()) }
         };
 
-        ScrollArea::vertical().id_source("proximity_visualizer1").max_height(400.0).show(ui, |ui| {
+        ScrollArea::vertical().id_source("proximity_visualizer1").max_height(200.0).show(ui, |ui| {
             Self::action_chain_proximity_visualizer_panel(ui, &fk_res_a, &fk_res_b, &res, chain_instance_idx_a, chain_instance_idx_b, link_shapes_module_a, link_shapes_module_b, link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, selected_idxs, color_change_engine, gizmos);
         });
 
@@ -984,7 +986,7 @@ impl BevyChainProximityVisualizerRaw {
                                                    selected_idxs: &mut Option<((usize, usize), (usize, usize))>,
                                                    color_change_engine: &mut ResMut<ColorChangeEngine>,
                                                    gizmos: &mut Gizmos) {
-        res.outputs.iter().zip(res.shape_idxs.iter()).enumerate().for_each(|(idx, (c, (i, j)))| {
+        res.outputs.iter().zip(res.shape_idxs.iter()).enumerate().for_each(|(_idx, (c, (i, j)))| {
             let c = c.as_ref().unwrap();
             let link_idxs_a = link_shapes_module_a.get_link_idx_and_subcomponent_idx(*i, link_shape_mode_a);
             let link_idxs_b = link_shapes_module_b.get_link_idx_and_subcomponent_idx(*j, link_shape_mode_b);
@@ -1000,8 +1002,8 @@ impl BevyChainProximityVisualizerRaw {
 
             if selected_idxs.is_some() && selected_idxs.unwrap() == (link_idxs_a, link_idxs_b) {
                 color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::low_priority_alpha(0.2), Signature::new_chain_link_mesh(vec![])));
-                color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::high_priority_color(0.5, 0.7, 0.8, 0.95), Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::from_link_shape_mode_and_link_shape_rep(link_shape_mode_a, link_shape_rep_a)), ChainMeshComponent::ChainInstanceIdx(chain_instance_idx_a), ChainMeshComponent::LinkIdx(link_idxs_a.0), ChainMeshComponent::SubcomponentIdx(link_idxs_a.1)])));
-                color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::high_priority_color(0.8, 0.7, 0.4, 0.95), Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::from_link_shape_mode_and_link_shape_rep(link_shape_mode_b, link_shape_rep_b)), ChainMeshComponent::ChainInstanceIdx(chain_instance_idx_b), ChainMeshComponent::LinkIdx(link_idxs_b.0), ChainMeshComponent::SubcomponentIdx(link_idxs_b.1)])));
+                color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::high_priority_color(0.5, 0.7, 0.8, 0.85), Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::from_link_shape_mode_and_link_shape_rep(link_shape_mode_a, link_shape_rep_a)), ChainMeshComponent::ChainInstanceIdx(chain_instance_idx_a), ChainMeshComponent::LinkIdx(link_idxs_a.0), ChainMeshComponent::SubcomponentIdx(link_idxs_a.1)])));
+                color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::high_priority_color(0.8, 0.7, 0.4, 0.85), Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::from_link_shape_mode_and_link_shape_rep(link_shape_mode_b, link_shape_rep_b)), ChainMeshComponent::ChainInstanceIdx(chain_instance_idx_b), ChainMeshComponent::LinkIdx(link_idxs_b.0), ChainMeshComponent::SubcomponentIdx(link_idxs_b.1)])));
 
                 let p1 = V3::from_column_slice(&c.point1.coords.as_slice());
                 let p2 = V3::from_column_slice(&c.point2.coords.as_slice());

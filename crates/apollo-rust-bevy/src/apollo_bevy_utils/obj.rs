@@ -19,7 +19,7 @@ pub fn spawn_obj(file_path_relative_to_assets: PathBuf, color: Color, pose: Opti
         material: materials.add(m),
         transform: match pose {
             None => { Transform::default() }
-            Some(pose) => { TransformUtils::util_convert_pose_to_y_up_bevy_transform(&pose.add_tiny_bit_of_noise()) }
+            Some(pose) => { TransformUtils::util_convert_pose_to_y_up_bevy_transform(&pose) }
         },
         ..default()
     });

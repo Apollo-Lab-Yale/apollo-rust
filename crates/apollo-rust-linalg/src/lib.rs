@@ -287,6 +287,21 @@ pub fn dmatrix_from_2dvec<T: Clone + PartialEq + Debug + 'static>(v: &Vec<Vec<T>
 
     let data: Vec<T> = v.into_iter().flatten().collect();
 
-    DMatrix::from_vec(rows, cols, data).transpose()
+    DMatrix::from_vec(rows, cols, data)
+}
+
+pub fn dmatrix_to_2dvec<T: Clone>(matrix: &DMatrix<T>) -> Vec<Vec<T>> {
+    let (rows, cols) = matrix.shape();
+    let mut vec_2d = Vec::with_capacity(rows);
+
+    for i in 0..rows {
+        let mut row_vec = Vec::with_capacity(cols);
+        for j in 0..cols {
+            row_vec.push(matrix[(i, j)].clone());
+        }
+        vec_2d.push(row_vec);
+    }
+
+    vec_2d
 }
 
