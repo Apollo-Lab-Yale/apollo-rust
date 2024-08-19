@@ -4,7 +4,7 @@ use std::sync::Arc;
 use bevy::asset::{Assets, AssetServer};
 use bevy::color::Color;
 use bevy::pbr::{PbrBundle, StandardMaterial};
-use bevy::prelude::{Changed, Commands, Component, Cuboid, default, Entity, Mesh, Query, Res, ResMut, Sphere, Transform, Window as Window1, With, Without};
+use bevy::prelude::{Changed, Commands, Component, Cuboid, default, Entity, Gizmos, Mesh, Query, Res, ResMut, Sphere, Transform, Window as Window1, With, Without};
 use bevy::window::PrimaryWindow;
 use bevy_egui::egui::{ComboBox, ScrollArea, SidePanel, Slider, Ui};
 use bevy_egui::EguiContexts;
@@ -43,6 +43,7 @@ use crate::apollo_bevy_utils::meshes::MeshType;
 use crate::apollo_bevy_utils::obj::spawn_obj;
 use crate::apollo_bevy_utils::signatures::{ChainMeshComponent, ChainMeshComponents, Signature, Signatures};
 use crate::apollo_bevy_utils::transform::TransformUtils;
+use crate::apollo_bevy_utils::viewport_visuals::ViewportVisualsActions;
 use crate::apollo_bevy_utils::visibility::{BaseVisibility, VisibilityChangeEngine, VisibilityChangeRequest, VisibilityChangeRequestType};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -924,7 +925,8 @@ impl BevyChainProximityVisualizerRaw {
                                                     link_shape_rep_b: &LinkShapeRep,
                                                     skips: Option<&DMatrix<bool>>,
                                                     average_distances: Option<&DMatrix<f64>>,
-                                                    color_change_engine: &mut ResMut<ColorChangeEngine>) {
+                                                    color_change_engine: &mut ResMut<ColorChangeEngine>,
+                                                    gizmos: &mut Gizmos) {
         let fk_res_a = RobotKinematicsFunctions::fk(state_a, urdf_module_a, chain_module_a, dof_module_a);
         let fk_res_b = RobotKinematicsFunctions::fk(state_b, urdf_module_b, chain_module_b, dof_module_b);
         let res = RobotProximityFunctions::double_chain_contact(link_shapes_module_a, &fk_res_a, link_shape_mode_a.clone(), link_shape_rep_a.clone(), link_shapes_module_b, &fk_res_b, link_shape_mode_b.clone(), link_shape_rep_b.clone(), skips, false, f64::INFINITY, &double_group_proximity_query_mode);
@@ -935,14 +937,14 @@ impl BevyChainProximityVisualizerRaw {
         };
 
         ScrollArea::vertical().id_source("proximity_visualizer1").max_height(400.0).show(ui, |ui| {
-            Self::action_chain_proximity_visualizer_panel(ui, &res, chain_instance_idx_a, chain_instance_idx_b, link_shapes_module_a, link_shapes_module_b, link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, color_change_engine);
+            Self::action_chain_proximity_visualizer_panel(ui, &fk_res_a, &fk_res_b, &res, chain_instance_idx_a, chain_instance_idx_b, link_shapes_module_a, link_shapes_module_b, link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, color_change_engine, gizmos);
         });
 
         match average_res {
             Some(average_res) => {
                 ui.heading("Pairwise Distances wrt Average");
                 ScrollArea::vertical().id_source("proximity_visualizer2").max_height(400.0).show(ui, |ui| {
-                    Self::action_chain_proximity_visualizer_panel(ui, &average_res, chain_instance_idx_a, chain_instance_idx_b, link_shapes_module_a, link_shapes_module_b, link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, color_change_engine);
+                    Self::action_chain_proximity_visualizer_panel(ui, &fk_res_a, &fk_res_b, &average_res, chain_instance_idx_a, chain_instance_idx_b, link_shapes_module_a, link_shapes_module_b, link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, color_change_engine, gizmos);
                 });
             }
             _ => { }
@@ -959,11 +961,14 @@ impl BevyChainProximityVisualizerRaw {
                                              link_shape_rep_b: &LinkShapeRep,
                                              skips: Option<&DMatrix<bool>>,
                                              average_distances: Option<&DMatrix<f64>>,
-                                             color_change_engine: &mut ResMut<ColorChangeEngine>) {
-        Self::action_chain_proximity_visualizer_static(ui, state_a, state_b, self.chain_instance_idx_a, self.chain_instance_idx_b, &self.urdf_module_a, &self.urdf_module_b, &self.chain_module_a, &self.chain_module_b, &self.dof_module_a, &self.dof_module_b, &self.link_shapes_module_a, &self.link_shapes_module_b, self.double_group_proximity_query_mode.clone(), link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, skips, average_distances, color_change_engine);
+                                             color_change_engine: &mut ResMut<ColorChangeEngine>,
+                                             gizmos: &mut Gizmos) {
+        Self::action_chain_proximity_visualizer_static(ui, state_a, state_b, self.chain_instance_idx_a, self.chain_instance_idx_b, &self.urdf_module_a, &self.urdf_module_b, &self.chain_module_a, &self.chain_module_b, &self.dof_module_a, &self.dof_module_b, &self.link_shapes_module_a, &self.link_shapes_module_b, self.double_group_proximity_query_mode.clone(), link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, skips, average_distances, color_change_engine, gizmos);
     }
 
     pub fn action_chain_proximity_visualizer_panel(ui: &mut Ui,
+                                                   _fk_res_a: &Vec<ISE3q>,
+                                                   _fk_res_b: &Vec<ISE3q>,
                                                    res: &DoubleGroupProximityQueryOutput<Option<Contact>>,
                                                    chain_instance_idx_a: usize,
                                                    chain_instance_idx_b: usize,
@@ -973,7 +978,8 @@ impl BevyChainProximityVisualizerRaw {
                                                    link_shape_mode_b: &LinkShapeMode,
                                                    link_shape_rep_a: &LinkShapeRep,
                                                    link_shape_rep_b: &LinkShapeRep,
-                                                   color_change_engine: &mut ResMut<ColorChangeEngine>) {
+                                                   color_change_engine: &mut ResMut<ColorChangeEngine>,
+                                                   gizmos: &mut Gizmos) {
         res.outputs.iter().zip(res.shape_idxs.iter()).for_each(|(c, (i, j))| {
             let c = c.as_ref().unwrap();
             let link_idxs_a = link_shapes_module_a.get_link_idx_and_subcomponent_idx(*i, link_shape_mode_a);
@@ -987,18 +993,24 @@ impl BevyChainProximityVisualizerRaw {
                 color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::high_priority_color(0.8, 0.7, 0.4, 0.95), Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::from_link_shape_mode_and_link_shape_rep(link_shape_mode_b, link_shape_rep_b)), ChainMeshComponent::ChainInstanceIdx(chain_instance_idx_b), ChainMeshComponent::LinkIdx(link_idxs_b.0), ChainMeshComponent::SubcomponentIdx(link_idxs_b.1)])));
                 // color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::medium_priority_color(0.5, 0.7, 0.8, 0.75), Signature::new_chain_link_mesh( vec![ChainMeshComponent::ChainInstanceIdx(chain_instance_idx_a), ChainMeshComponent::LinkIdx(link_idxs_a.0)] )));
                 // color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::medium_priority_color(0.8, 0.7, 0.4, 0.75), Signature::new_chain_link_mesh( vec![ChainMeshComponent::ChainInstanceIdx(chain_instance_idx_b), ChainMeshComponent::LinkIdx(link_idxs_b.0)] )));
+
+                let p1 = V3::from_column_slice(&c.point1.coords.as_slice());
+                let p2 = V3::from_column_slice(&c.point2.coords.as_slice());
+                let v1 = TransformUtils::util_convert_z_up_v3_to_y_up_vec3(p1);
+                let v2 = TransformUtils::util_convert_z_up_v3_to_y_up_vec3(p2);
+                gizmos.line(v1, v2, Color::srgba(1.0, 0.,0.,1.0));
             };
             ui.separator();
         });
     }
 
-    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<ColorChangeEngine>, ResMut<VisibilityChangeEngine>, Query<&ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>) + 'static {
+    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<ColorChangeEngine>, ResMut<VisibilityChangeEngine>, Query<&ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, Gizmos) + 'static {
         let mut link_shape_mode_a = LinkShapeMode::Full;
         let mut link_shape_mode_b = LinkShapeMode::Full;
         let mut link_shape_rep_a = LinkShapeRep::ConvexHull;
         let mut link_shape_rep_b = LinkShapeRep::ConvexHull;
 
-        move |mut egui_contexts: EguiContexts, mut color_change_engine: ResMut<ColorChangeEngine>, mut visibility_change_engine: ResMut<VisibilityChangeEngine>, query: Query<&ChainState>, mut cursor_is_over_egui: ResMut<CursorIsOverEgui>, query2: Query<&Window1, With<PrimaryWindow>>| {
+        move |mut egui_contexts: EguiContexts, mut color_change_engine: ResMut<ColorChangeEngine>, mut visibility_change_engine: ResMut<VisibilityChangeEngine>, query: Query<&ChainState>, mut cursor_is_over_egui: ResMut<CursorIsOverEgui>, query2: Query<&Window1, With<PrimaryWindow>>, mut gizmos: Gizmos| {
             let chain_state_a = query.iter().find(|x| x.chain_instance_idx == self.chain_instance_idx_a).expect("error");
             let chain_state_b = query.iter().find(|x| x.chain_instance_idx == self.chain_instance_idx_b).expect("error");
 
@@ -1008,7 +1020,7 @@ impl BevyChainProximityVisualizerRaw {
 
             SidePanel::left("proximity_visualizer").show(egui_contexts.ctx_mut(), |ui| {
                 ui.heading("Pairwise Distances Raw");
-                self.action_chain_proximity_visualizer(ui, &chain_state_a.state, &chain_state_b.state, &link_shape_mode_a, &link_shape_mode_b, &link_shape_rep_a, &link_shape_rep_b, None, None, &mut color_change_engine);
+                self.action_chain_proximity_visualizer(ui, &chain_state_a.state, &chain_state_b.state, &link_shape_mode_a, &link_shape_mode_b, &link_shape_rep_a, &link_shape_rep_b, None, None, &mut color_change_engine, &mut gizmos);
 
                 ui.separator();
 
@@ -1044,7 +1056,7 @@ pub struct BevyChainProximityVisualizer {
     pub chain_b: Arc<ChainNalgebra>,
 }
 impl BevyChainProximityVisualizer {
-    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<ColorChangeEngine>, ResMut<VisibilityChangeEngine>, Query<&ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>) + 'static {
+    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<ColorChangeEngine>, ResMut<VisibilityChangeEngine>, Query<&ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, Gizmos) + 'static {
         let c = BevyChainProximityVisualizerRaw {
             chain_instance_idx_a: self.chain_instance_idx_a,
             chain_instance_idx_b: self.chain_instance_idx_b,

@@ -191,7 +191,7 @@ macro_rules! create_double_group_query {
                 if skips.is_some() { if skips.as_ref().unwrap()[(i,j)] { return 0; } }
 
                 let ppa = sa.get_transform(pa);
-                let ppb = sa.get_transform(pb);
+                let ppb = sb.get_transform(pb);
 
                 let res = $query_func_code(&*ppa, &**sa.shape(), &*ppb, &**sb.shape(), &extra_args);
                 if $push_code(&res) {
