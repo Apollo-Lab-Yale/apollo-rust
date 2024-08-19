@@ -7,7 +7,7 @@ use bevy::math::Quat;
 use bevy::pbr::{PbrBundle, StandardMaterial};
 use bevy::prelude::{Changed, Commands, Component, Cuboid, default, Entity, Gizmos, Mesh, Query, Res, ResMut, Sphere, Transform, Window as Window1, With, Without};
 use bevy::window::PrimaryWindow;
-use bevy_egui::egui::{ComboBox, ScrollArea, SidePanel, Slider, Ui};
+use bevy_egui::egui::{Color32, ComboBox, RichText, ScrollArea, SidePanel, Slider, Ui};
 use bevy_egui::EguiContexts;
 use bevy_mod_outline::{OutlineBundle, OutlineMode, OutlineVolume};
 use nalgebra::DMatrix;
@@ -17,6 +17,7 @@ use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_lie::LieGroupElement;
 use apollo_rust_linalg::{V};
 use apollo_rust_proximity::double_group_queries::{ConvertToAverageDistancesTrait, DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput, SortDoubleGroupProximityQueryOutputTrait};
+use apollo_rust_proximity::{ToIntersectionResult, ToProximityValue};
 use apollo_rust_robot_modules::ResourcesSubDirectory;
 use apollo_rust_robot_modules::robot_modules::bounds_module::ApolloBoundsModule;
 use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
@@ -944,7 +945,7 @@ impl BevyChainProximityVisualizerRaw {
             Self::action_chain_proximity_visualizer_panel(ui, &fk_res_a, &fk_res_b, &res, chain_instance_idx_a, chain_instance_idx_b, link_shapes_module_a, link_shapes_module_b, link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, selected_idxs, color_change_engine, gizmos);
         });
 
-        match average_res {
+        match &average_res {
             Some(average_res) => {
                 ui.heading("Pairwise Distances wrt Average");
                 ScrollArea::vertical().id_source("proximity_visualizer2").max_height(400.0).show(ui, |ui| {
@@ -952,6 +953,46 @@ impl BevyChainProximityVisualizerRaw {
                 });
             }
             _ => { }
+        }
+
+        let intersection_found = res.to_intersection_result();
+        let proximity_value = res.to_proximity_value(10.0);
+        ui.separator();
+        ui.horizontal(|ui| {
+           ui.label("intersection found: ");
+            if intersection_found {
+                ui.label(RichText::new("true").color(Color32::RED));
+            } else {
+                ui.label(RichText::new("false").color(Color32::GREEN));
+            }
+        });
+        ui.separator();
+        ui.horizontal(|ui| {
+            let color = if proximity_value < 0.33 {
+                Color32::GREEN
+            } else if proximity_value <= 0.66 {
+                Color32::YELLOW
+            } else {
+                Color32::RED
+            };
+            ui.label("proximity value raw: ");
+            ui.label(RichText::new(format!("{:.3?}", proximity_value)).color(color));
+        });
+        match &average_res {
+            None => {  }
+            Some(average_res) => {
+                ui.separator();
+                let proximity_value = average_res.to_proximity_value(10.0);
+                let color = if proximity_value < 0.33 {
+                    Color32::GREEN
+                } else if proximity_value <= 0.66 {
+                    Color32::YELLOW
+                } else {
+                    Color32::RED
+                };
+                ui.label("proximity value wrt average: ");
+                ui.label(RichText::new(format!("{:.3?}", proximity_value)).color(color));
+            }
         }
     }
 
@@ -992,7 +1033,16 @@ impl BevyChainProximityVisualizerRaw {
             let link_idxs_b = link_shapes_module_b.get_link_idx_and_subcomponent_idx(*j, link_shape_mode_b);
 
             ui.label(format!("link {:?} <--> link {:?}", link_idxs_a, link_idxs_b));
-            ui.label(format!("distance: {:?}", c.dist));
+            let color = if c.dist <= 0.0 {
+                Color32::RED
+            } else {
+                Color32::GREEN
+            };
+            ui.horizontal(|ui| {
+                ui.label("distance: ");
+                ui.label(RichText::new(format!("{:.3?}", c.dist)).color(color));
+            });
+
             if ui.radio(selected_idxs.is_some() && selected_idxs.unwrap() == (link_idxs_a, link_idxs_b), "Display").clicked() {
                 if selected_idxs.is_none() { *selected_idxs = Some((link_idxs_a, link_idxs_b)); }
                 else if selected_idxs.unwrap() == ((link_idxs_a, link_idxs_b)) { *selected_idxs = None; }

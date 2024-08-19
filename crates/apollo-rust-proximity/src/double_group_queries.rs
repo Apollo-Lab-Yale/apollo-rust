@@ -4,6 +4,7 @@ use parry3d_f64::query::{Contact, contact, distance, intersection_test};
 use parry3d_f64::shape::Shape;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::offset_shape::OffsetShape;
+use crate::{ToIntersectionResult, ToProximityValue};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DoubleGroupProximityQueryMode {
@@ -23,38 +24,20 @@ impl<T> DoubleGroupProximityQueryOutput<T> {
     }
 }
 
-pub trait IntersectionFoundTrait {
-    fn intersection_found(&self) -> bool;
-}
-impl IntersectionFoundTrait for DoubleGroupProximityQueryOutput<bool> {
-    #[inline(always)]
-    fn intersection_found(&self) -> bool {
+impl ToIntersectionResult for DoubleGroupProximityQueryOutput<bool> {
+    fn to_intersection_result(&self) -> bool {
         for res in &self.outputs { if *res { return true; } }
         false
     }
 }
-impl IntersectionFoundTrait for DoubleGroupProximityQueryOutput<f64> {
-    #[inline(always)]
-    fn intersection_found(&self) -> bool {
+impl ToIntersectionResult for DoubleGroupProximityQueryOutput<f64> {
+    fn to_intersection_result(&self) -> bool {
         for res in &self.outputs { if *res <= 0.0 { return true; } }
         false
     }
 }
-impl IntersectionFoundTrait for DoubleGroupProximityQueryOutput<Option<f64>> {
-    #[inline(always)]
-    fn intersection_found(&self) -> bool {
-        for res in &self.outputs {
-            match res {
-                None => { }
-                Some(res) => { if *res <= 0.0 { return true; } }
-            }
-        }
-        false
-    }
-}
-impl IntersectionFoundTrait for DoubleGroupProximityQueryOutput<Option<Contact>> {
-    #[inline(always)]
-    fn intersection_found(&self) -> bool {
+impl ToIntersectionResult for DoubleGroupProximityQueryOutput<Option<Contact>> {
+    fn to_intersection_result(&self) -> bool {
         for res in &self.outputs {
             match res {
                 None => { }
@@ -62,6 +45,32 @@ impl IntersectionFoundTrait for DoubleGroupProximityQueryOutput<Option<Contact>>
             }
         }
         false
+    }
+}
+
+impl ToProximityValue for DoubleGroupProximityQueryOutput<f64> {
+    fn to_proximity_value(&self, p_norm: f64) -> f64 {
+        let mut out = 0.0;
+
+        self.outputs.iter().for_each(|x| out += x.powf(p_norm));
+
+        out.powf(1.0/p_norm)
+    }
+}
+impl ToProximityValue for DoubleGroupProximityQueryOutput<Option<Contact>> {
+    fn to_proximity_value(&self, p_norm: f64) -> f64 {
+        let mut out = 0.0;
+
+        self.outputs.iter().for_each(|x| {
+            match x {
+                None => { }
+                Some(x) => {
+                    out += x.dist.powf(p_norm)
+                }
+            }
+        });
+
+        out.powf(1.0/p_norm)
     }
 }
 
