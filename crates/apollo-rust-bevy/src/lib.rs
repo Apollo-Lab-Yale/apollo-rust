@@ -264,6 +264,10 @@ pub trait ApolloChainBevyTrait {
     fn bevy_self_proximity_vis(&self) { self.bevy_self_proximity_vis_app().run(); }
 
     fn bevy_self_proximity_vis_app(&self) -> App;
+
+    fn bevy_two_chain_display(&self, other: &ChainNalgebra) { self.bevy_two_chain_display_app(other).run(); }
+
+    fn bevy_two_chain_display_app(&self, other: &ChainNalgebra) -> App;
 }
 impl ApolloChainBevyTrait for ChainNalgebra {
     fn bevy_display_app(&self) -> App {
@@ -351,6 +355,50 @@ impl ApolloChainBevyTrait for ChainNalgebra {
                 set_cursor_is_over_egui_default(ui, &mut cursor_is_over_egui, &query2);
             });
         }).after(S1));
+
+        app
+    }
+
+    fn bevy_two_chain_display_app(&self, other: &ChainNalgebra) -> App {
+        #[derive(SystemSet, PartialEq, Eq, Hash, Clone, Debug)]
+        struct S1;
+        #[derive(SystemSet, PartialEq, Eq, Hash, Clone, Debug)]
+        struct S2;
+        #[derive(SystemSet, PartialEq, Eq, Hash, Clone, Debug)]
+        struct S3;
+
+        let mut app = App::new()
+            .apollo_bevy_robotics_base(true)
+            .apollo_bevy_spawn_robot(self, 0, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir())
+            .apollo_bevy_spawn_robot(other, 1, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
+
+        let arc_robot_a = Arc::new(self.clone());
+        let c = BevyChainSlidersEgui {
+            chain_instance_idx: 0,
+            chain: arc_robot_a.clone(),
+            color_changes: true,
+        };
+        app.add_systems(Update, c.get_system_side_panel_left().in_set(S1));
+
+        let arc_robot_b = Arc::new(other.clone());
+        let c = BevyChainSlidersEgui {
+            chain_instance_idx: 1,
+            chain: arc_robot_b.clone(),
+            color_changes: true,
+        };
+        app.add_systems(Update, c.get_system_side_panel_left().in_set(S2).after(S1));
+
+        let c = BevyChainLinkVisibilitySelector {
+            chain_instance_idx: 0,
+            chain: arc_robot_a.clone(),
+        };
+        app.add_systems(Update, c.get_system_side_panel_left().in_set(S3).after(S2));
+
+        let c = BevyChainLinkVisibilitySelector {
+            chain_instance_idx: 1,
+            chain: arc_robot_b.clone(),
+        };
+        app.add_systems(Update, c.get_system_side_panel_left().after(S3));
 
         app
     }

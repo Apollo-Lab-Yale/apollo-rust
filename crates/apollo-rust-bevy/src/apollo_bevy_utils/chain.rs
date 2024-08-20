@@ -810,7 +810,7 @@ impl BevyChainLinkVisibilitySelectorRaw {
     pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<VisibilityChangeEngine>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>) + 'static {
         let mut self_clone = self.clone();
         move |mut egui_contexts: EguiContexts, mut visibility_change_engine: ResMut<VisibilityChangeEngine>, mut cursor_is_over_eugi: ResMut<CursorIsOverEgui>, query: Query<&Window1, With<PrimaryWindow>>| {
-            SidePanel::left("chain_link_visibility_selctor_side_panel").show(egui_contexts.ctx_mut(), |ui| {
+            SidePanel::left(format!("chain_link_visibility_selctor_side_panel_{}", self.chain_instance_idx)).show(egui_contexts.ctx_mut(), |ui| {
                 self_clone.action_chain_link_visibility_selector(ui, &mut visibility_change_engine);
                 set_cursor_is_over_egui_default(ui, &mut cursor_is_over_eugi, &query);
             });
