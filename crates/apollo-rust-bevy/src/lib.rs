@@ -261,13 +261,17 @@ pub trait ApolloChainBevyTrait {
 
     fn bevy_display_app(&self) -> App;
 
-    fn bevy_self_proximity_vis(&self) { self.bevy_self_proximity_vis_app().run(); }
+    fn bevy_proximity_vis(&self) { self.bevy_proximity_vis_app().run(); }
 
-    fn bevy_self_proximity_vis_app(&self) -> App;
+    fn bevy_proximity_vis_app(&self) -> App;
 
-    fn bevy_two_chain_display(&self, other: &ChainNalgebra) { self.bevy_two_chain_display_app(other).run(); }
+    fn bevy_display_with_other_chain(&self, other: &ChainNalgebra) { self.bevy_display_with_other_chain_app(other).run(); }
 
-    fn bevy_two_chain_display_app(&self, other: &ChainNalgebra) -> App;
+    fn bevy_display_with_other_chain_app(&self, other: &ChainNalgebra) -> App;
+
+    fn bevy_proximity_vis_with_other_chain(&self, other: &ChainNalgebra) { self.bevy_proximity_vis_with_other_chain_app(other).run(); }
+
+    fn bevy_proximity_vis_with_other_chain_app(&self, other: &ChainNalgebra) -> App;
 }
 impl ApolloChainBevyTrait for ChainNalgebra {
     fn bevy_display_app(&self) -> App {
@@ -295,7 +299,7 @@ impl ApolloChainBevyTrait for ChainNalgebra {
         app
     }
 
-    fn bevy_self_proximity_vis_app(&self) -> App {
+    fn bevy_proximity_vis_app(&self) -> App {
         #[derive(SystemSet, PartialEq, Eq, Hash, Clone, Debug)]
         struct S1;
 
@@ -359,7 +363,7 @@ impl ApolloChainBevyTrait for ChainNalgebra {
         app
     }
 
-    fn bevy_two_chain_display_app(&self, other: &ChainNalgebra) -> App {
+    fn bevy_display_with_other_chain_app(&self, other: &ChainNalgebra) -> App {
         #[derive(SystemSet, PartialEq, Eq, Hash, Clone, Debug)]
         struct S1;
         #[derive(SystemSet, PartialEq, Eq, Hash, Clone, Debug)]
@@ -399,6 +403,93 @@ impl ApolloChainBevyTrait for ChainNalgebra {
             chain: arc_robot_b.clone(),
         };
         app.add_systems(Update, c.get_system_side_panel_left().after(S3));
+
+        app
+    }
+
+    fn bevy_proximity_vis_with_other_chain_app(&self, other: &ChainNalgebra) -> App {
+        #[derive(SystemSet, PartialEq, Eq, Hash, Clone, Debug)]
+        struct S1;
+        #[derive(SystemSet, PartialEq, Eq, Hash, Clone, Debug)]
+        struct S2;
+
+        let mut app = App::new()
+            .apollo_bevy_robotics_base(true)
+            .apollo_bevy_spawn_robot(self, 0, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir())
+            .apollo_bevy_spawn_robot(other, 1, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
+
+        let arc_chain = Arc::new(self.clone());
+        let arc_chain_other = Arc::new(other.clone());
+
+        let c = BevyChainSlidersEgui {
+            chain_instance_idx: 0,
+            chain: arc_chain.clone(),
+            color_changes: false,
+        };
+        app.add_systems(Update, c.get_system_side_panel_left().in_set(S1));
+
+        let c = BevyChainSlidersEgui {
+            chain_instance_idx: 1,
+            chain: arc_chain_other.clone(),
+            color_changes: false,
+        };
+        app.add_systems(Update, c.get_system_side_panel_left().in_set(S2).after(S1));
+
+        let mut link_shape_mode_a = LinkShapeMode::Full;
+        let mut link_shape_mode_b = LinkShapeMode::Full;
+        let mut link_shape_rep_a = LinkShapeRep::ConvexHull;
+        let mut link_shape_rep_b = LinkShapeRep::ConvexHull;
+        let mut selected_idxs = None;
+
+        let c = BevyChainProximityVisualizer {
+            chain_instance_idx_a: 0,
+            chain_a: arc_chain.clone(),
+            chain_instance_idx_b: 1,
+            chain_b: arc_chain_other.clone(),
+        }.to_raw();
+
+        app.add_systems(Update,(move |mut egui_contexts: EguiContexts, mut color_change_engine: ResMut<ColorChangeEngine>, mut visibility_change_engine: ResMut<VisibilityChangeEngine>, query: Query<&ChainState>, mut cursor_is_over_egui: ResMut<CursorIsOverEgui>, query2: Query<&Window, With<PrimaryWindow>>, mut gizmos: Gizmos| {
+            let chain_state_a = query.iter().find(|x| x.chain_instance_idx == 0).expect("error");
+            let chain_state_b = query.iter().find(|x| x.chain_instance_idx == 1).expect("error");
+
+            visibility_change_engine.add_momentary_request(VisibilityChangeRequest::new(VisibilityChangeRequestType::Off, Signature::new_chain_link_mesh(vec![ ])));
+            visibility_change_engine.add_momentary_request(VisibilityChangeRequest::new(VisibilityChangeRequestType::On, Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::from_link_shape_mode_and_link_shape_rep(&link_shape_mode_a, &link_shape_rep_a)), ChainMeshComponent::ChainInstanceIdx(0), ChainMeshComponent::MeshType(MeshType::OBJ)])));
+            visibility_change_engine.add_momentary_request(VisibilityChangeRequest::new(VisibilityChangeRequestType::On, Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::Plain), ChainMeshComponent::ChainInstanceIdx(0), ChainMeshComponent::MeshType(MeshType::OBJ)])));
+            visibility_change_engine.add_momentary_request(VisibilityChangeRequest::new(VisibilityChangeRequestType::On, Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::from_link_shape_mode_and_link_shape_rep(&link_shape_mode_b, &link_shape_rep_b)), ChainMeshComponent::ChainInstanceIdx(1), ChainMeshComponent::MeshType(MeshType::OBJ)])));
+            visibility_change_engine.add_momentary_request(VisibilityChangeRequest::new(VisibilityChangeRequestType::On, Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::Plain), ChainMeshComponent::ChainInstanceIdx(1), ChainMeshComponent::MeshType(MeshType::OBJ)])));
+
+            SidePanel::left("proximity_visualizer").show(egui_contexts.ctx_mut(), |ui| {
+                ui.heading("Pairwise Distances");
+                c.action_chain_proximity_visualizer(ui, &chain_state_a.state, &chain_state_b.state, &link_shape_mode_a, &link_shape_mode_b, &link_shape_rep_a, &link_shape_rep_b, None, None, &mut selected_idxs, &mut color_change_engine, &mut gizmos);
+
+                ui.separator();
+
+                ComboBox::from_label("Link shape mode A").selected_text(format!("{:?}", link_shape_mode_a)).show_ui(ui, |ui| {
+                    ui.selectable_value(&mut link_shape_mode_a, LinkShapeMode::Full, "Full");
+                    ui.selectable_value(&mut link_shape_mode_a, LinkShapeMode::Decomposition, "Decomposition");
+                });
+                ComboBox::from_label("Link shape rep A").selected_text(format!("{:?}", link_shape_rep_a)).show_ui(ui, |ui| {
+                    ui.selectable_value(&mut link_shape_rep_a, LinkShapeRep::ConvexHull, "Convex Hull");
+                    ui.selectable_value(&mut link_shape_rep_a, LinkShapeRep::OBB, "OBB");
+                    ui.selectable_value(&mut link_shape_rep_a, LinkShapeRep::BoundingSphere, "Bounding Sphere");
+                });
+                ComboBox::from_label("Link shape mode B").selected_text(format!("{:?}", link_shape_mode_b)).show_ui(ui, |ui| {
+                    ui.selectable_value(&mut link_shape_mode_b, LinkShapeMode::Full, "Full");
+                    ui.selectable_value(&mut link_shape_mode_b, LinkShapeMode::Decomposition, "Decomposition");
+                });
+                ComboBox::from_label("Link shape rep B").selected_text(format!("{:?}", link_shape_rep_b)).show_ui(ui, |ui| {
+                    ui.selectable_value(&mut link_shape_rep_b, LinkShapeRep::ConvexHull, "Convex Hull");
+                    ui.selectable_value(&mut link_shape_rep_b, LinkShapeRep::OBB, "OBB");
+                    ui.selectable_value(&mut link_shape_rep_b, LinkShapeRep::BoundingSphere, "Bounding Sphere");
+                });
+
+                ui.separator();
+
+                if ui.button("Deselect").clicked() { selected_idxs = None; }
+
+                set_cursor_is_over_egui_default(ui, &mut cursor_is_over_egui, &query2);
+            });
+        }).after(S2));
 
         app
     }

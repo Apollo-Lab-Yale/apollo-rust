@@ -117,18 +117,21 @@ pub trait PreprocessorModule : Serialize + DeserializeOwned {
     }
 
     fn load_from_json(s: &ResourcesSubDirectory) -> Result<Self, String> {
+        if !Self::full_path_to_module_version(s).exists() { return Err("Module version does not exist".to_string()) }
         let saved_version = Self::full_path_to_module_version(s).read_file_contents_to_string();
         if saved_version != Self::current_version() { return Err(format!("Version did not match when loading module {:?}.  saved version: {:?} vs. current version: {:?}", Self::relative_file_path_str_from_sub_dir_to_module_dir(), saved_version, Self::current_version())) }
         Self::full_path_module_json(s).load_object_from_json_file_result()
     }
 
     fn load_from_ron(s: &ResourcesSubDirectory) -> Result<Self, String> {
+        if !Self::full_path_to_module_version(s).exists() { return Err("Module version does not exist".to_string()) }
         let saved_version = Self::full_path_to_module_version(s).read_file_contents_to_string();
         if saved_version != Self::current_version() { return Err(format!("Version did not match when loading module {:?}.  saved version: {:?} vs. current version: {:?}", Self::relative_file_path_str_from_sub_dir_to_module_dir(), saved_version, Self::current_version())) }
         Self::full_path_module_ron(s).load_object_from_ron_file_result()
     }
 
     fn load_from_yaml(s: &ResourcesSubDirectory) -> Result<Self, String> {
+        if !Self::full_path_to_module_version(s).exists() { return Err("Module version does not exist".to_string()) }
         let saved_version = Self::full_path_to_module_version(s).read_file_contents_to_string();
         if saved_version != Self::current_version() { return Err(format!("Version did not match when loading module {:?}.  saved version: {:?} vs. current version: {:?}", Self::relative_file_path_str_from_sub_dir_to_module_dir(), saved_version, Self::current_version())) }
         Self::full_path_module_yaml(s).load_object_from_yaml_file_result()

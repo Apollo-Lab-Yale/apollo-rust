@@ -193,13 +193,27 @@ impl ApolloLinkShapesModule {
     }
 
     #[inline(always)]
-    pub fn get_link_idx_and_subcomponent_idx(&self, idx: usize, link_shape_mode: &LinkShapeMode) -> (usize, usize) {
+    pub fn get_link_idx_and_subcomponent_idx_from_shape_idx(&self, shape_idx: usize, link_shape_mode: &LinkShapeMode) -> (usize, usize) {
         return match link_shape_mode {
             LinkShapeMode::Full => {
-                (self.full_shape_idx_to_link_idx[idx].clone(), 0)
+                (self.full_shape_idx_to_link_idx[shape_idx].clone(), 0)
             }
             LinkShapeMode::Decomposition => {
-                self.decomposition_shape_idx_to_link_idx_and_link_sub_idx[idx].clone()
+                self.decomposition_shape_idx_to_link_idx_and_link_sub_idx[shape_idx].clone()
+            }
+        }
+    }
+
+    pub fn get_shape_idx_from_link_idx_and_subcomponent_idx(&self, link_idx: usize, subcomponent_idx: usize, link_shape_mode: &LinkShapeMode) -> Option<usize> {
+        return match link_shape_mode {
+            LinkShapeMode::Full => {
+                self.link_idx_to_full_shape_idx[link_idx].clone()
+            }
+            LinkShapeMode::Decomposition => {
+                let x = self.link_idx_to_decomposition_shape_idxs[link_idx].clone();
+                if x.len() == 0 { None } else {
+                    Some(x[subcomponent_idx])
+                }
             }
         }
     }

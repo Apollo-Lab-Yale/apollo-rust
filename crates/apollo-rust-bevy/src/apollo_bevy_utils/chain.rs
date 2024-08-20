@@ -1038,8 +1038,8 @@ impl BevyChainProximityVisualizerRaw {
         
         res.outputs.iter().zip(res.shape_idxs.iter()).enumerate().for_each(|(_idx, (c, (i, j)))| {
             let c = c.as_ref().unwrap();
-            let link_idxs_a = link_shapes_module_a.get_link_idx_and_subcomponent_idx(*i, link_shape_mode_a);
-            let link_idxs_b = link_shapes_module_b.get_link_idx_and_subcomponent_idx(*j, link_shape_mode_b);
+            let link_idxs_a = link_shapes_module_a.get_link_idx_and_subcomponent_idx_from_shape_idx(*i, link_shape_mode_a);
+            let link_idxs_b = link_shapes_module_b.get_link_idx_and_subcomponent_idx_from_shape_idx(*j, link_shape_mode_b);
 
             ui.label(format!("link {:?} <--> link {:?}", link_idxs_a, link_idxs_b));
             let color = if c.dist <= 0.0 {

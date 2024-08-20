@@ -60,8 +60,8 @@ pub (crate) fn get_simple_skips_from_link_shapes_distance_stats(stats: &LinkShap
             // if average <= 0.0 { skip = true; }
             // if minimum >= 0.0 { skip = true; }
 
-            let a = link_shapes_module.get_link_idx_and_subcomponent_idx(i, &shape_mode);
-            let b = link_shapes_module.get_link_idx_and_subcomponent_idx(j, &shape_mode);
+            let a = link_shapes_module.get_link_idx_and_subcomponent_idx_from_shape_idx(i, &shape_mode);
+            let b = link_shapes_module.get_link_idx_and_subcomponent_idx_from_shape_idx(j, &shape_mode);
             if a.0 == b.0 { skip = true; }
 
             out[i][j] = skip;

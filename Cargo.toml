@@ -16,7 +16,6 @@ members = [
     "crates/apollo-rust-robotics-core",
     "crates/apollo-rust-robotics",
     "crates/apollo-rust-mesh-utils",
-    "crates/apollo-rust-environment-modules",
     "crates/apollo-rust-preprocessor",
     "crates/apollo-rust-bevy-robotics",
     "crates/apollo-rust-algs"]

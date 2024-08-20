@@ -46,6 +46,15 @@ impl ResourcesRootDirectory {
         ResourcesSubDirectory::new_raw(name.to_string(), self.directory().clone(), directory)
     }
 
+    pub fn get_subdirectory_option(&self, name: &str) -> Option<ResourcesSubDirectory> {
+        let directory = self.directory().clone().append(name);
+        return if directory.exists() {
+            Some(ResourcesSubDirectory::new_raw(name.to_string(), self.directory().clone(), directory))
+        } else {
+            None
+        }
+    }
+
     pub fn get_all_subdirectories(&self) -> Vec<ResourcesSubDirectory> {
         let mut out = vec![];
 
