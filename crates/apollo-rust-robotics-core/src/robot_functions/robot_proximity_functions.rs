@@ -2,6 +2,8 @@ use apollo_rust_proximity::double_group_queries::{DoubleGroupProximityQueryMode,
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use nalgebra::DMatrix;
 use parry3d_f64::query::Contact;
+use apollo_rust_proximity::proxima::proxima1::Proxima1Cache;
+use apollo_rust_proximity::ProximitySimpleOutput;
 use crate::modules_runtime::link_shapes_module::{ApolloLinkShapesModule, LinkShapeMode, LinkShapeRep};
 
 pub struct RobotProximityFunctions;
@@ -86,5 +88,9 @@ impl RobotProximityFunctions {
         let poses_b = link_shapes_module_b.link_poses_to_shape_poses(link_poses_b, link_shape_mode_b);
 
         pairwise_group_query_contact(shapes_a, &poses_a, shapes_b, &poses_b, double_group_proximity_query_mode, skips, early_stop, margin)
+    }
+
+    pub fn self_intersect_proxima1(proxima_cache: &mut Proxima1Cache, link_shapes_module: &ApolloLinkShapesModule, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, skips: Option<&DMatrix<bool>>, early_stop: bool) -> ProximitySimpleOutput<bool> {
+        todo!()
     }
 }

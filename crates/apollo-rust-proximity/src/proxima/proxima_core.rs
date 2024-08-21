@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::time::{Duration, Instant};
 use nalgebra::DMatrix;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
-use crate::{DistanceMode, ProximityLossFunction, ToIntersectionResult, ToProximityValue};
+use crate::{DistanceMode, ProximityLossFunction, ProximitySimpleOutput, ToIntersectionResult, ToProximityValue};
 use crate::double_group_queries::DoubleGroupProximityQueryMode;
 use crate::offset_shape::OffsetShape;
 
@@ -12,6 +12,7 @@ pub trait ProximaTrait {
     type ExtraArgs : Clone;
 
     fn get_extra_args(&self, i: usize, j: usize) -> Cow<Self::ExtraArgs>;
+    fn get_cache(&mut self) -> &mut Self::CacheType;
     fn approximate_distance_and_bounds(cache_element: &Self::CacheElementType, pose_a_k: &ISE3q, pose_b_k: &ISE3q, cutoff_distance: f64, extra_args: &Self::ExtraArgs) -> Option<(f64, f64, f64)>;
     fn f(&self, cache: &Self::CacheType, i: usize, pa: &ISE3q, j: usize, pb: &ISE3q, skips: Option<&DMatrix<bool>>, cutoff_distance: f64) -> Option<ProximaOutput> {
         match skips {
@@ -149,12 +150,12 @@ pub trait ProximaTrait {
                              cutoff_distance: f64,
                              skips: Option<&DMatrix<bool>>,
                              average_distances: Option<&DMatrix<f64>>,
-                             frozen: bool) -> (f64, usize) {
+                             frozen: bool) -> ProximitySimpleOutput<f64> {
 
         let start = Instant::now();
         let mut proxima_outputs = self.get_all_proxima_outputs_for_proximity(cache, poses_a, poses_b, query_mode, skips, average_distances, cutoff_distance);
 
-        if frozen { return ( proxima_outputs.to_proximity_value(loss_function, p_norm), 0 ) }
+        if frozen { return ProximitySimpleOutput { result: proxima_outputs.to_proximity_value(loss_function, p_norm), num_ground_truth_checks: 0 } }
 
         let sorted_idxs = get_sorted_indices_of_maximum_possible_loss_function_error(&proxima_outputs, &loss_function);
 
@@ -194,7 +195,11 @@ pub trait ProximaTrait {
             proximity_value = proxima_outputs.to_proximity_value(loss_function, p_norm);
         }
 
-        return (proximity_value, num_ground_truth_checks);
+        // return (proximity_value, num_ground_truth_checks);
+        return ProximitySimpleOutput {
+            result: proximity_value,
+            num_ground_truth_checks,
+        }
     }
     fn proxima_for_intersection(&self,
                                 cache: &mut Self::CacheType,
@@ -207,14 +212,22 @@ pub trait ProximaTrait {
                                 loss_function: &ProximityLossFunction,
                                 p_norm: f64,
                                 skips: Option<&DMatrix<bool>>,
-                                frozen: bool) -> (bool, usize) {
+                                frozen: bool) -> ProximitySimpleOutput<bool> {
         let start = Instant::now();
         let proxima_outputs = self.get_all_proxima_outputs_for_intersection(cache, poses_a, poses_b, query_mode, skips, 0.0);
 
         return match proxima_outputs {
-            None => { (true, 0) }
+            None => { return ProximitySimpleOutput {
+                result: true,
+                num_ground_truth_checks: 0,
+            } }
             Some(mut proxima_outputs) => {
-                if frozen { return (proxima_outputs.to_intersection_result(), 0) }
+                if frozen {
+                    return ProximitySimpleOutput {
+                        result: proxima_outputs.to_intersection_result(),
+                        num_ground_truth_checks: 0,
+                    }
+                }
 
                 let sorted_idxs = get_sorted_indices_of_maximum_possible_loss_function_error(&proxima_outputs, &loss_function);
 
@@ -241,7 +254,10 @@ pub trait ProximaTrait {
 
                     let new_distance = cache.update_element_with_ground_truth(i, j, sa, pa, sb, pb);
 
-                    if new_distance <= 0.0 { return (true, num_ground_truth_checks) }
+                    if new_distance <= 0.0 { return ProximitySimpleOutput {
+                        result: true,
+                        num_ground_truth_checks,
+                    } }
 
                     proxima_output.approximate_distance = new_distance;
                     proxima_output.lower_bound_distance = new_distance;
@@ -251,7 +267,17 @@ pub trait ProximaTrait {
                     proximity_value = proxima_outputs.to_proximity_value(loss_function, p_norm);
                 }
 
-                (false, num_ground_truth_checks)
+                for proxima_output in &proxima_outputs {
+                    if proxima_output.approximate_distance <= 0.0 { return ProximitySimpleOutput {
+                        result: true,
+                        num_ground_truth_checks,
+                    } }
+                }
+
+                return ProximitySimpleOutput {
+                    result: false,
+                    num_ground_truth_checks,
+                }
             }
         }
     }

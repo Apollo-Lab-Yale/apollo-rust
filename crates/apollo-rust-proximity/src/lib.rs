@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 
 pub mod double_group_queries;
 pub mod offset_shape;
@@ -32,4 +33,10 @@ pub trait ToIntersectionResult {
 pub enum DistanceMode {
     RawDistance,
     AverageDistance
+}
+
+#[derive(Clone, Debug)]
+pub struct ProximitySimpleOutput<T: Clone + Debug> {
+    pub result: T,
+    pub num_ground_truth_checks: usize
 }

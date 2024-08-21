@@ -137,7 +137,10 @@ impl ApolloDMatrixTrait for M {
             SVDType::Compact => {
                 let mut sigma = Self::zeros(rank, rank);
                 let singular_values = svd.singular_values.data.as_vec().clone();
-                for (i, s) in singular_values.iter().enumerate() { sigma[(i,i)] = *s; }
+                for (i, s) in singular_values.iter().enumerate() {
+                    if singular_values[i] == 0.0 { continue; }
+                    sigma[(i,i)] = *s;
+                }
 
                 SVDResult {
                     u,

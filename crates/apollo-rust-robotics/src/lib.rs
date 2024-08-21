@@ -21,6 +21,12 @@ use apollo_rust_robotics_core::ChainNalgebra;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_distance_statistics_nalgebra_module::ApolloLinkShapesDistanceStatisticsNalgebraModule;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_skips_nalgebra_module::ApolloLinkShapesSkipsNalgebraModule;
 
+
+pub trait ChainBuildersTrait {
+    fn new_from_root_directory(root: &ResourcesRootDirectory, robot_name: &str) -> Self;
+
+    fn new_from_sub_directory(s: &ResourcesSubDirectory) -> Self;
+}
 impl ChainBuildersTrait for ChainNalgebra {
     fn new_from_root_directory(root: &ResourcesRootDirectory, robot_name: &str) -> Self {
         let s = root.get_subdirectory(robot_name);
@@ -49,7 +55,7 @@ impl ChainBuildersTrait for ChainNalgebra {
         let bounds_module = ApolloBoundsModule::load_or_build(&s, false).expect("error");
 
         Self {
-            single_robot_directory: s.clone(),
+            resources_sub_directory: s.clone(),
             urdf_module,
             chain_module,
             dof_module,
@@ -69,10 +75,15 @@ impl ChainBuildersTrait for ChainNalgebra {
     }
 }
 
-pub trait ChainBuildersTrait {
-    fn new_from_root_directory(root: &ResourcesRootDirectory, robot_name: &str) -> Self;
-
-    fn new_from_sub_directory(s: &ResourcesSubDirectory) -> Self;
+pub trait PreprocessForceBuildModulesTrait {
+    fn refine_link_shapes_skips_module(self) -> Self;
+}
+impl PreprocessForceBuildModulesTrait for ChainNalgebra {
+    fn refine_link_shapes_skips_module(self) -> Self {
+        let s = &self.resources_sub_directory;
+        ApolloLinkShapesSkipsModule::load_or_build(s, true).expect("error");
+        s.to_chain_nalgebra()
+    }
 }
 
 pub trait ToChainNalgebra {
