@@ -335,7 +335,7 @@ impl ApolloChainBevyTrait for ChainNalgebra {
             visibility_change_engine.add_momentary_request(VisibilityChangeRequest::new(VisibilityChangeRequestType::On, Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::Plain), ChainMeshComponent::ChainInstanceIdx(0), ChainMeshComponent::MeshType(MeshType::OBJ)])));
 
             let stats = a.link_shapes_distance_statistics_module.get_stats(&link_shape_rep_a, &link_shape_mode_a);
-            let skips = a.link_shapes_simple_skips_nalgebra_module.get_skips(link_shape_mode_a, link_shape_rep_a);
+            let skips = a.link_shapes_skips_nalgebra_module.get_skips(link_shape_mode_a, link_shape_rep_a);
             SidePanel::left("proximity_visualizer").show(egui_contexts.ctx_mut(), |ui| {
                 ui.heading("Pairwise Distances");
                 c.action_chain_proximity_visualizer(ui, &chain_state_a.state, &chain_state_a.state, &link_shape_mode_a, &link_shape_mode_a, &link_shape_rep_a, &link_shape_rep_a, Some(skips), Some(&stats.averages), &mut selected_idxs, &mut color_change_engine, &mut gizmos);

@@ -16,6 +16,7 @@ use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::modules_runtime::link_shapes_distance_statistics_nalgebra_module::ApolloLinkShapesDistanceStatisticsNalgebraModule;
 use crate::modules_runtime::link_shapes_module::{ApolloLinkShapesModule, LinkShapeMode, LinkShapeRep};
 use crate::modules_runtime::link_shapes_simple_skips_nalgebra_module::ApolloLinkShapesSimpleSkipsNalgebraModule;
+use crate::modules_runtime::link_shapes_skips_nalgebra_module::ApolloLinkShapesSkipsNalgebraModule;
 use crate::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModule;
 use crate::robot_functions::robot_kinematics_functions::RobotKinematicsFunctions;
 use crate::robot_functions::robot_proximity_functions::RobotProximityFunctions;
@@ -150,6 +151,7 @@ pub struct ChainNalgebra {
     pub link_shapes_max_distance_from_origin_module: ApolloLinkShapesMaxDistanceFromOriginModule,
     pub link_shapes_distance_statistics_module: ApolloLinkShapesDistanceStatisticsNalgebraModule,
     pub link_shapes_simple_skips_nalgebra_module: ApolloLinkShapesSimpleSkipsNalgebraModule,
+    pub link_shapes_skips_nalgebra_module: ApolloLinkShapesSkipsNalgebraModule,
     pub bounds_module: ApolloBoundsModule
 }
 impl ChainNalgebra {
@@ -219,6 +221,11 @@ impl ChainNalgebra {
     #[inline(always)]
     pub fn link_shapes_simple_skips_nalgebra_module(&self) -> &ApolloLinkShapesSimpleSkipsNalgebraModule {
         &self.link_shapes_simple_skips_nalgebra_module
+    }
+
+    #[inline(always)]
+    pub fn link_shapes_skips_nalgebra_module(&self) -> &ApolloLinkShapesSkipsNalgebraModule {
+        &self.link_shapes_skips_nalgebra_module
     }
 
     #[inline(always)]

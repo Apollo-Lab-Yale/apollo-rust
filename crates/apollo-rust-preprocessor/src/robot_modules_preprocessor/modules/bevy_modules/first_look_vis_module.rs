@@ -27,7 +27,6 @@ impl PreprocessorModule for ApolloFirstLookVisModule {
             .arg("--bin")
             .arg("first_look_vis_module_process")
             .arg("--")
-            .arg(s.root_directory.to_str().expect("error"))
             .arg(&s.name)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

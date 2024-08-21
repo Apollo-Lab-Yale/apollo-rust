@@ -12,12 +12,14 @@ use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_a
 use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_distance_statistics_module::ApolloLinkShapesDistanceStatisticsModule;
 use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
 use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_simple_skips_module::ApolloLinkShapesSimpleSkipsModule;
+use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_skips_module::ApolloLinkShapesSkipsModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
 use apollo_rust_robot_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 use apollo_rust_robotics_core::ChainNalgebra;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_distance_statistics_nalgebra_module::ApolloLinkShapesDistanceStatisticsNalgebraModule;
+use apollo_rust_robotics_core::modules_runtime::link_shapes_skips_nalgebra_module::ApolloLinkShapesSkipsNalgebraModule;
 
 impl ChainBuildersTrait for ChainNalgebra {
     fn new_from_root_directory(root: &ResourcesRootDirectory, robot_name: &str) -> Self {
@@ -42,6 +44,8 @@ impl ChainBuildersTrait for ChainNalgebra {
         let link_shapes_distance_statistics_module = ApolloLinkShapesDistanceStatisticsNalgebraModule::from_link_shapes_distance_statistics_module(&link_shapes_distance_statistics_module);
         let link_shapes_simple_skips_module = ApolloLinkShapesSimpleSkipsModule::load_or_build(&s, false).expect("error");
         let link_shapes_simple_skips_nalgebra_module = ApolloLinkShapesSimpleSkipsNalgebraModule::from_link_shapes_simple_skips_module(&link_shapes_simple_skips_module);
+        let link_shapes_skips_module = ApolloLinkShapesSkipsModule::load_or_build(&s, false).expect("error");
+        let link_shapes_skips_nalgebra_module = ApolloLinkShapesSkipsNalgebraModule::from_link_shapes_skips_module(&link_shapes_skips_module);
         let bounds_module = ApolloBoundsModule::load_or_build(&s, false).expect("error");
 
         Self {
@@ -59,6 +63,7 @@ impl ChainBuildersTrait for ChainNalgebra {
             link_shapes_max_distance_from_origin_module,
             link_shapes_distance_statistics_module,
             link_shapes_simple_skips_nalgebra_module,
+            link_shapes_skips_nalgebra_module,
             bounds_module,
         }
     }
