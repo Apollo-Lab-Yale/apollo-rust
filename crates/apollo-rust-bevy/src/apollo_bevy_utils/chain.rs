@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use arboard::Clipboard;
 use bevy::asset::{Assets, AssetServer};
 use bevy::color::Color;
 use bevy::math::Quat;
@@ -15,7 +16,7 @@ use parry3d_f64::query::Contact;
 use apollo_rust_algs::VecOfOptionsToVecOfVecsTrait;
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_lie::LieGroupElement;
-use apollo_rust_linalg::{V};
+use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_proximity::double_group_queries::{ConvertToAverageDistancesTrait, DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput, SortDoubleGroupProximityQueryOutputTrait};
 use apollo_rust_proximity::{ProximityLossFunction, ToIntersectionResult, ToProximityValue};
 use apollo_rust_robot_modules::ResourcesSubDirectory;
@@ -493,6 +494,7 @@ impl BevyChainSlidersEguiRaw {
         dof_module: &ApolloDOFModule,
         bounds_module: &ApolloBoundsModule,
         color_changes: bool,
+        state_text_edit_string: &mut String,
         color_change_engine: &mut ResMut<ColorChangeEngine>,
         query: &mut Query<&mut ChainState>,
         ui: &mut Ui) {
@@ -534,7 +536,7 @@ impl BevyChainSlidersEguiRaw {
                                     if resp.clicked() { robot_state[*dof_idx] -= 0.1; }
                                 });
 
-                                if hovered &&color_changes {
+                                if hovered && color_changes {
                                     color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::medium_priority_color(0.0, 0.2, 1.0, 0.8), Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainInstanceIdx(chain_instance_idx), ChainMeshComponent::LinkIdx(parent_link_idx)])));
                                     color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::medium_priority_color(0.2, 1.0, 0.0, 0.8), Signature::new_chain_link_mesh(vec![ChainMeshComponent::LinkIdx(child_link_idx), ChainMeshComponent::ChainInstanceIdx(chain_instance_idx)])));
                                 }
@@ -545,28 +547,51 @@ impl BevyChainSlidersEguiRaw {
 
                     ui.separator();
 
-                    if ui.button("Reset").clicked() {
+                    if ui.button("Reset state").clicked() {
                         robot_state.iter_mut().for_each(|x| *x = 0.0);
                     }
-                    if ui.button("Random").clicked() {
+                    if ui.button("Random state").clicked() {
                         let random = bounds_module.sample_random_state();
                         robot_state.iter_mut().enumerate().for_each(|(i, x)| *x = random[i]);
+                    }
+                    ui.text_edit_singleline(state_text_edit_string);
+                    if ui.button("Set state from textbox").clicked() {
+                        let trimmed = state_text_edit_string.trim_matches(|c| c == '[' || c == ']');
+
+                        let vec = trimmed
+                            .split(',')
+                            .map(|s| s.trim().parse::<f64>())
+                            .collect::<Result<Vec<f64>, _>>().expect("error");
+
+                        *robot_state = V::new(&vec);
+                    }
+                    if ui.button("Copy state to clipboard").clicked() {
+                        let formatted_string = robot_state
+                            .iter()
+                            .map(|v| format!("{:.1}", v))
+                            .collect::<Vec<String>>()
+                            .join(",");
+
+                        let formated_string = format!("[{}]", formatted_string);
+                        let mut clipboard = Clipboard::new().expect("error");
+                        clipboard.set_text(formated_string.to_string()).expect("error");
                     }
                 });
             }
         });
     }
 
-    pub fn action_chain_sliders_egui(&self, color_change_engine: &mut ResMut<ColorChangeEngine>, query: &mut Query<&mut ChainState>, ui: &mut Ui) {
-        Self::action_chain_sliders_egui_static(self.chain_instance_idx, &self.urdf_module, &self.chain_module, &self.dof_module, &self.bounds_module, self.color_changes, color_change_engine, query, ui);
+    pub fn action_chain_sliders_egui(&self, state_text_edit_string: &mut String, color_change_engine: &mut ResMut<ColorChangeEngine>, query: &mut Query<&mut ChainState>, ui: &mut Ui) {
+        Self::action_chain_sliders_egui_static(self.chain_instance_idx, &self.urdf_module, &self.chain_module, &self.dof_module, &self.bounds_module, self.color_changes, state_text_edit_string, color_change_engine, query, ui);
     }
 
     pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, Query<&mut ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, ResMut<ColorChangeEngine>) + 'static {
+        let mut state_text_edit_string = "".to_string();
         return move |mut egui_contexts: EguiContexts, mut query: Query<&mut ChainState>, mut cursor_is_over_egui: ResMut<CursorIsOverEgui>, query2: Query<&Window1, With<PrimaryWindow>>, mut color_change_engine: ResMut<ColorChangeEngine>| {
             let self_clone = self.clone();
             SidePanel::left(format!("chain_sliders_side_panel_chain_instance_idx_{}", self.chain_instance_idx))
                 .show(egui_contexts.ctx_mut(),  |ui| {
-                    self_clone.action_chain_sliders_egui(&mut color_change_engine, &mut query, ui);
+                    self_clone.action_chain_sliders_egui(&mut state_text_edit_string, &mut color_change_engine, &mut query, ui);
                     set_cursor_is_over_egui_default(ui, &mut cursor_is_over_egui, &query2);
                 });
         }
@@ -580,8 +605,8 @@ pub struct BevyChainSlidersEgui {
     pub color_changes: bool
 }
 impl BevyChainSlidersEgui {
-    pub fn action_chain_sliders_egui(&self, color_change_engine: &mut ResMut<ColorChangeEngine>, query: &mut Query<&mut ChainState>, ui: &mut Ui) {
-        BevyChainSlidersEguiRaw::action_chain_sliders_egui_static(self.chain_instance_idx, &self.chain.urdf_module, &self.chain.chain_module, &self.chain.dof_module, &self.chain.bounds_module, self.color_changes, color_change_engine, query, ui);
+    pub fn action_chain_sliders_egui(&self, state_text_edit_string: &mut String, color_change_engine: &mut ResMut<ColorChangeEngine>, query: &mut Query<&mut ChainState>, ui: &mut Ui) {
+        BevyChainSlidersEguiRaw::action_chain_sliders_egui_static(self.chain_instance_idx, &self.chain.urdf_module, &self.chain.chain_module, &self.chain.dof_module, &self.chain.bounds_module, self.color_changes, state_text_edit_string, color_change_engine, query, ui);
     }
     pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, Query<&mut ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, ResMut<ColorChangeEngine>) + 'static {
         let raw = BevyChainSlidersEguiRaw {

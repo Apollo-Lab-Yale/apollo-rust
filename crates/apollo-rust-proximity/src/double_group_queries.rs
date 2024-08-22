@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::fmt::Debug;
 use nalgebra::DMatrix;
 use parry3d_f64::query::{Contact, contact, distance, intersection_test};
 use parry3d_f64::shape::Shape;
@@ -13,12 +14,13 @@ pub enum DoubleGroupProximityQueryMode {
     SubsetOfPairs(Vec<(usize, usize)>)
 }
 
-pub struct DoubleGroupProximityQueryOutput<T> {
+#[derive(Clone, Debug)]
+pub struct DoubleGroupProximityQueryOutput<T: Clone + Debug> {
     pub outputs: Vec<T>,
     pub shape_idxs: Vec<(usize, usize)>,
     pub num_ground_truth_checks: usize
 }
-impl<T> DoubleGroupProximityQueryOutput<T> {
+impl<T: Clone + Debug> DoubleGroupProximityQueryOutput<T> {
     pub fn new(outputs: Vec<T>, shape_idxs: Vec<(usize, usize)>, num_ground_truth_checks: usize) -> Self {
         Self { outputs, shape_idxs, num_ground_truth_checks }
     }

@@ -2,6 +2,8 @@ use parry3d_f64::query::Contact;
 use apollo_rust_linalg::V;
 use apollo_rust_proximity::double_group_queries::{DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput};
 use apollo_rust_proximity::proxima::proxima1::{Proxima1, Proxima1Cache};
+use apollo_rust_proximity::proxima::proxima_core::{ProximaBudget, ProximaOutput, ProximaTrait};
+use apollo_rust_proximity::ProximityLossFunction;
 use apollo_rust_robot_modules::{ResourcesSubDirectory};
 use apollo_rust_robot_modules::robot_modules::bounds_module::ApolloBoundsModule;
 use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
@@ -281,7 +283,34 @@ impl ChainNalgebra {
         self.self_contact(&link_poses, link_shape_mode, link_shape_rep, early_stop, margin)
     }
 
-    pub fn other_chain_intersect(&self,
+    pub fn double_chain_intersect(&self,
+                                  other_chain: &ChainNalgebra,
+                                  self_link_poses: &Vec<ISE3q>,
+                                  self_link_shape_mode: LinkShapeMode,
+                                  self_link_shape_rep: LinkShapeRep,
+                                  other_link_poses: &Vec<ISE3q>,
+                                  other_link_shape_mode: LinkShapeMode,
+                                  other_link_shape_rep: LinkShapeRep,
+                                  early_stop: bool) -> DoubleGroupProximityQueryOutput<bool> {
+        RobotProximityFunctions::double_chain_intersect(&self.link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_chain.link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, None, early_stop, &DoubleGroupProximityQueryMode::AllPossiblePairs)
+    }
+
+    pub fn double_chain_intersect_from_states(&self,
+                                              other_chain: &ChainNalgebra,
+                                              self_state: &V,
+                                              self_link_shape_mode: LinkShapeMode,
+                                              self_link_shape_rep: LinkShapeRep,
+                                              other_state: &V,
+                                              other_link_shape_mode: LinkShapeMode,
+                                              other_link_shape_rep: LinkShapeRep,
+                                              early_stop: bool) -> DoubleGroupProximityQueryOutput<bool> {
+        let self_link_poses = self.fk(self_state);
+        let other_link_poses = other_chain.fk(other_state);
+
+        self.double_chain_intersect(other_chain, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_link_poses, other_link_shape_mode, other_link_shape_rep, early_stop)
+    }
+
+    pub fn double_chain_distance(&self,
                                  other_chain: &ChainNalgebra,
                                  self_link_poses: &Vec<ISE3q>,
                                  self_link_shape_mode: LinkShapeMode,
@@ -289,11 +318,11 @@ impl ChainNalgebra {
                                  other_link_poses: &Vec<ISE3q>,
                                  other_link_shape_mode: LinkShapeMode,
                                  other_link_shape_rep: LinkShapeRep,
-                                 early_stop: bool) -> DoubleGroupProximityQueryOutput<bool> {
-        RobotProximityFunctions::double_chain_intersect(&self.link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_chain.link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, None, early_stop, &DoubleGroupProximityQueryMode::AllPossiblePairs)
+                                 early_stop: bool) -> DoubleGroupProximityQueryOutput<f64> {
+        RobotProximityFunctions::double_chain_distance(&self.link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_chain.link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, None, early_stop, &DoubleGroupProximityQueryMode::AllPossiblePairs)
     }
 
-    pub fn other_chain_intersect_from_states(&self,
+    pub fn double_chain_distance_from_states(&self,
                                              other_chain: &ChainNalgebra,
                                              self_state: &V,
                                              self_link_shape_mode: LinkShapeMode,
@@ -301,14 +330,14 @@ impl ChainNalgebra {
                                              other_state: &V,
                                              other_link_shape_mode: LinkShapeMode,
                                              other_link_shape_rep: LinkShapeRep,
-                                             early_stop: bool) -> DoubleGroupProximityQueryOutput<bool> {
+                                             early_stop: bool) -> DoubleGroupProximityQueryOutput<f64> {
         let self_link_poses = self.fk(self_state);
         let other_link_poses = other_chain.fk(other_state);
 
-        self.other_chain_intersect(other_chain, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_link_poses, other_link_shape_mode, other_link_shape_rep, early_stop)
+        self.double_chain_distance(other_chain, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_link_poses, other_link_shape_mode, other_link_shape_rep, early_stop)
     }
 
-    pub fn other_chain_distance(&self,
+    pub fn double_chain_contact(&self,
                                 other_chain: &ChainNalgebra,
                                 self_link_poses: &Vec<ISE3q>,
                                 self_link_shape_mode: LinkShapeMode,
@@ -316,11 +345,12 @@ impl ChainNalgebra {
                                 other_link_poses: &Vec<ISE3q>,
                                 other_link_shape_mode: LinkShapeMode,
                                 other_link_shape_rep: LinkShapeRep,
-                                early_stop: bool) -> DoubleGroupProximityQueryOutput<f64> {
-        RobotProximityFunctions::double_chain_distance(&self.link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_chain.link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, None, early_stop, &DoubleGroupProximityQueryMode::AllPossiblePairs)
+                                early_stop: bool,
+                                margin: f64) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
+        RobotProximityFunctions::double_chain_contact(&self.link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_chain.link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, None, early_stop, margin, &DoubleGroupProximityQueryMode::AllPossiblePairs)
     }
 
-    pub fn other_chain_distance_from_states(&self,
+    pub fn double_chain_contact_from_states(&self,
                                             other_chain: &ChainNalgebra,
                                             self_state: &V,
                                             self_link_shape_mode: LinkShapeMode,
@@ -328,47 +358,53 @@ impl ChainNalgebra {
                                             other_state: &V,
                                             other_link_shape_mode: LinkShapeMode,
                                             other_link_shape_rep: LinkShapeRep,
-                                            early_stop: bool) -> DoubleGroupProximityQueryOutput<f64> {
+                                            early_stop: bool,
+                                            margin: f64) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
         let self_link_poses = self.fk(self_state);
         let other_link_poses = other_chain.fk(other_state);
 
-        self.other_chain_distance(other_chain, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_link_poses, other_link_shape_mode, other_link_shape_rep, early_stop)
+        self.double_chain_contact(other_chain, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_link_poses, other_link_shape_mode, other_link_shape_rep, early_stop, margin)
     }
 
-    pub fn other_chain_contact(&self,
-                               other_chain: &ChainNalgebra,
-                               self_link_poses: &Vec<ISE3q>,
-                               self_link_shape_mode: LinkShapeMode,
-                               self_link_shape_rep: LinkShapeRep,
-                               other_link_poses: &Vec<ISE3q>,
-                               other_link_shape_mode: LinkShapeMode,
-                               other_link_shape_rep: LinkShapeRep,
-                               early_stop: bool,
-                               margin: f64) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
-        RobotProximityFunctions::double_chain_contact(&self.link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_chain.link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, None, early_stop, margin, &DoubleGroupProximityQueryMode::AllPossiblePairs)
+    pub fn self_intersect_proxima<P: ProximaTrait>(&self, proxima: &mut P, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, frozen: bool) -> ProximaOutput<bool> {
+        let link_shapes_module = &self.link_shapes_module;
+        let skips = self.link_shapes_skips_nalgebra_module.get_skips(link_shape_mode, link_shape_rep);
+        RobotProximityFunctions::self_intersect_proxima(proxima, link_shapes_module, link_poses, link_shape_mode, link_shape_rep, Some(skips), frozen)
     }
 
-    pub fn other_chain_contact_from_states(&self,
-                                           other_chain: &ChainNalgebra,
-                                           self_state: &V,
-                                           self_link_shape_mode: LinkShapeMode,
-                                           self_link_shape_rep: LinkShapeRep,
-                                           other_state: &V,
-                                           other_link_shape_mode: LinkShapeMode,
-                                           other_link_shape_rep: LinkShapeRep,
-                                           early_stop: bool,
-                                           margin: f64) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
-        let self_link_poses = self.fk(self_state);
-        let other_link_poses = other_chain.fk(other_state);
-
-        self.other_chain_contact(other_chain, &self_link_poses, self_link_shape_mode, self_link_shape_rep, &other_link_poses, other_link_shape_mode, other_link_shape_rep, early_stop, margin)
+    pub fn self_proximity_proxima<P: ProximaTrait>(&self, proxima: &mut P, budget: &ProximaBudget, loss_function: &ProximityLossFunction, p_norm: f64, cutoff_distance: f64, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, frozen: bool) -> ProximaOutput<f64> {
+        let link_shapes_module = &self.link_shapes_module;
+        let skips = self.link_shapes_skips_nalgebra_module.get_skips(link_shape_mode, link_shape_rep);
+        let average_distances = &self.link_shapes_distance_statistics_module.get_stats(&link_shape_rep, &link_shape_mode).averages;
+        RobotProximityFunctions::self_proximity_proxima(proxima, budget, loss_function, p_norm, cutoff_distance, link_shapes_module, link_poses, link_shape_mode, link_shape_rep, Some(skips), Some(average_distances), frozen)
     }
 
-    pub fn self_intersect_proxima1() {
-        
+    pub fn double_chain_intersect_proxima<P: ProximaTrait>(&self, other_chain: &ChainNalgebra, proxima: &mut P, self_link_poses: &Vec<ISE3q>, self_link_shape_mode: LinkShapeMode, self_link_shape_rep: LinkShapeRep, other_link_poses: &Vec<ISE3q>, other_link_shape_mode: LinkShapeMode, other_link_shape_rep: LinkShapeRep, frozen: bool) -> ProximaOutput<bool> {
+        let self_link_shapes_module = &self.link_shapes_module;
+        let other_link_shapes_module = &other_chain.link_shapes_module;
+        RobotProximityFunctions::double_chain_intersect_proxima(proxima, self_link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, other_link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, frozen)
     }
 
-    pub fn get_self_proxima1(&self, state: &V, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep) -> Proxima1 {
+    pub fn double_chain_proximity_proxima<P: ProximaTrait>(&self,
+                                                           other_chain: &ChainNalgebra,
+                                                           proxima: &mut P,
+                                                           budget: &ProximaBudget,
+                                                           loss_function: &ProximityLossFunction,
+                                                           p_norm: f64,
+                                                           cutoff_distance: f64,
+                                                           self_link_poses: &Vec<ISE3q>,
+                                                           self_link_shape_mode: LinkShapeMode,
+                                                           self_link_shape_rep: LinkShapeRep,
+                                                           other_link_poses: &Vec<ISE3q>,
+                                                           other_link_shape_mode: LinkShapeMode,
+                                                           other_link_shape_rep: LinkShapeRep,
+                                                           frozen: bool) -> ProximaOutput<f64> {
+        let self_link_shapes_module = &self.link_shapes_module;
+        let other_link_shapes_module = &other_chain.link_shapes_module;
+        RobotProximityFunctions::double_chain_proximity_proxima(proxima, budget, loss_function, p_norm, cutoff_distance, self_link_shapes_module, &self_link_poses, self_link_shape_mode, self_link_shape_rep, other_link_shapes_module, other_link_poses, other_link_shape_mode, other_link_shape_rep, frozen)
+    }
+
+    pub fn get_self_proxima1(&self, interpolation: f64, state: &V, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep) -> Proxima1 {
         let fk_res = self.fk(state);
         let shapes = self.link_shapes_module.get_shapes(link_shape_mode, link_shape_rep);
         let poses = self.link_shapes_module.link_poses_to_shape_poses(&fk_res, link_shape_mode);
@@ -379,11 +415,11 @@ impl ChainNalgebra {
             cache,
             max_distances_from_origin_a: self.link_shapes_max_distance_from_origin_module.get_shapes_max_distances_from_origin(link_shape_mode, link_shape_rep),
             max_distances_from_origin_b: self.link_shapes_max_distance_from_origin_module.get_shapes_max_distances_from_origin(link_shape_mode, link_shape_rep),
-            interpolation: 0.0,
+            interpolation,
         }
     }
 
-    pub fn get_other_proxima1(&self, other_chain: &ChainNalgebra, self_state: &V, self_link_shape_mode: LinkShapeMode, self_link_shape_rep: LinkShapeRep, other_state: &V, other_link_shape_mode: LinkShapeMode, other_link_shape_rep: LinkShapeRep) -> Proxima1 {
+    pub fn get_double_chain_proxima1(&self, interpolation: f64, other_chain: &ChainNalgebra, self_state: &V, self_link_shape_mode: LinkShapeMode, self_link_shape_rep: LinkShapeRep, other_state: &V, other_link_shape_mode: LinkShapeMode, other_link_shape_rep: LinkShapeRep) -> Proxima1 {
         let self_fk_res = self.fk(self_state);
         let self_shapes = self.link_shapes_module.get_shapes(self_link_shape_mode, self_link_shape_rep);
         let self_poses = self.link_shapes_module.link_poses_to_shape_poses(&self_fk_res, self_link_shape_mode);
@@ -397,7 +433,7 @@ impl ChainNalgebra {
             cache,
             max_distances_from_origin_a: self.link_shapes_max_distance_from_origin_module.get_shapes_max_distances_from_origin(self_link_shape_mode, self_link_shape_rep),
             max_distances_from_origin_b: other_chain.link_shapes_max_distance_from_origin_module.get_shapes_max_distances_from_origin(other_link_shape_mode, other_link_shape_rep),
-            interpolation: 0.0,
+            interpolation,
         }
     }
 }

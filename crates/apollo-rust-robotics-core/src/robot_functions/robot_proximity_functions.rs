@@ -2,9 +2,8 @@ use apollo_rust_proximity::double_group_queries::{DoubleGroupProximityQueryMode,
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use nalgebra::DMatrix;
 use parry3d_f64::query::Contact;
-use apollo_rust_proximity::proxima::proxima1::{Proxima1};
-use apollo_rust_proximity::proxima::proxima_core::{ProximaBudget, ProximaTrait};
-use apollo_rust_proximity::{ProximityLossFunction, ProximitySimpleOutput};
+use apollo_rust_proximity::proxima::proxima_core::{ProximaBudget, ProximaOutput, ProximaTrait};
+use apollo_rust_proximity::{ProximityLossFunction};
 use crate::modules_runtime::link_shapes_module::{ApolloLinkShapesModule, LinkShapeMode, LinkShapeRep};
 
 pub struct RobotProximityFunctions;
@@ -91,17 +90,59 @@ impl RobotProximityFunctions {
         pairwise_group_query_contact(shapes_a, &poses_a, shapes_b, &poses_b, double_group_proximity_query_mode, skips, early_stop, margin)
     }
 
-    pub fn self_intersect_proxima1(proxima: &mut Proxima1, budget: &ProximaBudget, link_shapes_module: &ApolloLinkShapesModule, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, skips: Option<&DMatrix<bool>>) -> ProximitySimpleOutput<bool> {
+    pub fn self_intersect_proxima<P: ProximaTrait>(proxima: &mut P, link_shapes_module: &ApolloLinkShapesModule, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, skips: Option<&DMatrix<bool>>, frozen: bool) -> ProximaOutput<bool> {
         let group = link_shapes_module.get_shapes(link_shape_mode, link_shape_rep);
         let poses = link_shapes_module.link_poses_to_shape_poses(link_poses, link_shape_mode);
 
-        proxima.proxima_for_intersection(budget, &group, &poses, &group, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, &ProximityLossFunction::Hinge { threshold: 0.0 }, 8.0, skips, false)
+        proxima.proxima_for_intersection(&group, &poses, &group, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs,  skips, frozen)
     }
 
-    pub fn self_proximity_proxima1(proxima: &mut Proxima1, budget: &ProximaBudget, loss_function: &ProximityLossFunction, p_norm: f64, cutoff_distance: f64, link_shapes_module: &ApolloLinkShapesModule, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, skips: Option<&DMatrix<bool>>, average_distances: Option<&DMatrix<f64>>) -> ProximitySimpleOutput<f64> {
+    pub fn self_proximity_proxima<P: ProximaTrait>(proxima: &mut P, budget: &ProximaBudget, loss_function: &ProximityLossFunction, p_norm: f64, cutoff_distance: f64, link_shapes_module: &ApolloLinkShapesModule, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, skips: Option<&DMatrix<bool>>, average_distances: Option<&DMatrix<f64>>, frozen: bool) -> ProximaOutput<f64> {
         let group = link_shapes_module.get_shapes(link_shape_mode, link_shape_rep);
         let poses = link_shapes_module.link_poses_to_shape_poses(link_poses, link_shape_mode);
 
-        proxima.proxima_for_proximity(budget, &group, &poses, &group, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, loss_function, 8.0, cutoff_distance, skips, average_distances, false)
+        proxima.proxima_for_proximity(budget, &group, &poses, &group, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, loss_function, p_norm, cutoff_distance, skips, average_distances, frozen)
+    }
+
+    pub fn double_chain_intersect_proxima<P: ProximaTrait>(proxima: &mut P,
+                                                           self_link_shapes_module: &ApolloLinkShapesModule,
+                                                           self_link_poses: &Vec<ISE3q>,
+                                                           self_link_shape_mode: LinkShapeMode,
+                                                           self_link_shape_rep: LinkShapeRep,
+                                                           other_link_shapes_module: &ApolloLinkShapesModule,
+                                                           other_link_poses: &Vec<ISE3q>,
+                                                           other_link_shape_mode: LinkShapeMode,
+                                                           other_link_shape_rep: LinkShapeRep,
+                                                           frozen: bool) -> ProximaOutput<bool> {
+        let self_group = self_link_shapes_module.get_shapes(self_link_shape_mode, self_link_shape_rep);
+        let self_poses = self_link_shapes_module.link_poses_to_shape_poses(self_link_poses, self_link_shape_mode);
+
+        let other_group = other_link_shapes_module.get_shapes(other_link_shape_mode, other_link_shape_rep);
+        let other_poses = other_link_shapes_module.link_poses_to_shape_poses(other_link_poses, other_link_shape_mode);
+
+        proxima.proxima_for_intersection(&self_group, &self_poses, &other_group, &other_poses, &DoubleGroupProximityQueryMode::AllPossiblePairs,  None, frozen)
+    }
+
+    pub fn double_chain_proximity_proxima<P: ProximaTrait>(proxima: &mut P,
+                                                           budget: &ProximaBudget,
+                                                           loss_function: &ProximityLossFunction,
+                                                           p_norm: f64,
+                                                           cutoff_distance: f64,
+                                                           self_link_shapes_module: &ApolloLinkShapesModule,
+                                                           self_link_poses: &Vec<ISE3q>,
+                                                           self_link_shape_mode: LinkShapeMode,
+                                                           self_link_shape_rep: LinkShapeRep,
+                                                           other_link_shapes_module: &ApolloLinkShapesModule,
+                                                           other_link_poses: &Vec<ISE3q>,
+                                                           other_link_shape_mode: LinkShapeMode,
+                                                           other_link_shape_rep: LinkShapeRep,
+                                                           frozen: bool) -> ProximaOutput<f64> {
+        let self_group = self_link_shapes_module.get_shapes(self_link_shape_mode, self_link_shape_rep);
+        let self_poses = self_link_shapes_module.link_poses_to_shape_poses(self_link_poses, self_link_shape_mode);
+
+        let other_group = other_link_shapes_module.get_shapes(other_link_shape_mode, other_link_shape_rep);
+        let other_poses = other_link_shapes_module.link_poses_to_shape_poses(other_link_poses, other_link_shape_mode);
+
+        proxima.proxima_for_proximity(budget, self_group, &self_poses, other_group, &other_poses, &DoubleGroupProximityQueryMode::AllPossiblePairs, loss_function, p_norm, cutoff_distance, None, None, frozen)
     }
 }
