@@ -12,6 +12,6 @@ fn main() {
     // let s2 = r.get_subdirectory("test");
     // let c2 = s2.to_chain_nalgebra();
     // c.bevy_proximity_vis();
-    let cc = c.get_self_proxima1_cache(&V::new(&[0.0; 6]), LinkShapeMode::Decomposition, LinkShapeRep::ConvexHull);
+    let cc = c.get_self_proxima1(&V::new(&[0.0; 6]), LinkShapeMode::Decomposition, LinkShapeRep::ConvexHull);
     println!("{:?}", cc);
 }

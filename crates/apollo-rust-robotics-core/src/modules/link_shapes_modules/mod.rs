@@ -1,0 +1,1 @@
+pub mod link_shapes_max_distance_from_origin_module;

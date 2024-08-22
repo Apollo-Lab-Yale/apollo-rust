@@ -111,8 +111,12 @@ impl ProximaTrait for Proxima1 {
         } )
     }
 
-    fn get_cache(&mut self) -> &mut Self::CacheType {
+    fn get_cache_mut(&mut self) -> &mut Self::CacheType {
         &mut self.cache
+    }
+
+    fn get_cache_immut(&self) -> &Self::CacheType {
+        &self.cache
     }
 
     fn approximate_distance_and_bounds(cache_element: &Self::CacheElementType, pose_a_k: &ISE3q, pose_b_k: &ISE3q, cutoff_distance: f64, extra_args: &Self::ExtraArgs) -> Option<(f64, f64, f64)> {

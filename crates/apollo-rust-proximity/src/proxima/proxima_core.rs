@@ -12,7 +12,8 @@ pub trait ProximaTrait {
     type ExtraArgs : Clone;
 
     fn get_extra_args(&self, i: usize, j: usize) -> Cow<Self::ExtraArgs>;
-    fn get_cache(&mut self) -> &mut Self::CacheType;
+    fn get_cache_mut(&mut self) -> &mut Self::CacheType;
+    fn get_cache_immut(&self) -> &Self::CacheType;
     fn approximate_distance_and_bounds(cache_element: &Self::CacheElementType, pose_a_k: &ISE3q, pose_b_k: &ISE3q, cutoff_distance: f64, extra_args: &Self::ExtraArgs) -> Option<(f64, f64, f64)>;
     fn f(&self, cache: &Self::CacheType, i: usize, pa: &ISE3q, j: usize, pb: &ISE3q, skips: Option<&DMatrix<bool>>, cutoff_distance: f64) -> Option<ProximaOutput> {
         match skips {
@@ -39,9 +40,10 @@ pub trait ProximaTrait {
             }
         }
     }
-    fn get_all_proxima_outputs_for_proximity(&self, cache: &Self::CacheType, poses_a: &Vec<ISE3q>, poses_b: &Vec<ISE3q>, query_mode: &DoubleGroupProximityQueryMode, skips: Option<&DMatrix<bool>>, average_distances: Option<&DMatrix<f64>>, cutoff_distance: f64) -> Vec<ProximaOutput> {
+    fn get_all_proxima_outputs_for_proximity(&self, poses_a: &Vec<ISE3q>, poses_b: &Vec<ISE3q>, query_mode: &DoubleGroupProximityQueryMode, skips: Option<&DMatrix<bool>>, average_distances: Option<&DMatrix<f64>>, cutoff_distance: f64) -> Vec<ProximaOutput> {
         let mut out = vec![];
 
+        let cache = self.get_cache_immut();
         match query_mode {
             DoubleGroupProximityQueryMode::AllPossiblePairs => {
                 for (i, pa) in poses_a.iter().enumerate() {
@@ -86,9 +88,10 @@ pub trait ProximaTrait {
 
         out
     }
-    fn get_all_proxima_outputs_for_intersection(&self, cache: &Self::CacheType, poses_a: &Vec<ISE3q>, poses_b: &Vec<ISE3q>, query_mode: &DoubleGroupProximityQueryMode, skips: Option<&DMatrix<bool>>, cutoff_distance: f64) -> Option<Vec<ProximaOutput>> {
+    fn get_all_proxima_outputs_for_intersection(&self, poses_a: &Vec<ISE3q>, poses_b: &Vec<ISE3q>, query_mode: &DoubleGroupProximityQueryMode, skips: Option<&DMatrix<bool>>, cutoff_distance: f64) -> Option<Vec<ProximaOutput>> {
         let mut out = vec![];
 
+        let cache = self.get_cache_immut();
         match query_mode {
             DoubleGroupProximityQueryMode::AllPossiblePairs => {
                 for (i, pa) in poses_a.iter().enumerate() {
@@ -137,8 +140,7 @@ pub trait ProximaTrait {
 
         Some(out)
     }
-    fn proxima_for_proximity(&self,
-                             cache: &mut Self::CacheType,
+    fn proxima_for_proximity(&mut self,
                              budget: &ProximaBudget,
                              group_a: &Vec<OffsetShape>,
                              poses_a: &Vec<ISE3q>,
@@ -153,7 +155,7 @@ pub trait ProximaTrait {
                              frozen: bool) -> ProximitySimpleOutput<f64> {
 
         let start = Instant::now();
-        let mut proxima_outputs = self.get_all_proxima_outputs_for_proximity(cache, poses_a, poses_b, query_mode, skips, average_distances, cutoff_distance);
+        let mut proxima_outputs = self.get_all_proxima_outputs_for_proximity(poses_a, poses_b, query_mode, skips, average_distances, cutoff_distance);
 
         if frozen { return ProximitySimpleOutput { result: proxima_outputs.to_proximity_value(loss_function, p_norm), num_ground_truth_checks: 0 } }
 
@@ -180,7 +182,7 @@ pub trait ProximaTrait {
             let pa = &poses_a[i];
             let pb = &poses_b[j];
 
-            let mut new_distance = cache.update_element_with_ground_truth(i, j, sa, pa, sb, pb);
+            let mut new_distance = self.get_cache_mut().update_element_with_ground_truth(i, j, sa, pa, sb, pb);
 
             match average_distances {
                 None => { }
@@ -201,8 +203,7 @@ pub trait ProximaTrait {
             num_ground_truth_checks,
         }
     }
-    fn proxima_for_intersection(&self,
-                                cache: &mut Self::CacheType,
+    fn proxima_for_intersection(&mut self,
                                 budget: &ProximaBudget,
                                 group_a: &Vec<OffsetShape>,
                                 poses_a: &Vec<ISE3q>,
@@ -214,13 +215,15 @@ pub trait ProximaTrait {
                                 skips: Option<&DMatrix<bool>>,
                                 frozen: bool) -> ProximitySimpleOutput<bool> {
         let start = Instant::now();
-        let proxima_outputs = self.get_all_proxima_outputs_for_intersection(cache, poses_a, poses_b, query_mode, skips, 0.0);
+        let proxima_outputs = self.get_all_proxima_outputs_for_intersection(poses_a, poses_b, query_mode, skips, 0.0);
 
         return match proxima_outputs {
-            None => { return ProximitySimpleOutput {
-                result: true,
-                num_ground_truth_checks: 0,
-            } }
+            None => {
+                ProximitySimpleOutput {
+                    result: true,
+                    num_ground_truth_checks: 0,
+                }
+            }
             Some(mut proxima_outputs) => {
                 if frozen {
                     return ProximitySimpleOutput {
@@ -252,7 +255,7 @@ pub trait ProximaTrait {
                     let pa = &poses_a[i];
                     let pb = &poses_b[j];
 
-                    let new_distance = cache.update_element_with_ground_truth(i, j, sa, pa, sb, pb);
+                    let new_distance = self.get_cache_mut().update_element_with_ground_truth(i, j, sa, pa, sb, pb);
 
                     if new_distance <= 0.0 { return ProximitySimpleOutput {
                         result: true,
@@ -274,7 +277,7 @@ pub trait ProximaTrait {
                     } }
                 }
 
-                return ProximitySimpleOutput {
+                ProximitySimpleOutput {
                     result: false,
                     num_ground_truth_checks,
                 }

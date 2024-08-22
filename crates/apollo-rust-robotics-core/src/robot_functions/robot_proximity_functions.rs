@@ -2,8 +2,9 @@ use apollo_rust_proximity::double_group_queries::{DoubleGroupProximityQueryMode,
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use nalgebra::DMatrix;
 use parry3d_f64::query::Contact;
-use apollo_rust_proximity::proxima::proxima1::Proxima1Cache;
-use apollo_rust_proximity::ProximitySimpleOutput;
+use apollo_rust_proximity::proxima::proxima1::{Proxima1};
+use apollo_rust_proximity::proxima::proxima_core::{ProximaBudget, ProximaTrait};
+use apollo_rust_proximity::{ProximityLossFunction, ProximitySimpleOutput};
 use crate::modules_runtime::link_shapes_module::{ApolloLinkShapesModule, LinkShapeMode, LinkShapeRep};
 
 pub struct RobotProximityFunctions;
@@ -90,7 +91,17 @@ impl RobotProximityFunctions {
         pairwise_group_query_contact(shapes_a, &poses_a, shapes_b, &poses_b, double_group_proximity_query_mode, skips, early_stop, margin)
     }
 
-    pub fn self_intersect_proxima1(proxima_cache: &mut Proxima1Cache, link_shapes_module: &ApolloLinkShapesModule, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, skips: Option<&DMatrix<bool>>, early_stop: bool) -> ProximitySimpleOutput<bool> {
-        todo!()
+    pub fn self_intersect_proxima1(proxima: &mut Proxima1, budget: &ProximaBudget, link_shapes_module: &ApolloLinkShapesModule, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, skips: Option<&DMatrix<bool>>) -> ProximitySimpleOutput<bool> {
+        let group = link_shapes_module.get_shapes(link_shape_mode, link_shape_rep);
+        let poses = link_shapes_module.link_poses_to_shape_poses(link_poses, link_shape_mode);
+
+        proxima.proxima_for_intersection(budget, &group, &poses, &group, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, &ProximityLossFunction::Hinge { threshold: 0.0 }, 8.0, skips, false)
+    }
+
+    pub fn self_proximity_proxima1(proxima: &mut Proxima1, budget: &ProximaBudget, loss_function: &ProximityLossFunction, p_norm: f64, cutoff_distance: f64, link_shapes_module: &ApolloLinkShapesModule, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, skips: Option<&DMatrix<bool>>, average_distances: Option<&DMatrix<f64>>) -> ProximitySimpleOutput<f64> {
+        let group = link_shapes_module.get_shapes(link_shape_mode, link_shape_rep);
+        let poses = link_shapes_module.link_poses_to_shape_poses(link_poses, link_shape_mode);
+
+        proxima.proxima_for_proximity(budget, &group, &poses, &group, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, loss_function, 8.0, cutoff_distance, skips, average_distances, false)
     }
 }
