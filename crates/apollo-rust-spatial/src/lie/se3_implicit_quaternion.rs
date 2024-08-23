@@ -38,6 +38,12 @@ impl LieGroupISE3q {
     }
 
     #[inline(always)]
+    pub fn pseudo_ln(&self) -> PseudoLieAlgISE3q {
+        let q = self.0.rotation.to_lie_group_h1().ln();
+        PseudoLieAlgISE3q::new(q.0, self.0.translation.to_vector3())
+    }
+
+    #[inline(always)]
     pub fn add_tiny_bit_of_noise(&self) -> Self {
         Self::new(self.0.add_tiny_bit_of_noise())
     }
@@ -170,6 +176,7 @@ impl ApolloLieAlgPackIse3qTrait for V6 {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/*
 pub struct PseudoLieGroupISE3q(pub I3);
 impl PseudoLieGroupISE3q {
     #[inline(always)]
@@ -182,6 +189,7 @@ impl PseudoLieGroupISE3q {
         return exponential_coordinates.to_pseudo_lie_alg_ise3q().exp()
     }
 }
+*/
 
 #[derive(Clone, Debug)]
 pub struct PseudoLieAlgISE3q { q: Q, v: V3 }
@@ -199,6 +207,7 @@ impl PseudoLieAlgISE3q {
     }
 }
 
+/*
 impl LieGroupElement for PseudoLieGroupISE3q {
     type LieAlgebraElementType = PseudoLieAlgISE3q;
 
@@ -222,9 +231,10 @@ impl LieGroupElement for PseudoLieGroupISE3q {
         PseudoLieAlgISE3q::new(q.0, self.0.translation.to_vector3())
     }
 }
+*/
 
 impl LieAlgebraElement for PseudoLieAlgISE3q {
-    type LieGroupElementType = PseudoLieGroupISE3q;
+    type LieGroupElementType = LieGroupISE3q;
     type EuclideanSpaceElementType = V6;
 
     fn from_euclidean_space_element(e: &Self::EuclideanSpaceElementType) -> Self {
@@ -239,7 +249,7 @@ impl LieAlgebraElement for PseudoLieAlgISE3q {
     #[inline(always)]
     fn exp(&self) -> Self::LieGroupElementType {
         let q = self.q.to_lie_alg_h1().exp();
-        PseudoLieGroupISE3q::new(I3::from_parts(self.v.to_translation(), q.0))
+        LieGroupISE3q::new(I3::from_parts(self.v.to_translation(), q.0))
     }
 
     fn vee(&self) -> Self::EuclideanSpaceElementType {
@@ -249,6 +259,7 @@ impl LieAlgebraElement for PseudoLieAlgISE3q {
         V6::new(u[0], u[1], u[2], v[0], v[1], v[2])
     }
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

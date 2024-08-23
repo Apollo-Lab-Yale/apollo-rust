@@ -409,7 +409,7 @@ impl ChainNalgebra {
         let shapes = self.link_shapes_module.get_shapes(link_shape_mode, link_shape_rep);
         let poses = self.link_shapes_module.link_poses_to_shape_poses(&fk_res, link_shape_mode);
         let skips = self.link_shapes_skips_nalgebra_module.get_skips(link_shape_mode, link_shape_rep);
-        let cache = Proxima1Cache::new(shapes, &poses, shapes, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, Some(skips));
+        let cache = Proxima1Cache::build_all_elements(shapes, &poses, shapes, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, Some(skips));
         
         Proxima1 {
             cache,
@@ -427,7 +427,7 @@ impl ChainNalgebra {
         let other_fk_res = other_chain.fk(other_state);
         let other_shapes = other_chain.link_shapes_module.get_shapes(other_link_shape_mode, other_link_shape_rep);
         let other_poses = self.link_shapes_module.link_poses_to_shape_poses(&other_fk_res, other_link_shape_mode);
-        let cache = Proxima1Cache::new(self_shapes, &self_poses, other_shapes, &other_poses, &DoubleGroupProximityQueryMode::AllPossiblePairs, None);
+        let cache = Proxima1Cache::build_all_elements(self_shapes, &self_poses, other_shapes, &other_poses, &DoubleGroupProximityQueryMode::AllPossiblePairs, None);
 
         Proxima1 {
             cache,

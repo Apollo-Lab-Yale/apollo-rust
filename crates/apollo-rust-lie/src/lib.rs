@@ -29,7 +29,7 @@ pub trait LieGroupElement : Sized {
 }
 
 pub trait LieAlgebraElement {
-    type LieGroupElementType: LieGroupElement<LieAlgebraElementType= Self>;
+    type LieGroupElementType: LieGroupElement;
     type EuclideanSpaceElementType : EuclideanSpaceElement;
 
     fn from_euclidean_space_element(e: &Self::EuclideanSpaceElementType) -> Self;

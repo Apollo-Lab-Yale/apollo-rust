@@ -6,7 +6,7 @@ use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use apollo_rust_spatial::vectors::V3;
 use crate::double_group_queries::{DoubleGroupProximityQueryMode, pairwise_group_query_contact};
 use crate::offset_shape::OffsetShape;
-use crate::proxima::proxima_core::{ProximaCacheTrait, ProximaTrait};
+use crate::proxima::proxima_core::{ProximaCacheElementTrait, ProximaCacheTrait, ProximaTrait};
 
 #[derive(Clone, Debug)]
 pub struct Proxima1Cache {
@@ -53,17 +53,18 @@ impl ProximaCacheTrait<Proxima1CacheElement> for Proxima1Cache {
     fn elements_mut(&mut self) -> &mut DMatrix<Proxima1CacheElement> {
         &mut self.elements
     }
+}
 
-    fn update_element_with_ground_truth(&mut self, i: usize, j: usize, sa: &OffsetShape, pa: &ISE3q, sb: &OffsetShape, pb: &ISE3q) -> f64 {
-        let element = &mut self.elements[(i, j)];
-        let contact = sa.contact(pa, sb, pb, f64::INFINITY).unwrap();
+impl ProximaCacheElementTrait for Proxima1CacheElement {
+    fn update_element_with_ground_truth(&mut self, shape_a: &OffsetShape, pose_a: &ISE3q, shape_b: &OffsetShape, pose_b: &ISE3q) -> f64 {
+        let contact = shape_a.contact(pose_a, shape_b, pose_b, f64::INFINITY).unwrap();
 
-        element.pose_a_j = pa.clone();
-        element.pose_b_j = pb.clone();
-        element.raw_distance_j = contact.dist;
-        element.disp_between_a_and_b_j = pa.displacement(pb);
-        element.closest_point_a_j = contact.point1.coords.xyz();
-        element.closest_point_a_j = contact.point2.coords.xyz();
+        self.pose_a_j = pose_a.clone();
+        self.pose_b_j = pose_b.clone();
+        self.raw_distance_j = contact.dist;
+        self.disp_between_a_and_b_j = pose_a.displacement(pose_b);
+        self.closest_point_a_j = contact.point1.coords.xyz();
+        self.closest_point_a_j = contact.point2.coords.xyz();
 
         contact.dist
     }

@@ -9,7 +9,7 @@ use crate::offset_shape::OffsetShape;
 
 pub trait ProximaTrait {
     type CacheType: ProximaCacheTrait<Self::CacheElementType>;
-    type CacheElementType;
+    type CacheElementType: ProximaCacheElementTrait;
     type ExtraArgs : Clone;
 
     fn get_extra_args(&self, i: usize, j: usize) -> Cow<Self::ExtraArgs>;
@@ -306,10 +306,43 @@ pub trait ProximaTrait {
     }
 }
 
-pub trait ProximaCacheTrait<CacheElement> {
+pub trait ProximaCacheTrait<CacheElement: ProximaCacheElementTrait> {
+    /*
+    fn build_all_elements(group_a: &Vec<OffsetShape>, poses_a: &Vec<ISE3q>, group_b: &Vec<OffsetShape>, poses_b: &Vec<ISE3q>, query_mode: &DoubleGroupProximityQueryMode, skips: Option<&DMatrix<bool>>) -> DMatrix<CacheElement> {
+        if let DoubleGroupProximityQueryMode::SubsetOfPairs(_) = query_mode {
+            panic!("you probably shouldn't use a subset of pairs to initialize the Proxima cache.");
+        }
+        assert_eq!(group_a.len(), poses_a.len());
+        assert_eq!(group_b.len(), poses_b.len());
+
+        let mut elements = DMatrix::from_vec(group_a.len(), group_b.len(), vec![CacheElement::default(); group_a.len()*group_b.len()]);
+
+        for (i, (shape_a, pose_a)) in group_a.iter().zip(poses_a.iter()).enumerate() {
+            'l: for (j, (shape_b, pose_b)) in group_b.iter().zip(poses_b.iter()).enumerate() {
+                match skips {
+                    None => {}
+                    Some(skips) => {
+                        if skips[(i,j)] { continue 'l; }
+                    }
+                }
+                elements[(i,j)].update_element_with_ground_truth(shape_a, pose_a, shape_b, pose_b);
+            }
+        }
+
+        elements
+    }
+    fn new_from_elements(elements: DMatrix<CacheElement>) -> Self;
+    */
     fn elements(&self) -> &DMatrix<CacheElement>;
     fn elements_mut(&mut self) -> &mut DMatrix<CacheElement>;
-    fn update_element_with_ground_truth(&mut self, i: usize, j: usize, shape_a: &OffsetShape, pose_a: &ISE3q, shape_b: &OffsetShape, pose_b: &ISE3q) -> f64;
+    fn update_element_with_ground_truth(&mut self, i: usize, j: usize, shape_a: &OffsetShape, pose_a: &ISE3q, shape_b: &OffsetShape, pose_b: &ISE3q) -> f64 {
+        let element = &mut self.elements_mut()[(i,j)];
+        element.update_element_with_ground_truth(shape_a, pose_a, shape_b, pose_b)
+    }
+}
+
+pub trait ProximaCacheElementTrait: Clone {
+    fn update_element_with_ground_truth(&mut self, shape_a: &OffsetShape, pose_a: &ISE3q, shape_b: &OffsetShape, pose_b: &ISE3q) -> f64;
 }
 
 #[derive(Clone, Debug)]
