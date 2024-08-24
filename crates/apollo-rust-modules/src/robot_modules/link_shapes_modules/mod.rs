@@ -3,3 +3,4 @@ pub mod link_shapes_distance_statistics_module;
 pub mod link_shapes_simple_skips_module;
 pub mod link_shapes_approximations_module;
 pub mod link_shapes_skips_module;
+pub mod link_shapes_lie_alg_error_models_module;
