@@ -32,6 +32,7 @@ impl Proxima1Cache {
             let closest_point_a_j = c.point1.coords.xyz();
             let closest_point_b_j = c.point2.coords.xyz();
 
+            elements[(i,j)].shape_indices = (i,j);
             elements[(i,j)].pose_a_j = pose_a_j.clone();
             elements[(i,j)].pose_b_j = pose_b_j.clone();
             elements[(i,j)].disp_between_a_and_b_j = disp_between_a_and_b_j;
@@ -55,23 +56,9 @@ impl ProximaCacheTrait<Proxima1CacheElement> for Proxima1Cache {
     }
 }
 
-impl ProximaCacheElementTrait for Proxima1CacheElement {
-    fn update_element_with_ground_truth(&mut self, shape_a: &OffsetShape, pose_a: &ISE3q, shape_b: &OffsetShape, pose_b: &ISE3q) -> f64 {
-        let contact = shape_a.contact(pose_a, shape_b, pose_b, f64::INFINITY).unwrap();
-
-        self.pose_a_j = pose_a.clone();
-        self.pose_b_j = pose_b.clone();
-        self.raw_distance_j = contact.dist;
-        self.disp_between_a_and_b_j = pose_a.displacement(pose_b);
-        self.closest_point_a_j = contact.point1.coords.xyz();
-        self.closest_point_a_j = contact.point2.coords.xyz();
-
-        contact.dist
-    }
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Proxima1CacheElement {
+    pub shape_indices: (usize, usize),
     pub pose_a_j: ISE3q,
     pub pose_b_j: ISE3q,
     pub closest_point_a_j: V3,
@@ -82,6 +69,7 @@ pub struct Proxima1CacheElement {
 impl Default for Proxima1CacheElement {
     fn default() -> Self {
         Self {
+            shape_indices: (0, 0),
             pose_a_j: Default::default(),
             pose_b_j: Default::default(),
             closest_point_a_j: Default::default(),
@@ -89,6 +77,21 @@ impl Default for Proxima1CacheElement {
             raw_distance_j: -100000.0,
             disp_between_a_and_b_j: Default::default(),
         }
+    }
+}
+impl ProximaCacheElementTrait for Proxima1CacheElement {
+    #[inline(always)]
+    fn update_element_with_ground_truth(&mut self, shape_a: &OffsetShape, pose_a: &ISE3q, shape_b: &OffsetShape, pose_b: &ISE3q) -> f64 {
+        let contact = shape_a.contact(pose_a, shape_b, pose_b, f64::INFINITY).unwrap();
+
+        self.pose_a_j = pose_a.clone();
+        self.pose_b_j = pose_b.clone();
+        self.raw_distance_j = contact.dist;
+        self.disp_between_a_and_b_j = pose_a.displacement(pose_b);
+        self.closest_point_a_j = contact.point1.coords;
+        self.closest_point_b_j = contact.point2.coords;
+
+        contact.dist
     }
 }
 
@@ -104,6 +107,7 @@ impl ProximaTrait for Proxima1 {
     type CacheElementType = Proxima1CacheElement;
     type ExtraArgs = Proxima1ExtraArgs;
 
+    #[inline(always)]
     fn get_extra_args(&self, i: usize, j: usize) -> Cow<Self::ExtraArgs> {
         Cow::Owned( Proxima1ExtraArgs {
             max_distance_from_origin_a: self.max_distances_from_origin_a[i],
@@ -112,27 +116,37 @@ impl ProximaTrait for Proxima1 {
         } )
     }
 
+    #[inline(always)]
     fn get_cache_mut(&mut self) -> &mut Self::CacheType {
         &mut self.cache
     }
 
+    #[inline(always)]
     fn get_cache_immut(&self) -> &Self::CacheType {
         &self.cache
     }
 
+    #[inline(always)]
     fn approximate_distance_and_bounds(cache_element: &Self::CacheElementType, pose_a_k: &ISE3q, pose_b_k: &ISE3q, cutoff_distance: f64, extra_args: &Self::ExtraArgs) -> Option<(f64, f64, f64)> {
-        let lower_bound = Self::distance_lower_bound(cache_element, pose_a_k, pose_b_k, extra_args.max_distance_from_origin_a, extra_args.max_distance_from_origin_b);
+        let d = cache_element.disp_between_a_and_b_j.displacement(&pose_a_k.displacement(&pose_b_k));
+        let delta_m = d.0.translation.vector.norm();
+        let delta_r = d.0.rotation.to_lie_group_h1().ln().vee().norm();
+
+        let h = extra_args.max_distance_from_origin_a.max(extra_args.max_distance_from_origin_b);
+        let psi = f64::sqrt(2.0 * h * h * (1.0 - f64::cos(delta_r)));
+
+        let lower_bound= cache_element.raw_distance_j - delta_m - psi;
         if lower_bound > cutoff_distance { return None; }
+
         let upper_bound = Self::distance_upper_bound(cache_element, pose_a_k, pose_b_k);
+        let upper_bound = upper_bound.min(cache_element.raw_distance_j + delta_m + psi);
 
         let approximation_distance = (1.0 - extra_args.interpolation) * lower_bound + extra_args.interpolation * upper_bound;
-
         Some((approximation_distance, lower_bound, upper_bound))
     }
 }
 impl Proxima1 {
     pub fn distance_lower_bound(cache_element: &Proxima1CacheElement, pose_a_k: &ISE3q, pose_b_k: &ISE3q, max_distance_from_origin_a: f64, max_distance_from_origin_b: f64) -> f64 {
-
         let d = cache_element.disp_between_a_and_b_j.displacement(&pose_a_k.displacement(&pose_b_k));
         let delta_m = d.0.translation.vector.norm();
         let delta_r = d.0.rotation.to_lie_group_h1().ln().vee().norm();

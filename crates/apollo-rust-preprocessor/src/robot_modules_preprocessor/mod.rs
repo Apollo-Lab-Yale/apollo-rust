@@ -275,6 +275,7 @@ impl CombinedRobot {
             name: self.name.clone(),
             root_directory: r.directory.clone(),
             directory: fp.clone(),
+            resources_type: r.resources_type,
         };
 
         let json_fp = fp.clone().append("combined_robot_module/module.json");
@@ -460,6 +461,7 @@ impl AdjustedRobot {
             name: self.name.clone(),
             root_directory: r.directory.clone(),
             directory: fp.clone(),
+            resources_type: r.resources_type,
         };
         s.preprocess_robot(false);
     }
@@ -527,6 +529,7 @@ impl ApolloChainCreator {
             name: self.name.clone(),
             root_directory: r.directory.clone(),
             directory: fp.clone(),
+            resources_type: r.resources_type,
         };
 
         let json_fp = fp.clone().append("creator_module/module.json");

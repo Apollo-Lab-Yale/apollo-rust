@@ -4,6 +4,7 @@ use optimization_engine::panoc::{PANOCCache, PANOCOptimizer};
 use optimization_engine::{Optimizer, Problem, SolverError};
 use optimization_engine::constraints::NoConstraints;
 use optimization_engine::core::SolverStatus;
+use rand::Rng;
 use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::{ApolloLieAlgPackIse3qTrait, ApolloPseudoLieAlgPackIse3qTrait, ISE3q};
@@ -68,6 +69,7 @@ impl Proxima2CacheElement {
     }
 }
 impl ProximaCacheElementTrait for Proxima2CacheElement {
+    #[inline(always)]
     fn update_element_with_ground_truth(&mut self, shape_a: &OffsetShape, pose_a: &ISE3q, shape_b: &OffsetShape, pose_b: &ISE3q) -> f64 {
         let disp = pose_a.displacement(&pose_b);
         let t = get_t(&disp, self.lie_alg_mode);
@@ -83,8 +85,6 @@ impl ProximaCacheElementTrait for Proxima2CacheElement {
 #[derive(Clone, Debug)]
 pub struct Proxima2 {
     pub cache: Proxima2Cache,
-    pub upper_bound_error_models: DMatrix<[f64; 3]>,
-    pub lower_bound_error_models: DMatrix<[f64; 3]>,
     pub lie_alg_mode: LieAlgMode
 }
 impl ProximaTrait for Proxima2 {
@@ -92,29 +92,37 @@ impl ProximaTrait for Proxima2 {
     type CacheElementType = Proxima2CacheElement;
     type ExtraArgs = Proxima2ExtraArgs;
 
-    fn get_extra_args(&self, i: usize, j: usize) -> Cow<Self::ExtraArgs> {
+    #[inline(always)]
+    fn get_extra_args(&self, _i: usize, _j: usize) -> Cow<Self::ExtraArgs> {
         Cow::Owned(Proxima2ExtraArgs {
-            upper_bound_error_model: self.upper_bound_error_models[(i,j)],
-            lower_bound_error_model: self.lower_bound_error_models[(i,j)],
             lie_alg_mode: self.lie_alg_mode,
         })
     }
 
+    #[inline(always)]
     fn get_cache_mut(&mut self) -> &mut Self::CacheType {
         &mut self.cache
     }
 
+    #[inline(always)]
     fn get_cache_immut(&self) -> &Self::CacheType {
         &self.cache
     }
 
-    #[inline]
+    #[inline(always)]
     fn approximate_distance_and_bounds(cache_element: &Self::CacheElementType, pose_a_k: &ISE3q, pose_b_k: &ISE3q, _cutoff_distance: f64, extra_args: &Self::ExtraArgs) -> Option<(f64, f64, f64)> {
         let delta_t = get_delta_t(&cache_element.disp_between_a_and_b_j, &pose_a_k.displacement(&pose_b_k), extra_args.lie_alg_mode);
         let norm = delta_t.norm();
         let approximate_distance = cache_element.raw_distance_j + cache_element.gradient.dot(&delta_t);
-        let lower_bound_delta = PolynomialFit::Cubic.call(&extra_args.lower_bound_error_model, norm);
-        let upper_bound_delta = PolynomialFit::Cubic.call(&extra_args.upper_bound_error_model, norm);
+        let lower_bound_delta = match extra_args.lie_alg_mode {
+            LieAlgMode::Standard => { -0.3244893534761935*norm }
+            LieAlgMode::Pseudo => { -0.33611397097921175*norm }
+        };
+        let upper_bound_delta = match extra_args.lie_alg_mode {
+            LieAlgMode::Standard => { 1.561538215120098*norm }
+            LieAlgMode::Pseudo => { 1.5894634675072785*norm }
+        };
+
         let lower_bound = approximate_distance + lower_bound_delta;
         let upper_bound = approximate_distance + upper_bound_delta;
 
@@ -124,8 +132,6 @@ impl ProximaTrait for Proxima2 {
 
 #[derive(Clone, Debug)]
 pub struct Proxima2ExtraArgs {
-    pub upper_bound_error_model: [f64; 3],
-    pub lower_bound_error_model: [f64; 3],
     pub lie_alg_mode: LieAlgMode
 }
 
@@ -167,6 +173,7 @@ pub fn lladis(shape_a: &OffsetShape, shape_b: &OffsetShape, t: &V6, lie_alg_mode
     shape_a.contact(&ISE3q::identity(), shape_b, &pose, f64::INFINITY).unwrap().dist
 }
 
+#[inline(always)]
 pub fn lladis_gradient(shape_a: &OffsetShape, shape_b: &OffsetShape, t: &V6, lie_alg_mode: LieAlgMode) -> (f64, V6) {
     let mut out = V6::zeros();
 
@@ -182,8 +189,30 @@ pub fn lladis_gradient(shape_a: &OffsetShape, shape_b: &OffsetShape, t: &V6, lie
     (f0, out)
 }
 
+pub fn get_lladis_taylor_series_error_dataset(shapes: &Vec<OffsetShape>, lie_alg_mode: LieAlgMode, num_random_pairs: usize, num_gradient_samples: usize, num_samples_per_gradient: usize, t_norm_max: f64, delta_t_norm_max: f64) -> Vec<(f64, f64)> {
+    let mut out = vec![];
+
+    assert!(shapes.len() >= 2);
+
+    for _ in 0..num_random_pairs {
+        let mut rng = rand::thread_rng();
+        let mut i = 0;
+        let mut j = 0;
+        while i == j {
+            i = rng.gen_range(0..shapes.len());
+            j = rng.gen_range(0..shapes.len());
+        }
+        let shape_a = &shapes[i];
+        let shape_b = &shapes[j];
+        let ds = get_lladis_taylor_series_error_dataset_shape_pair(shape_a, shape_b, lie_alg_mode, num_gradient_samples, num_samples_per_gradient, t_norm_max, delta_t_norm_max);
+        out.extend(ds);
+    }
+
+    out
+}
+
 /// the outputs here will be pairs (x,y), where x is the norm of delta_t, and y is the signed error between the ground truth and taylor series approximation
-pub fn get_lladis_taylor_series_error_dataset(shape_a: &OffsetShape, shape_b: &OffsetShape, lie_alg_mode: LieAlgMode, num_gradient_samples: usize, num_samples_per_gradient: usize, t_norm_max: f64, delta_t_norm_max: f64) -> Vec<(f64, f64)> {
+pub fn get_lladis_taylor_series_error_dataset_shape_pair(shape_a: &OffsetShape, shape_b: &OffsetShape, lie_alg_mode: LieAlgMode, num_gradient_samples: usize, num_samples_per_gradient: usize, t_norm_max: f64, delta_t_norm_max: f64) -> Vec<(f64, f64)> {
     let mut out = vec![];
 
     for _ in 0..num_gradient_samples {
@@ -197,7 +226,7 @@ pub fn get_lladis_taylor_series_error_dataset(shape_a: &OffsetShape, shape_b: &O
             delta_t = (delta_t / delta_t.norm()) * s;
             let gt = lladis(&shape_a, &shape_b, &(t + delta_t), lie_alg_mode);
             let ts = lladis(&shape_a, &shape_b, &t, lie_alg_mode) + gradient.dot(&delta_t);
-            out.push( (delta_t.norm(), ts - gt) );
+            out.push( (delta_t.norm(), gt - ts) );
         }
     }
 
@@ -206,6 +235,7 @@ pub fn get_lladis_taylor_series_error_dataset(shape_a: &OffsetShape, shape_b: &O
 
 #[derive(Clone, Debug, Copy)]
 pub enum PolynomialFit {
+    LinearNoIntercept,
     Linear,
     Quadratic,
     Cubic,
@@ -215,6 +245,9 @@ impl PolynomialFit {
     #[inline(always)]
     pub fn call(&self, coefficients: &[f64], x: f64) -> f64 {
         return match self {
+            PolynomialFit::LinearNoIntercept => {
+                coefficients[0] * x
+            }
             PolynomialFit::Linear => {
                 coefficients[0] + coefficients[1] * x
             }
@@ -232,6 +265,7 @@ impl PolynomialFit {
 
     pub fn num_dofs(&self) -> usize {
         match self {
+            PolynomialFit::LinearNoIntercept => { 1 }
             PolynomialFit::Linear => { 2 }
             PolynomialFit::Quadratic => { 3 }
             PolynomialFit::Cubic => { 4 }

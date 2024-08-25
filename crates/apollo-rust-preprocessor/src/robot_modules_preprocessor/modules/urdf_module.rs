@@ -40,7 +40,7 @@ impl URDFModuleBuilders for ApolloURDFModule {
     }
 
     fn build_from_adjusted_robot(s: &ResourcesSubDirectory, adjusted_robot: &AdjustedRobot) -> Result<Self, String> {
-        let root = ResourcesRootDirectory::new(s.root_directory().clone());
+        let root = ResourcesRootDirectory::new(s.root_directory().clone(), s.resources_type);
 
         let core_robot_urdf_module = ApolloURDFModule::load_or_build(&root.get_subdirectory(&adjusted_robot.base_robot_name), false).expect("error");
 
@@ -71,7 +71,7 @@ impl URDFModuleBuilders for ApolloURDFModule {
     }
 
     fn build_from_combined_robot(s: &ResourcesSubDirectory, combined_robot: &CombinedRobot) -> Result<Self, String> {
-        let root = ResourcesRootDirectory::new(s.root_directory().clone());
+        let root = ResourcesRootDirectory::new(s.root_directory().clone(), s.resources_type);
 
         let name = combined_robot.name.clone();
         let mut links = vec![];
@@ -150,7 +150,7 @@ impl URDFModuleBuilders for ApolloURDFModule {
         environment_creator.actions.iter().for_each(|action| {
             match action {
                 ChainCreatorAction::AddAlreadyExistingChain { name, base_offset, .. } => {
-                    let environments_directory = ResourcesRootDirectory::new(s.root_directory.clone());
+                    let environments_directory = ResourcesRootDirectory::new(s.root_directory.clone(), s.resources_type);
                     let ss = environments_directory.get_subdirectory(name);
                     let urdf_module = ApolloURDFModule::load_or_build(&ss, false).expect("error");
 

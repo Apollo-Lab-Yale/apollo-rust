@@ -25,7 +25,7 @@ pub struct ApolloLinkShapesModule {
 }
 impl ApolloLinkShapesModule {
     pub fn from_mesh_modules(s: &ResourcesSubDirectory, convex_hull_meshes_module: &ApolloConvexHullMeshesModule, convex_decomposition_meshes_module: &ApolloConvexDecompositionMeshesModule) -> Self {
-        let root = ResourcesRootDirectory::new(s.root_directory().clone());
+        let root = ResourcesRootDirectory::new(s.root_directory().clone(), s.resources_type);
         let mut full_convex_hulls = vec![];
         let mut full_obbs = vec![];
         let mut full_bounding_spheres = vec![];

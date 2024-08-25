@@ -11,3 +11,5 @@ parry3d-f64 = { version = "0.16.1", features = ["serde-serialize"] }
 nalgebra = { version = "0.33.0", features = ["rand", "serde-serialize"] }
 serde = { version = "1.0.203", features = ["derive"] }
 optimization_engine = { version = "0.9.1" }
+rayon = "1.10.0"
+rand = "0.8.5"

@@ -114,7 +114,7 @@ pub trait ProximaTrait {
                         if i >= j { continue 'l; }
                         let output = self.f(cache, i, pa, j, pb, skips, cutoff_distance);
                         match output {
-                            None => {}
+                            None => { }
                             Some(output) => {
                                 if output.upper_bound_distance < 0.0 { return None; }
                                 out.push(output);
@@ -129,7 +129,7 @@ pub trait ProximaTrait {
                     let pb = &poses_b[*j];
                     let output = self.f(cache, *i, pa, *j, pb, skips, cutoff_distance);
                     match output {
-                        None => {}
+                        None => { }
                         Some(output) => {
                             if output.upper_bound_distance < 0.0 { return None; }
                             out.push(output);
@@ -164,7 +164,9 @@ pub trait ProximaTrait {
 
         // let mut num_ground_truth_checks = 0;
         let mut ground_truth_checks = vec![];
-        let mut proximity_value = proxima_outputs.to_proximity_value(loss_function, p_norm);
+        let lower_bound_proximity_value = proxima_outputs.to_lower_bound_proximity_value(&loss_function, p_norm);
+        let upper_bound_proximity_value = proxima_outputs.to_upper_bound_proximity_value(&loss_function, p_norm);
+        let mut max_possible_error = (lower_bound_proximity_value - upper_bound_proximity_value).abs();
 
         'l: for k in 0..sorted_idxs.len() {
             match budget {
@@ -172,7 +174,7 @@ pub trait ProximaTrait {
                     if start.elapsed() > *b { break 'l; }
                 }
                 ProximaBudget::AccuracyBudget(b) => {
-                    if proximity_value < *b { break 'l; }
+                    if max_possible_error < *b { break 'l; }
                 }
             }
 
@@ -197,12 +199,14 @@ pub trait ProximaTrait {
 
             // num_ground_truth_checks += 1;
             ground_truth_checks.push((i, j));
-            proximity_value = proxima_outputs.to_proximity_value(loss_function, p_norm);
+            let lower_bound_proximity_value = proxima_outputs.to_lower_bound_proximity_value(&loss_function, p_norm);
+            let upper_bound_proximity_value = proxima_outputs.to_upper_bound_proximity_value(&loss_function, p_norm);
+            max_possible_error = (lower_bound_proximity_value - upper_bound_proximity_value).abs();
         }
 
         // return (proximity_value, num_ground_truth_checks);
         return ProximaOutput {
-            result: proximity_value,
+            result: proxima_outputs.to_proximity_value(&loss_function, p_norm),
             ground_truth_checks,
         }
     }
@@ -341,7 +345,7 @@ pub trait ProximaCacheTrait<CacheElement: ProximaCacheElementTrait> {
     }
 }
 
-pub trait ProximaCacheElementTrait: Clone {
+pub trait ProximaCacheElementTrait: Clone + Debug {
     fn update_element_with_ground_truth(&mut self, shape_a: &OffsetShape, pose_a: &ISE3q, shape_b: &OffsetShape, pose_b: &ISE3q) -> f64;
 }
 

@@ -19,37 +19,41 @@ pub struct ResourcesSingleRobotDirectory {
 
 #[derive(Clone, Debug)]
 pub struct ResourcesRootDirectory {
-    pub directory: PathBuf
+    pub directory: PathBuf,
+    pub resources_type: ResourcesType
 }
 impl ResourcesRootDirectory {
-    pub fn new(directory: PathBuf) -> Self {
+    pub fn new(directory: PathBuf, resources_type: ResourcesType) -> Self {
         Self {
             directory,
+            resources_type,
         }
     }
 
     pub fn new_from_default_apollo_robots_directory() -> Self {
         return Self {
             directory: PathBuf::new_from_default_apollo_robots_dir(),
+            resources_type: ResourcesType::Robot,
         }
     }
 
     pub fn new_from_default_apollo_environments_directory() -> Self {
         return Self {
             directory: PathBuf::new_from_default_apollo_environments_dir(),
+            resources_type: ResourcesType::Environment,
         }
     }
 
     pub fn get_subdirectory(&self, name: &str) -> ResourcesSubDirectory {
         let directory = self.directory().clone().append(name);
         assert!(directory.exists(), "{}", format!("directory {:?} does not exist", directory));
-        ResourcesSubDirectory::new_raw(name.to_string(), self.directory().clone(), directory)
+        ResourcesSubDirectory::new_raw(name.to_string(), self.directory().clone(), directory, self.resources_type)
     }
 
     pub fn get_subdirectory_option(&self, name: &str) -> Option<ResourcesSubDirectory> {
         let directory = self.directory().clone().append(name);
         return if directory.exists() {
-            Some(ResourcesSubDirectory::new_raw(name.to_string(), self.directory().clone(), directory))
+            Some(ResourcesSubDirectory::new_raw(name.to_string(), self.directory().clone(), directory, self.resources_type))
         } else {
             None
         }
@@ -77,14 +81,16 @@ impl ResourcesRootDirectory {
 pub struct ResourcesSubDirectory {
     pub name: String,
     pub root_directory: PathBuf,
-    pub directory: PathBuf
+    pub directory: PathBuf,
+    pub resources_type: ResourcesType
 }
 impl ResourcesSubDirectory {
-    pub fn new_raw(name: String, root_directory: PathBuf, directory: PathBuf) -> Self {
+    pub fn new_raw(name: String, root_directory: PathBuf, directory: PathBuf, resources_type: ResourcesType) -> Self {
         Self {
             name,
             root_directory,
             directory,
+            resources_type,
         }
     }
 
@@ -99,4 +105,10 @@ impl ResourcesSubDirectory {
     pub fn directory(&self) -> &PathBuf {
         &self.directory
     }
+}
+
+#[derive(Clone, Debug, Copy)]
+pub enum ResourcesType {
+    Robot,
+    Environment
 }

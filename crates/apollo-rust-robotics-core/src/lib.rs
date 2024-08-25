@@ -2,6 +2,7 @@ use parry3d_f64::query::Contact;
 use apollo_rust_linalg::V;
 use apollo_rust_proximity::double_group_queries::{DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput};
 use apollo_rust_proximity::proxima::proxima1::{Proxima1, Proxima1Cache};
+use apollo_rust_proximity::proxima::proxima2::{LieAlgMode, Proxima2, Proxima2Cache};
 use apollo_rust_proximity::proxima::proxima_core::{ProximaBudget, ProximaOutput, ProximaTrait};
 use apollo_rust_proximity::ProximityLossFunction;
 use apollo_rust_robot_modules::{ResourcesSubDirectory};
@@ -156,6 +157,7 @@ pub struct ChainNalgebra {
     pub link_shapes_distance_statistics_module: ApolloLinkShapesDistanceStatisticsNalgebraModule,
     pub link_shapes_simple_skips_nalgebra_module: ApolloLinkShapesSimpleSkipsNalgebraModule,
     pub link_shapes_skips_nalgebra_module: ApolloLinkShapesSkipsNalgebraModule,
+    // pub link_shapes_lie_alg_error_models_nalgebra_module: ApolloLinkShapesLieAlgErrorModelsNalgebraModule,
     pub bounds_module: ApolloBoundsModule
 }
 impl ChainNalgebra {
@@ -409,7 +411,7 @@ impl ChainNalgebra {
         let shapes = self.link_shapes_module.get_shapes(link_shape_mode, link_shape_rep);
         let poses = self.link_shapes_module.link_poses_to_shape_poses(&fk_res, link_shape_mode);
         let skips = self.link_shapes_skips_nalgebra_module.get_skips(link_shape_mode, link_shape_rep);
-        let cache = Proxima1Cache::build_all_elements(shapes, &poses, shapes, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, Some(skips));
+        let cache = Proxima1Cache::new(shapes, &poses, shapes, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, Some(skips));
         
         Proxima1 {
             cache,
@@ -427,13 +429,43 @@ impl ChainNalgebra {
         let other_fk_res = other_chain.fk(other_state);
         let other_shapes = other_chain.link_shapes_module.get_shapes(other_link_shape_mode, other_link_shape_rep);
         let other_poses = self.link_shapes_module.link_poses_to_shape_poses(&other_fk_res, other_link_shape_mode);
-        let cache = Proxima1Cache::build_all_elements(self_shapes, &self_poses, other_shapes, &other_poses, &DoubleGroupProximityQueryMode::AllPossiblePairs, None);
+        let cache = Proxima1Cache::new(self_shapes, &self_poses, other_shapes, &other_poses, &DoubleGroupProximityQueryMode::AllPossiblePairs, None);
 
         Proxima1 {
             cache,
             max_distances_from_origin_a: self.link_shapes_max_distance_from_origin_module.get_shapes_max_distances_from_origin(self_link_shape_mode, self_link_shape_rep),
             max_distances_from_origin_b: other_chain.link_shapes_max_distance_from_origin_module.get_shapes_max_distances_from_origin(other_link_shape_mode, other_link_shape_rep),
             interpolation,
+        }
+    }
+
+    pub fn get_self_proxima2(&self, state: &V, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, lie_alg_mode: LieAlgMode) -> Proxima2 {
+        let fk_res = self.fk(state);
+        let shapes = self.link_shapes_module.get_shapes(link_shape_mode, link_shape_rep);
+        let poses = self.link_shapes_module.link_poses_to_shape_poses(&fk_res, link_shape_mode);
+        let skips = self.link_shapes_skips_nalgebra_module.get_skips(link_shape_mode, link_shape_rep);
+        let cache = Proxima2Cache::new(shapes, &poses, shapes, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, Some(skips), lie_alg_mode);
+
+        Proxima2 {
+            cache,
+            lie_alg_mode,
+        }
+    }
+
+    pub fn get_double_chain_proxima2(&self, other_chain: &ChainNalgebra, self_state: &V, self_link_shape_mode: LinkShapeMode, self_link_shape_rep: LinkShapeRep, other_state: &V, other_link_shape_mode: LinkShapeMode, other_link_shape_rep: LinkShapeRep, lie_alg_mode: LieAlgMode) -> Proxima2 {
+        let self_fk_res = self.fk(self_state);
+        let self_shapes = self.link_shapes_module.get_shapes(self_link_shape_mode, self_link_shape_rep);
+        let self_poses = self.link_shapes_module.link_poses_to_shape_poses(&self_fk_res, self_link_shape_mode);
+
+        let other_fk_res = other_chain.fk(other_state);
+        let other_shapes = other_chain.link_shapes_module.get_shapes(other_link_shape_mode, other_link_shape_rep);
+        let other_poses = self.link_shapes_module.link_poses_to_shape_poses(&other_fk_res, other_link_shape_mode);
+
+        let cache = Proxima2Cache::new(self_shapes, &self_poses, other_shapes, &other_poses, &DoubleGroupProximityQueryMode::AllPossiblePairs, None, lie_alg_mode);
+
+        Proxima2 {
+            cache,
+            lie_alg_mode,
         }
     }
 }

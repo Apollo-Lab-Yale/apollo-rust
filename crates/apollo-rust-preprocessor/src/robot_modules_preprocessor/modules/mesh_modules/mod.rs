@@ -19,7 +19,7 @@ macro_rules! create_generic_build_from_combined_robot {
                 link_mesh_relative_paths.push($initial_push);
                 combined_robot.attached_robots.iter().for_each(|x| {
                     let robot_name = x.robot_name.clone();
-                    let ss = ResourcesRootDirectory::new(s.root_directory().clone())
+                    let ss = ResourcesRootDirectory::new(s.root_directory().clone(), s.resources_type)
                         .get_subdirectory(&robot_name);
                     let module = <$module>::load_or_build(&ss, false).expect("error");
                     link_mesh_relative_paths.extend(module.link_mesh_relative_paths);
@@ -56,7 +56,7 @@ macro_rules! create_generic_build_from_combined_robot2 {
 
                 combined_robot.attached_robots.iter().for_each(|x| {
                     let robot_name = x.robot_name.clone();
-                    let ss = ResourcesRootDirectory::new(s.root_directory().clone())
+                    let ss = ResourcesRootDirectory::new(s.root_directory().clone(), s.resources_type)
                         .get_subdirectory(&robot_name);
                     let module = <$module>::load_or_build(&ss, false).expect("error");
 
@@ -90,7 +90,7 @@ macro_rules! create_generic_build_from_adjusted_robot {
             return if let Ok(adjusted_robot) = adjusted_robot {
                 let mut link_mesh_relative_paths = vec![];
 
-                let ss = ResourcesRootDirectory::new(s.root_directory().clone())
+                let ss = ResourcesRootDirectory::new(s.root_directory().clone(), s.resources_type)
                     .get_subdirectory(&adjusted_robot.base_robot_name);
                 let module = <$module>::load_or_build(&ss, false).expect("error");
 
@@ -143,7 +143,7 @@ macro_rules! create_generic_build_from_adjusted_robot2 {
                 // obj_link_mesh_relative_paths.push($initial_push);
                 // glb_link_mesh_relative_paths.push($initial_push);
 
-                let ss = ResourcesRootDirectory::new(s.root_directory().clone())
+                let ss = ResourcesRootDirectory::new(s.root_directory().clone(), s.resources_type)
                     .get_subdirectory(&adjusted_robot.base_robot_name);
                 let module = <$module>::load_or_build(&ss, false).expect("error");
 

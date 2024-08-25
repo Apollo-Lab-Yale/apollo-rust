@@ -75,7 +75,7 @@ impl OriginalMeshesModuleBuilders for ApolloOriginalMeshesModule {
             chain_creator.actions.iter().for_each(|action| {
                 match action {
                     ChainCreatorAction::AddAlreadyExistingChain { name, .. } => {
-                        let r = ResourcesRootDirectory::new(s.root_directory.clone());
+                        let r = ResourcesRootDirectory::new(s.root_directory.clone(), s.resources_type);
                         let ss = r.get_subdirectory(name);
                         let original_meshes_module = ApolloOriginalMeshesModule::load_or_build(&ss, false).expect("error");
                         let urdf_module = ApolloURDFModule::load_or_build(&ss, false).expect("error");

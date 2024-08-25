@@ -52,6 +52,8 @@ impl ChainBuildersTrait for ChainNalgebra {
         let link_shapes_simple_skips_nalgebra_module = ApolloLinkShapesSimpleSkipsNalgebraModule::from_link_shapes_simple_skips_module(&link_shapes_simple_skips_module);
         let link_shapes_skips_module = ApolloLinkShapesSkipsModule::load_or_build(&s, false).expect("error");
         let link_shapes_skips_nalgebra_module = ApolloLinkShapesSkipsNalgebraModule::from_link_shapes_skips_module(&link_shapes_skips_module);
+        // let link_shapes_lie_alg_error_models_module = ApolloLinkShapesLieAlgErrorModelsModule::load_or_build(&s, false).expect("error");
+        // let link_shapes_lie_alg_error_models_nalgebra_module = ApolloLinkShapesLieAlgErrorModelsNalgebraModule::from_link_shapes_lie_alg_error_models_module(&link_shapes_lie_alg_error_models_module);
         let bounds_module = ApolloBoundsModule::load_or_build(&s, false).expect("error");
 
         Self {
