@@ -4,7 +4,6 @@ use apollo_rust_spatial::lie::se3_implicit::ISE3;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::{ApolloLieAlgPackIse3qTrait, ISE3q};
 
 fn main() {
-
     let a = ISE3::new(I3M::new_random_with_range(-0.001, 0.001));
     let b = ISE3::new(I3M::new_random_with_range(-0.001, 0.001));
     // let c = ISE3q::new(I3::new_random_with_range(-0.01, 0.01));

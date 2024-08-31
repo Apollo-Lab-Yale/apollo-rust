@@ -18,8 +18,7 @@ members = [
     "crates/apollo-rust-mesh-utils",
     "crates/apollo-rust-preprocessor",
     "crates/apollo-rust-bevy-robotics",
-    "crates/apollo-rust-algs",
-    "crates/apollo-rust-planning"]
+    "crates/apollo-rust-algs"]
 [dependencies]
 
 

@@ -1,5 +1,5 @@
 [package]
-name = "apollo-rust-robot-modules"
+name = "apollo-rust-modules"
 version = "0.0.1"
 edition = "2021"
 
