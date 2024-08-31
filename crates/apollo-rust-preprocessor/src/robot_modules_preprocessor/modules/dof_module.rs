@@ -1,6 +1,6 @@
-use apollo_rust_robot_modules::robot_modules::dof_module::ApolloDOFModule;
-use apollo_rust_robot_modules::ResourcesSubDirectory;
-use apollo_rust_robot_modules::robot_modules::urdf_module::{ApolloURDFJointType, ApolloURDFModule};
+use apollo_rust_modules::robot_modules::dof_module::ApolloDOFModule;
+use apollo_rust_modules::ResourcesSubDirectory;
+use apollo_rust_modules::robot_modules::urdf_module::{ApolloURDFJointType, ApolloURDFModule};
 use crate::PreprocessorModule;
 use crate::utils::progress_bar::ProgressBarWrapper;
 

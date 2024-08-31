@@ -1,8 +1,8 @@
 use parry3d_f64::shape::TypedShape;
-use apollo_rust_robot_modules::ResourcesSubDirectory;
-use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_approximations_module::{ApolloLinkShapesApproximationsModule, BoundingSphereDescriptor, OBBDescriptor};
-use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
-use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
+use apollo_rust_modules::ResourcesSubDirectory;
+use apollo_rust_modules::robot_modules::link_shapes_modules::link_shapes_approximations_module::{ApolloLinkShapesApproximationsModule, BoundingSphereDescriptor, OBBDescriptor};
+use apollo_rust_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
+use apollo_rust_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_module::ApolloLinkShapesModule;
 use crate::PreprocessorModule;
 use crate::utils::progress_bar::ProgressBarWrapper;

@@ -2,8 +2,8 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_file::traits::FromJsonString;
-use apollo_rust_robot_modules::ResourcesSubDirectory;
-use apollo_rust_robot_modules::robot_modules::bevy_modules::first_look_vis_module::ApolloFirstLookVisModule;
+use apollo_rust_modules::ResourcesSubDirectory;
+use apollo_rust_modules::robot_modules::bevy_modules::first_look_vis_module::ApolloFirstLookVisModule;
 use crate::PreprocessorModule;
 use crate::utils::progress_bar::ProgressBarWrapper;
 

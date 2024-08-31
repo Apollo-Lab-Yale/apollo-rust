@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use apollo_rust_robot_modules::robot_modules::urdf_module::*;
+use apollo_rust_modules::robot_modules::urdf_module::*;
 use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, ApolloIsometryMatrix3Trait, I3, I3M};
 use apollo_rust_spatial::lie::se3_implicit::LieGroupISE3;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::LieGroupISE3q;

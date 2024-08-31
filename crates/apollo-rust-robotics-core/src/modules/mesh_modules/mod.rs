@@ -5,7 +5,7 @@ pub mod convex_decomposition_meshes_module;
 
 use std::path::PathBuf;
 use apollo_rust_file::ApolloPathBufTrait;
-use apollo_rust_robot_modules::ResourcesSubDirectory;
+use apollo_rust_modules::ResourcesSubDirectory;
 
 pub trait VecOfPathBufOptionsToVecOfVecTrait {
     fn to_vec_of_vec_path_bufs(&self) -> Vec<Vec<PathBuf>>;

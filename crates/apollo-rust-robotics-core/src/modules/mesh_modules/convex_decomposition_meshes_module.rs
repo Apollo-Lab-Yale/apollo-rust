@@ -1,6 +1,6 @@
 use std::path::PathBuf;
-use apollo_rust_robot_modules::ResourcesSubDirectory;
-use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
+use apollo_rust_modules::ResourcesSubDirectory;
+use apollo_rust_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
 use crate::modules::mesh_modules::recover_full_paths_from_double_vec_of_relative_paths;
 
 pub trait ConvexDecompositionMeshesModuleGetFullPaths {

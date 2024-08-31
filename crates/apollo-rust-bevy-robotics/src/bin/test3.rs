@@ -1,5 +1,5 @@
 use apollo_rust_bevy::ApolloChainBevyTrait;
-use apollo_rust_robot_modules::ResourcesRootDirectory;
+use apollo_rust_modules::ResourcesRootDirectory;
 use apollo_rust_robotics::{ToChainNalgebra};
 
 fn main() {

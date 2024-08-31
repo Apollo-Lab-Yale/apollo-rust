@@ -6,12 +6,12 @@ use apollo_rust_mesh_utils::obj::load_obj_file;
 use crate::utils::progress_bar::ProgressBarWrapper;
 use apollo_rust_mesh_utils::stl::load_stl_file;
 use apollo_rust_mesh_utils::trimesh::ToTriMesh;
-use apollo_rust_robot_modules::ResourcesSubDirectory;
+use apollo_rust_modules::ResourcesSubDirectory;
 use crate::robot_modules_preprocessor::CombinedRobot;
 use crate::robot_modules_preprocessor::AdjustedRobot;
-use apollo_rust_robot_modules::ResourcesRootDirectory;
-use apollo_rust_robot_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
-use apollo_rust_robot_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
+use apollo_rust_modules::ResourcesRootDirectory;
+use apollo_rust_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
+use apollo_rust_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 
 pub trait PlainMeshesModuleBuilders: Sized {
     fn build_from_original_meshes_module(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;

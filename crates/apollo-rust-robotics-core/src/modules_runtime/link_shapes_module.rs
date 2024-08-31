@@ -4,9 +4,9 @@ use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_mesh_utils::stl::load_stl_file;
 use apollo_rust_mesh_utils::trimesh::ToTriMesh;
 use apollo_rust_proximity::offset_shape::{OffsetShape, to_offset_shape_bounding_sphere, to_offset_shape_obb};
-use apollo_rust_robot_modules::{ResourcesRootDirectory, ResourcesSubDirectory};
-use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
-use apollo_rust_robot_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
+use apollo_rust_modules::{ResourcesRootDirectory, ResourcesSubDirectory};
+use apollo_rust_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
+use apollo_rust_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 
 /// initialized in apollo-rust-robotics

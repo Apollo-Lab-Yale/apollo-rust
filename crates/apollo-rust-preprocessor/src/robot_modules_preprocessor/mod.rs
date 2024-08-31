@@ -3,12 +3,12 @@ pub mod utils;
 
 use serde::{Deserialize, Serialize};
 use apollo_rust_file::ApolloPathBufTrait;
-use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
-use apollo_rust_robot_modules::{ResourcesRootDirectory, ResourcesSubDirectory};
-use apollo_rust_robot_modules::robot_modules::urdf_module::{ApolloURDFAxis, ApolloURDFDynamics, ApolloURDFJoint, ApolloURDFJointLimit, ApolloURDFJointType, ApolloURDFLink, ApolloURDFModule, ApolloURDFPose, ApolloURDFSafetyController};
+use apollo_rust_modules::robot_modules::chain_module::ApolloChainModule;
+use apollo_rust_modules::{ResourcesRootDirectory, ResourcesSubDirectory};
+use apollo_rust_modules::robot_modules::urdf_module::{ApolloURDFAxis, ApolloURDFDynamics, ApolloURDFJoint, ApolloURDFJointLimit, ApolloURDFJointType, ApolloURDFLink, ApolloURDFModule, ApolloURDFPose, ApolloURDFSafetyController};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use std::path::PathBuf;
-use apollo_rust_robot_modules::robot_modules::link_simulation_mode_module::EnvironmentLinkSimulationMode;
+use apollo_rust_modules::robot_modules::link_simulation_mode_module::EnvironmentLinkSimulationMode;
 use crate::{PreprocessorModule, ResourcesSubDirectoryTrait};
 
 /*

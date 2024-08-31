@@ -1,8 +1,8 @@
 use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
-use apollo_rust_robot_modules::robot_modules::chain_module::ApolloChainModule;
-use apollo_rust_robot_modules::robot_modules::dof_module::ApolloDOFModule;
-use apollo_rust_robot_modules::robot_modules::urdf_module::ApolloURDFJointType;
+use apollo_rust_modules::robot_modules::chain_module::ApolloChainModule;
+use apollo_rust_modules::robot_modules::dof_module::ApolloDOFModule;
+use apollo_rust_modules::robot_modules::urdf_module::ApolloURDFJointType;
 use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, I3};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::{ApolloLieAlgPackIse3qTrait, ISE3q};
 use apollo_rust_spatial::vectors::{V3, V6};

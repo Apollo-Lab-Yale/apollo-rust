@@ -1,6 +1,6 @@
 use std::path::PathBuf;
-use apollo_rust_robot_modules::ResourcesSubDirectory;
-use apollo_rust_robot_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
+use apollo_rust_modules::ResourcesSubDirectory;
+use apollo_rust_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 use crate::modules::mesh_modules::recover_full_paths_from_relative_paths;
 
 pub trait PlainMeshesModuleGetFullPaths {

@@ -4,12 +4,12 @@ use crate::utils::progress_bar::ProgressBarWrapper;
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_mesh_utils::gltf::load_gltf_file;
 use apollo_rust_mesh_utils::mesh_object_scene::ToMeshObjectScene;
-use apollo_rust_robot_modules::ResourcesSubDirectory;
-use apollo_rust_robot_modules::robot_modules::urdf_module::{ApolloURDFGeometry, ApolloURDFModule};
+use apollo_rust_modules::ResourcesSubDirectory;
+use apollo_rust_modules::robot_modules::urdf_module::{ApolloURDFGeometry, ApolloURDFModule};
 use crate::robot_modules_preprocessor::{ApolloChainCreator, ChainCreatorAction, CombinedRobot};
 use crate::robot_modules_preprocessor::AdjustedRobot;
-use apollo_rust_robot_modules::ResourcesRootDirectory;
-use apollo_rust_robot_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
+use apollo_rust_modules::ResourcesRootDirectory;
+use apollo_rust_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
 pub trait OriginalMeshesModuleBuilders: Sized {
     fn build_from_urdf_module(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
     fn build_from_combined_robot(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;

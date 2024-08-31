@@ -1,4 +1,4 @@
-use apollo_rust_robot_modules::robot_modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
+use apollo_rust_modules::robot_modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::ApolloLinkShapesMaxDistanceFromOriginModule;
 use crate::modules_runtime::link_shapes_module::{LinkShapeMode, LinkShapeRep};
 
 pub trait LinkShapesMaxDistanceFromOriginTrait {
