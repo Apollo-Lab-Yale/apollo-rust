@@ -2,18 +2,30 @@ use nalgebra::Point3;
 use parry3d_f64::bounding_volume::{Aabb, BoundingSphere, BoundingVolume};
 use parry3d_f64::query::distance;
 use parry3d_f64::shape::{Ball, Cuboid};
+use apollo_rust_algs::combinations_of_n;
 use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, I3};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use apollo_rust_spatial::vectors::V3;
 use crate::offset_shape::OffsetShape;
 
-pub trait BvhShape : Sized {
+pub trait BvhShape : Sized + Clone {
     fn new_from_offset_shapes(offset_shapes: &Vec<OffsetShape>, poses: &Vec<ISE3q>) -> Self;
     fn new_from_combined(bvh_shapes: &Vec<Self>) -> Self;
     fn volume(&self) -> f64;
     fn intersect(&self, other: &Self) -> bool;
     fn signed_distance(&self, other: &Self) -> f64;
 }
+
+/*
+pub trait BvhShapeBuilder {
+    type BvhShapeType : BvhShape;
+
+    fn new_from_offset_shapes(offset_shapes: &Vec<OffsetShape>, poses: &Vec<ISE3q>) -> Self::BvhShapeType;
+    fn new_from_combined(bvh_shapes: &Vec<Self::BvhShapeType>) -> Self::BvhShapeType;
+}
+*/
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, Debug)]
 pub struct BvhShapeAABB {
@@ -52,12 +64,12 @@ impl BvhShape for BvhShapeAABB {
             x.shape().compute_aabb(&pose.as_ref().0)
         }).collect();
 
-        Self::new_from_aabbs(&aabbs)
+        BvhShapeAABB::new_from_aabbs(&aabbs)
     }
 
     fn new_from_combined(bvh_shapes: &Vec<Self>) -> Self {
         let aabbs = bvh_shapes.iter().map(|x| x.aabb).collect();
-        Self::new_from_aabbs(&aabbs)
+        BvhShapeAABB::new_from_aabbs(&aabbs)
     }
 
     #[inline(always)]
@@ -76,6 +88,31 @@ impl BvhShape for BvhShapeAABB {
     }
 }
 
+/*
+pub struct BvhShapeBuilderAABB;
+impl BvhShapeBuilder for BvhShapeBuilderAABB {
+    type BvhShapeType = BvhShapeAABB;
+
+    fn new_from_offset_shapes(offset_shapes: &Vec<OffsetShape>, poses: &Vec<ISE3q>) -> Self::BvhShapeType {
+        assert_eq!(offset_shapes.len(), poses.len());
+
+        let aabbs: Vec<Aabb> = offset_shapes.iter().zip(poses).map(|(x, y)| {
+            let pose = x.get_transform(y);
+            x.shape().compute_aabb(&pose.as_ref().0)
+        }).collect();
+
+        BvhShapeAABB::new_from_aabbs(&aabbs)
+    }
+
+    fn new_from_combined(bvh_shapes: &Vec<Self::BvhShapeType>) -> Self::BvhShapeType {
+        let aabbs = bvh_shapes.iter().map(|x| x.aabb).collect();
+        BvhShapeAABB::new_from_aabbs(&aabbs)
+    }
+}
+*/
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #[derive(Clone, Debug)]
 pub struct BvhShapeBoundingSphere {
     ball: Ball,
@@ -84,7 +121,7 @@ pub struct BvhShapeBoundingSphere {
 }
 impl BvhShapeBoundingSphere {
     fn new_from_bounding_spheres(bounding_spheres: &Vec<BoundingSphere>) -> Self {
-        assert!(bounding_spheres.len() > 1);
+        assert!(bounding_spheres.len() > 0);
         let mut center = V3::zeros();
         bounding_spheres.iter().for_each(|x| center += x.center.coords);
         center /= bounding_spheres.len() as f64;
@@ -113,12 +150,12 @@ impl BvhShape for BvhShapeBoundingSphere {
             x.shape().compute_bounding_sphere(&pose.0)
         }).collect();
 
-        Self::new_from_bounding_spheres(&bounding_spheres)
+        BvhShapeBoundingSphere::new_from_bounding_spheres(&bounding_spheres)
     }
 
     fn new_from_combined(bvh_shapes: &Vec<Self>) -> Self {
         let bounding_spheres = bvh_shapes.iter().map(|x| x.bounding_sphere).collect();
-        Self::new_from_bounding_spheres(&bounding_spheres)
+        BvhShapeBoundingSphere::new_from_bounding_spheres(&bounding_spheres)
     }
 
     fn volume(&self) -> f64 {
@@ -134,7 +171,71 @@ impl BvhShape for BvhShapeBoundingSphere {
     }
 }
 
+/*
+pub struct BvhShapeBuilderBoundingSphere;
+impl BvhShapeBuilder for BvhShapeBuilderBoundingSphere {
+    type BvhShapeType = BvhShapeBoundingSphere;
+
+    fn new_from_offset_shapes(offset_shapes: &Vec<OffsetShape>, poses: &Vec<ISE3q>) -> Self::BvhShapeType {
+        let bounding_spheres = offset_shapes.iter().zip(poses.iter()).map(|(x, y)| {
+            let pose = x.get_transform(y);
+            x.shape().compute_bounding_sphere(&pose.0)
+        }).collect();
+
+        BvhShapeBoundingSphere::new_from_bounding_spheres(&bounding_spheres)
+    }
+
+    fn new_from_combined(bvh_shapes: &Vec<Self::BvhShapeType>) -> Self::BvhShapeType {
+        let bounding_spheres = bvh_shapes.iter().map(|x| x.bounding_sphere).collect();
+        BvhShapeBoundingSphere::new_from_bounding_spheres(&bounding_spheres)
+    }
+}
+*/
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #[derive(Clone, Debug)]
 pub struct Bvh {
 
+}
+
+pub fn get_bvh_layer_info<B: BvhShape>(inputs: &Vec<B>, branch_factor: usize) -> (Vec<B>, Vec<Vec<usize>>) {
+    let mut out_shapes = vec![];
+    let mut out_idxs = vec![];
+
+    let combinations = combinations_of_n((0..inputs.len()).collect(), branch_factor);
+
+    let mut done = vec![false; inputs.len()];
+
+    let res: Vec<(B, f64)> = combinations.iter().map(|x| {
+        let tmp: Vec<B> = x.iter().map(|y| inputs[*y].clone()).collect();
+        let combined = B::new_from_combined(&tmp);
+        let v = combined.volume();
+        (combined, v)
+    }).collect();
+
+    let combined_shapes: Vec<B> = res.iter().map(|x| x.0.clone()).collect();
+    let volumes: Vec<f64> = res.iter().map(|y| y.1.clone()).collect();
+
+    let mut sorted_idxs: Vec<usize> = (0..volumes.len()).collect();
+    sorted_idxs.sort_by(|x, y| volumes[*x].partial_cmp(&volumes[*y]).unwrap());
+
+    'l: for idx in sorted_idxs {
+        let combination = &combinations[idx];
+        for c in combination { if done[*c] { continue 'l; } }
+        for c in combination { done[*c] = true; }
+
+        out_shapes.push(combined_shapes[idx].clone());
+        out_idxs.push(combination.clone());
+    }
+
+    let mut not_done = vec![];
+    for i in 0..done.len() { if !done[i] { not_done.push(i); } }
+
+    for i in not_done {
+        out_shapes.push(inputs[i].clone());
+        out_idxs.push(vec![i]);
+    }
+
+    (out_shapes, out_idxs)
 }
