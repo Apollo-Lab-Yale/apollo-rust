@@ -1,6 +1,6 @@
 use nalgebra::Point3;
 use parry3d_f64::bounding_volume::{Aabb, BoundingSphere, BoundingVolume};
-use parry3d_f64::query::distance;
+use parry3d_f64::query::{contact};
 use parry3d_f64::shape::{Ball, Cuboid};
 use apollo_rust_algs::combinations_of_n;
 use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, I3};
@@ -84,7 +84,7 @@ impl BvhShape for BvhShapeAABB {
 
     #[inline(always)]
     fn signed_distance(&self, other: &Self) -> f64 {
-        distance(&self.pose.0, &self.cuboid, &other.pose.0, &other.cuboid).expect("error")
+        contact(&self.pose.0, &self.cuboid, &other.pose.0, &other.cuboid, f64::INFINITY).expect("error").unwrap().dist
     }
 }
 
@@ -167,7 +167,7 @@ impl BvhShape for BvhShapeBoundingSphere {
     }
 
     fn signed_distance(&self, other: &Self) -> f64 {
-        distance(&self.pose.0, &self.ball, &other.pose.0, &other.ball).expect("error")
+        contact(&self.pose.0, &self.ball, &other.pose.0, &other.ball, f64::INFINITY).expect("error").unwrap().dist
     }
 }
 
@@ -195,11 +195,130 @@ impl BvhShapeBuilder for BvhShapeBuilderBoundingSphere {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, Debug)]
-pub struct Bvh {
+pub struct Bvh<B: BvhShape> {
+    pub layers: Vec<BvhLayer<B>>,
+    pub branch_factor: usize
+}
+impl<B: BvhShape> Bvh<B> {
+    pub fn build(shapes: &Vec<OffsetShape>, poses: &Vec<ISE3q>, branch_factor: usize) -> Self {
+        let bvh_shapes = shapes.iter().zip(poses.iter()).map(|(x, y)| B::new_from_offset_shapes(&vec![x.clone()], &vec![y.clone()])).collect();
+        let mut layers = vec![BvhLayer::build(&bvh_shapes, branch_factor)];
+        while !layers[0].bvh_shapes.len() == 1 {
+            let new_layer = BvhLayer::build(&layers[0].bvh_shapes, branch_factor);
+            layers.insert(0, new_layer);
+        }
+        Self {
+            layers,
+            branch_factor,
+        }
+    }
 
+    pub fn update(&mut self, shapes: &Vec<OffsetShape>, poses: &Vec<ISE3q>) {
+        let bvh_shapes = shapes.iter().zip(poses.iter()).map(|(x, y)| B::new_from_offset_shapes(&vec![x.clone()], &vec![y.clone()])).collect();
+        *self.layers.last_mut().unwrap() = BvhLayer::build(&bvh_shapes, self.branch_factor);
+        if self.layers.len() == 1 { return; }
+        let mut curr_idx = self.layers.len() - 1;
+        loop {
+            let l = self.layers[curr_idx].bvh_shapes.len();
+            for i in 0..l {
+                let parent_idxs = self.layers[curr_idx].parent_indices[i].clone();
+                let parent_shapes = parent_idxs.iter().map(|x| self.layers[curr_idx+1].bvh_shapes[*x].clone() ).collect();
+                let updated_shape = B::new_from_combined(&parent_shapes);
+                self.layers[curr_idx].bvh_shapes[i] = updated_shape;
+            }
+
+            if curr_idx == 0 { return; }
+            curr_idx -= 1;
+        }
+    }
+
+    pub fn intersection_filter(&self, other: &Bvh<B>) -> Vec<(usize, usize)> {
+        let self_num_layers = self.layers.len();
+        let other_num_layers = other.layers.len();
+
+        let mut self_curr_layer = 0;
+        let mut other_curr_layer = 0;
+
+        let mut out_list = vec![(0,0)];
+
+        loop {
+            let out_list_clone = out_list.clone();
+            let mut curr_out_list = vec![];
+
+            out_list_clone.iter().for_each(|(i,j)| {
+                let self_shape = &self.layers[self_curr_layer].bvh_shapes[*i];
+                let other_shape = &other.layers[other_curr_layer].bvh_shapes[*j];
+                let intersect = self_shape.intersect(other_shape);
+                if intersect {
+                    for self_idx in &self.layers[self_curr_layer].parent_indices[*i] {
+                        for other_idx in &other.layers[other_curr_layer].parent_indices[*j] {
+                            curr_out_list.push( (*self_idx, *other_idx) );
+                        }
+                    }
+                }
+            });
+
+            out_list = curr_out_list;
+            if self_curr_layer == self_num_layers - 1 && other_curr_layer == other_num_layers - 1 { return out_list; }
+            self_curr_layer = (self_curr_layer + 1).min(self_num_layers - 1);
+            other_curr_layer = (other_curr_layer + 1).min(other_num_layers - 1);
+        }
+
+    }
+
+    pub fn distance_filter(&self, other: &Bvh<B>, distance_threshold: f64) -> Vec<(usize, usize)> {
+        let self_num_layers = self.layers.len();
+        let other_num_layers = other.layers.len();
+
+        let mut self_curr_layer = 0;
+        let mut other_curr_layer = 0;
+
+        let mut out_list = vec![(0,0)];
+
+        loop {
+            let out_list_clone = out_list.clone();
+            let mut curr_out_list = vec![];
+
+            out_list_clone.iter().for_each(|(i,j)| {
+                let self_shape = &self.layers[self_curr_layer].bvh_shapes[*i];
+                let other_shape = &other.layers[other_curr_layer].bvh_shapes[*j];
+                let distance = self_shape.signed_distance(other_shape);
+                if distance < distance_threshold {
+                    for self_idx in &self.layers[self_curr_layer].parent_indices[*i] {
+                        for other_idx in &other.layers[other_curr_layer].parent_indices[*j] {
+                            curr_out_list.push( (*self_idx, *other_idx) );
+                        }
+                    }
+                }
+            });
+
+            out_list = curr_out_list;
+            if self_curr_layer == self_num_layers - 1 && other_curr_layer == other_num_layers - 1 { return out_list; }
+            self_curr_layer = (self_curr_layer + 1).min(self_num_layers - 1);
+            other_curr_layer = (other_curr_layer + 1).min(other_num_layers - 1);
+        }
+
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct BvhLayer<B: BvhShape> {
+    pub bvh_shapes: Vec<B>,
+    pub parent_indices: Vec<Vec<usize>>
+}
+impl<B: BvhShape> BvhLayer<B> {
+    pub fn build(bvh_shapes: &Vec<B>, branch_factor: usize) -> Self {
+        let res = get_bvh_layer_info(bvh_shapes, branch_factor);
+        return Self {
+            bvh_shapes: res.0,
+            parent_indices: res.1,
+        }
+    }
 }
 
 pub fn get_bvh_layer_info<B: BvhShape>(inputs: &Vec<B>, branch_factor: usize) -> (Vec<B>, Vec<Vec<usize>>) {
+    if inputs.len() < branch_factor { return get_bvh_layer_info(inputs, 1); }
+
     let mut out_shapes = vec![];
     let mut out_idxs = vec![];
 
@@ -239,3 +358,4 @@ pub fn get_bvh_layer_info<B: BvhShape>(inputs: &Vec<B>, branch_factor: usize) ->
 
     (out_shapes, out_idxs)
 }
+
