@@ -4,6 +4,7 @@ use nalgebra::DMatrix;
 use parry3d_f64::query::Contact;
 use apollo_rust_proximity::proxima::proxima_core::{ProximaBudget, ProximaOutput, ProximaTrait};
 use apollo_rust_proximity::{ProximityLossFunction};
+use apollo_rust_proximity::bvh::{Bvh, BvhShape};
 use crate::modules_runtime::link_shapes_module::{ApolloLinkShapesModule, LinkShapeMode, LinkShapeRep};
 
 pub struct RobotProximityFunctions;
@@ -13,6 +14,16 @@ impl RobotProximityFunctions {
         let poses = link_shapes_module.link_poses_to_shape_poses(link_poses, link_shape_mode);
 
         pairwise_group_query_intersection(shapes, &poses, shapes, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, skips, early_stop, ())
+    }
+
+    pub fn self_intersect_bvh<B: BvhShape>(bvh: &mut Bvh<B>, link_shapes_module: &ApolloLinkShapesModule, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, skips: Option<&DMatrix<bool>>, early_stop: bool) -> DoubleGroupProximityQueryOutput<bool> {
+        let shapes = link_shapes_module.get_shapes(link_shape_mode, link_shape_rep);
+        let poses = link_shapes_module.link_poses_to_shape_poses(link_poses, link_shape_mode);
+
+        bvh.update(&shapes, &poses);
+        let pairs = bvh.intersection_filter(&bvh).iter().filter(|x| x.0 <= x.1).map(|x| x.clone()).collect();
+
+        pairwise_group_query_intersection(shapes, &poses, shapes, &poses, &DoubleGroupProximityQueryMode::SubsetOfPairs(pairs), skips, early_stop, ())
     }
 
     pub fn self_distance(link_shapes_module: &ApolloLinkShapesModule, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, skips: Option<&DMatrix<bool>>, early_stop: bool) -> DoubleGroupProximityQueryOutput<f64> {
@@ -27,6 +38,16 @@ impl RobotProximityFunctions {
         let poses = link_shapes_module.link_poses_to_shape_poses(link_poses, link_shape_mode);
 
         pairwise_group_query_contact(shapes, &poses, shapes, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, skips, early_stop, margin)
+    }
+
+    pub fn self_contact_bvh<B: BvhShape>(bvh: &mut Bvh<B>, link_shapes_module: &ApolloLinkShapesModule, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, skips: Option<&DMatrix<bool>>, early_stop: bool, margin: f64) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
+        let shapes = link_shapes_module.get_shapes(link_shape_mode, link_shape_rep);
+        let poses = link_shapes_module.link_poses_to_shape_poses(link_poses, link_shape_mode);
+
+        bvh.update(&shapes, &poses);
+        let pairs = bvh.distance_filter(&bvh, margin).iter().filter(|x| x.0 <= x.1).map(|x| x.clone()).collect();
+
+        pairwise_group_query_contact(shapes, &poses, shapes, &poses, &DoubleGroupProximityQueryMode::SubsetOfPairs(pairs), skips, early_stop, margin)
     }
 
     pub fn double_chain_intersect(link_shapes_module_a: &ApolloLinkShapesModule,
@@ -47,6 +68,31 @@ impl RobotProximityFunctions {
         let poses_b = link_shapes_module_b.link_poses_to_shape_poses(link_poses_b, link_shape_mode_b);
 
         pairwise_group_query_intersection(shapes_a, &poses_a, shapes_b, &poses_b, double_group_proximity_query_mode, skips, early_stop, ())
+    }
+
+    pub fn double_chain_intersect_bvh<B: BvhShape>(self_bvh: &mut Bvh<B>,
+                                                   other_bvh: &mut Bvh<B>,
+                                                   link_shapes_module_a: &ApolloLinkShapesModule,
+                                                   link_poses_a: &Vec<ISE3q>,
+                                                   link_shape_mode_a: LinkShapeMode,
+                                                   link_shape_rep_a: LinkShapeRep,
+                                                   link_shapes_module_b: &ApolloLinkShapesModule,
+                                                   link_poses_b: &Vec<ISE3q>,
+                                                   link_shape_mode_b: LinkShapeMode,
+                                                   link_shape_rep_b: LinkShapeRep,
+                                                   skips: Option<&DMatrix<bool>>,
+                                                   early_stop: bool) -> DoubleGroupProximityQueryOutput<bool> {
+        let shapes_a = link_shapes_module_a.get_shapes(link_shape_mode_a, link_shape_rep_a);
+        let poses_a = link_shapes_module_a.link_poses_to_shape_poses(link_poses_a, link_shape_mode_a);
+
+        let shapes_b = link_shapes_module_b.get_shapes(link_shape_mode_b, link_shape_rep_b);
+        let poses_b = link_shapes_module_b.link_poses_to_shape_poses(link_poses_b, link_shape_mode_b);
+
+        self_bvh.update(&shapes_a, &poses_a);
+        other_bvh.update(&shapes_b, &poses_b);
+        let pairs = self_bvh.intersection_filter(&other_bvh);
+
+        pairwise_group_query_intersection(shapes_a, &poses_a, shapes_b, &poses_b, &DoubleGroupProximityQueryMode::SubsetOfPairs(pairs), skips, early_stop, ())
     }
 
     pub fn double_chain_distance(link_shapes_module_a: &ApolloLinkShapesModule,
@@ -88,6 +134,33 @@ impl RobotProximityFunctions {
         let poses_b = link_shapes_module_b.link_poses_to_shape_poses(link_poses_b, link_shape_mode_b);
 
         pairwise_group_query_contact(shapes_a, &poses_a, shapes_b, &poses_b, double_group_proximity_query_mode, skips, early_stop, margin)
+    }
+
+    pub fn double_chain_contact_bvh<B: BvhShape>(self_bvh: &mut Bvh<B>,
+                                                 other_bvh: &mut Bvh<B>,
+                                                 link_shapes_module_a: &ApolloLinkShapesModule,
+                                                 link_poses_a: &Vec<ISE3q>,
+                                                 link_shape_mode_a: LinkShapeMode,
+                                                 link_shape_rep_a: LinkShapeRep,
+                                                 link_shapes_module_b: &ApolloLinkShapesModule,
+                                                 link_poses_b: &Vec<ISE3q>,
+                                                 link_shape_mode_b: LinkShapeMode,
+                                                 link_shape_rep_b: LinkShapeRep,
+                                                 skips: Option<&DMatrix<bool>>,
+                                                 early_stop: bool,
+                                                 margin: f64) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
+        let shapes_a = link_shapes_module_a.get_shapes(link_shape_mode_a, link_shape_rep_a);
+        let poses_a = link_shapes_module_a.link_poses_to_shape_poses(link_poses_a, link_shape_mode_a);
+
+        let shapes_b = link_shapes_module_b.get_shapes(link_shape_mode_b, link_shape_rep_b);
+        let poses_b = link_shapes_module_b.link_poses_to_shape_poses(link_poses_b, link_shape_mode_b);
+
+        self_bvh.update(&shapes_a, &poses_a);
+        other_bvh.update(&shapes_b, &poses_b);
+        let pairs = self_bvh.distance_filter(&other_bvh, margin);
+
+        pairwise_group_query_contact(shapes_a, &poses_a, shapes_b, &poses_b, &DoubleGroupProximityQueryMode::SubsetOfPairs(pairs), skips, early_stop, margin)
+
     }
 
     pub fn self_intersect_proxima<P: ProximaTrait>(proxima: &mut P, link_shapes_module: &ApolloLinkShapesModule, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, skips: Option<&DMatrix<bool>>, frozen: bool) -> ProximaOutput<bool> {

@@ -203,7 +203,7 @@ impl<B: BvhShape> Bvh<B> {
     pub fn build(shapes: &Vec<OffsetShape>, poses: &Vec<ISE3q>, branch_factor: usize) -> Self {
         let bvh_shapes = shapes.iter().zip(poses.iter()).map(|(x, y)| B::new_from_offset_shapes(&vec![x.clone()], &vec![y.clone()])).collect();
         let mut layers = vec![BvhLayer::build(&bvh_shapes, branch_factor)];
-        while !layers[0].bvh_shapes.len() == 1 {
+        while !(layers[0].bvh_shapes.len() == 1) {
             let new_layer = BvhLayer::build(&layers[0].bvh_shapes, branch_factor);
             layers.insert(0, new_layer);
         }
@@ -217,7 +217,7 @@ impl<B: BvhShape> Bvh<B> {
         let bvh_shapes = shapes.iter().zip(poses.iter()).map(|(x, y)| B::new_from_offset_shapes(&vec![x.clone()], &vec![y.clone()])).collect();
         *self.layers.last_mut().unwrap() = BvhLayer::build(&bvh_shapes, self.branch_factor);
         if self.layers.len() == 1 { return; }
-        let mut curr_idx = self.layers.len() - 1;
+        let mut curr_idx = self.layers.len() - 2;
         loop {
             let l = self.layers[curr_idx].bvh_shapes.len();
             for i in 0..l {

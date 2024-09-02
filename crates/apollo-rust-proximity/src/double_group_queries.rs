@@ -210,7 +210,7 @@ macro_rules! create_double_group_query {
             let mut num_ground_truth_checks = 0;
 
             let mut f = |i: usize, sa: &OffsetShape, pa: &ISE3q, j: usize, sb: &OffsetShape, pb: &ISE3q| -> i8 {
-                if skips.is_some() { if skips.as_ref().unwrap()[(i,j)] { return 0; } }
+                if skips.is_some() { if skips.as_ref().unwrap()[(i,j)] { return 1; } }
 
                 let ppa = sa.get_transform(pa);
                 let ppb = sb.get_transform(pb);
@@ -232,8 +232,9 @@ macro_rules! create_double_group_query {
             match query_mode {
                 DoubleGroupProximityQueryMode::AllPossiblePairs => {
                     for (i, (sa, pa)) in group_a.iter().zip(poses_a).enumerate() {
-                        for (j, (sb, pb)) in group_b.iter().zip(poses_b).enumerate() {
+                        'l: for (j, (sb, pb)) in group_b.iter().zip(poses_b).enumerate() {
                             let res = f(i, sa, pa, j, sb, pb);
+                            if res == 1 { continue 'l; }
                             num_ground_truth_checks += 1;
                             if res == -1 { return DoubleGroupProximityQueryOutput::new(outputs, shape_idxs, num_ground_truth_checks); }
                         }
@@ -244,19 +245,21 @@ macro_rules! create_double_group_query {
                         'l: for (j, (sb, pb)) in group_b.iter().zip(poses_b).enumerate() {
                             if i >= j { continue 'l; }
                             let res = f(i, sa, pa, j, sb, pb);
+                            if res == 1 { continue 'l; }
                             num_ground_truth_checks += 1;
                             if res == -1 { return DoubleGroupProximityQueryOutput::new(outputs, shape_idxs, num_ground_truth_checks); }
                         }
                     }
                 },
                 DoubleGroupProximityQueryMode::SubsetOfPairs(v) => {
-                    for (i,j) in v {
+                    'l: for (i,j) in v {
                         let pa = &poses_a[*i];
                         let pb = &poses_b[*j];
                         let sa = &group_a[*i];
                         let sb = &group_b[*j];
 
                         let res = f(*i, sa, pa, *j, sb, pb);
+                        if res == 1 { continue 'l; }
                         num_ground_truth_checks += 1;
                         if res == -1 { return DoubleGroupProximityQueryOutput::new(outputs, shape_idxs, num_ground_truth_checks); }
                     }
