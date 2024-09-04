@@ -1,5 +1,5 @@
 use apollo_rust_differentiation::{DerivativeNalgebraTrait, FunctionNalgebraTrait, WASPDerivativeEngine};
-use apollo_rust_linalg::{ApolloDVectorTrait, V};
+use apollo_rust_linalg::{ApolloDMatrixTrait, ApolloDVectorTrait, M, V};
 
 struct Test;
 impl FunctionNalgebraTrait for Test {
@@ -16,23 +16,42 @@ impl FunctionNalgebraTrait for Test {
     }
 }
 
+#[derive(Clone)]
+struct Test2 {
+    pub m: M
+}
+impl Test2 {
+    pub fn new(n: usize, m: usize) -> Self {
+        Self {
+            m: M::new_random_with_range(m, n, -1.0, 1.0),
+        }
+    }
+}
+impl FunctionNalgebraTrait for Test2 {
+    fn call(&self, x: &V) -> V {
+        return &self.m * x;
+    }
+
+    fn input_dim(&self) -> usize {
+        self.m.ncols()
+    }
+
+    fn output_dim(&self) -> usize {
+        self.m.nrows()
+    }
+}
+
 fn main() {
-    let mut w = WASPDerivativeEngine::new(Test, 0.1);
-    let d = w.derivative(&V::new(&[1.,2.]));
-    println!("{}", d);
+    let f = Test2::new(5, 5);
+    println!("{}", f.m);
+    println!("---");
+    let mut w = WASPDerivativeEngine::new(f, 0.0001);
+    let mut v = V::new_random_with_range(5, -1.0, 1.0);
 
-    let d = w.derivative(&V::new(&[1.001,2.002]));
-    println!("{}", d);
-
-    let d = w.derivative(&V::new(&[1.03,2.04]));
-    println!("{}", d);
-
-    let d = w.derivative(&V::new(&[1.03,2.04]));
-    println!("{}", d);
-
-    let d = w.derivative(&V::new(&[1.03,2.04]));
-    println!("{}", d);
-
-    let d = w.derivative(&V::new(&[1.03,2.04]));
-    println!("{}", d);
+    for _ in 0..10 {
+        v += V::new_random_with_range(5, -0.1, 0.1);
+        let d = w.derivative(&v);
+        println!("{}", d);
+        println!("{:?}", w.num_f_calls);
+    }
 }
