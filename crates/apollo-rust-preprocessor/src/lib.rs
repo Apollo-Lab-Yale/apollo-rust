@@ -205,12 +205,12 @@ impl ResourcesSubDirectoryTrait for ResourcesSubDirectory {
         ApolloPlainMeshesModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloConvexHullMeshesModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloConvexDecompositionMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloFirstLookVisModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloBoundsModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesDistanceStatisticsModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesSimpleSkipsModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesApproximationsModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloFirstLookVisModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesSkipsModule::load_or_build(self, force_build_on_all).expect("error");
     }
 
@@ -223,12 +223,12 @@ impl ResourcesSubDirectoryTrait for ResourcesSubDirectory {
         ApolloPlainMeshesModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloConvexHullMeshesModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloConvexDecompositionMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloFirstLookVisModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloBoundsModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesDistanceStatisticsModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesSimpleSkipsModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesApproximationsModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloFirstLookVisModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloLinkShapesSkipsModule::load_or_build(self, force_build_on_all).expect("error");
     }
 }

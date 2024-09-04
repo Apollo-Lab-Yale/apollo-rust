@@ -234,7 +234,9 @@ impl ApolloPathBufTrait for PathBuf {
         assert!(n > 0);
 
         let s = self.split_into_path_bufs();
-        assert!(s.len() > n);
+        // if s.len() <= n { return self.extract_last_n_segments(s.len()) }
+        // assert!(s.len() > n);
+        let n = n.min(s.len());
 
         let mut out = PathBuf::new();
         for i in 0..n {

@@ -38,7 +38,7 @@ impl OriginalMeshesModuleBuilders for ApolloOriginalMeshesModule {
                             // if !target.exists() {
                             let ff = fp.extract_last_n_segments(3);
                             println!("searching directory for file that ends with {:?}", ff);
-                            let find = PathBuf::new_from_documents_dir().walk_directory_and_find_first(ff);
+                            let find = PathBuf::new_from_desktop_dir().walk_directory_and_find_first(ff);
                             println!("found!  Copying file.");
                             find.copy_file_to_destination_file_path(&target);
                             // }

@@ -114,7 +114,6 @@ fn get_trimesh_from_collada_node(node: &Node, curr_transforms: &Vec<Transform>, 
                                     _ => {  }
                                 }
                             });
-
                             transform_points(&mut curr_points, curr_transforms);
 
                             let indices = triangles.data.prim.as_ref().expect("error");
@@ -153,7 +152,7 @@ fn transform_points(points: &mut Vec<[f64; 3]>, transforms: &Vec<Transform>) {
             Transform::Matrix(matrix) => {
                 let mm = &matrix.0;
                 let mm: Vec<f64> = mm.iter().map(|x| *x as f64).collect();
-                let mat = Matrix4::from_column_slice(mm.as_slice());
+                let mat = Matrix4::from_row_slice(mm.as_slice());
                 let translation = Vector3::new(mat[(0, 3)], mat[(1, 3)], mat[(2, 3)]);
                 let m = mat.fixed_view::<3, 3>(0, 0);
                 let m: Matrix3<f64> = m.into();
