@@ -19,6 +19,7 @@ pub struct WASPDerivativeEngine<F: FunctionNalgebraTrait> {
     delta_x_mat: M,
     delta_x_mat_t: M,
     delta_f_hat_mat_t: M,
+    #[allow(unused)]
     r: usize,
     i: usize,
     pub num_f_calls: usize

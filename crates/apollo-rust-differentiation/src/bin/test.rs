@@ -1,6 +1,7 @@
 use apollo_rust_differentiation::{DerivativeNalgebraTrait, FunctionNalgebraTrait, WASPDerivativeEngine};
 use apollo_rust_linalg::{ApolloDMatrixTrait, ApolloDVectorTrait, M, V};
 
+#[allow(unused)]
 struct Test;
 impl FunctionNalgebraTrait for Test {
     fn call(&self, x: &V) -> V {
