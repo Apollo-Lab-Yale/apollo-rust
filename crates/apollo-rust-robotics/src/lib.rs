@@ -23,19 +23,29 @@ use apollo_rust_robotics_core::modules_runtime::link_shapes_distance_statistics_
 use apollo_rust_robotics_core::modules_runtime::link_shapes_skips_nalgebra_module::ApolloLinkShapesSkipsNalgebraModule;
 
 
+// Trait defining builder methods for creating instances of the implementing type from various resources.
 pub trait ChainBuildersTrait {
+    // Create a new instance from the root directory and robot name.
     fn new_from_root_directory(root: &ResourcesRootDirectory, robot_name: &str) -> Self;
 
+    // Create a new instance from a subdirectory.
     fn new_from_sub_directory(s: &ResourcesSubDirectory) -> Self;
 }
+
+// Implementation of `ChainBuildersTrait` for the `ChainNalgebra` type.
 impl ChainBuildersTrait for ChainNalgebra {
+    // Create a new `ChainNalgebra` from the root directory and robot name.
     fn new_from_root_directory(root: &ResourcesRootDirectory, robot_name: &str) -> Self {
+        // Get the subdirectory associated with the robot name.
         let s = root.get_subdirectory(robot_name);
 
+        // Use the subdirectory to create the `ChainNalgebra` instance.
         Self::new_from_sub_directory(&s)
     }
 
+    // Create a new `ChainNalgebra` from a subdirectory.
     fn new_from_sub_directory(s: &ResourcesSubDirectory) -> Self {
+        // Load or build various modules from the subdirectory.
         let urdf_module = ApolloURDFNalgebraModule::from_urdf_module(&ApolloURDFModule::load_or_build(&s, false).expect("error"));
         let chain_module = ApolloChainModule::load_or_build(&s, false).expect("error");
         let dof_module = ApolloDOFModule::load_or_build(&s, false).expect("error");
@@ -54,10 +64,12 @@ impl ChainBuildersTrait for ChainNalgebra {
         let link_shapes_simple_skips_nalgebra_module = ApolloLinkShapesSimpleSkipsNalgebraModule::from_link_shapes_simple_skips_module(&link_shapes_simple_skips_module);
         let link_shapes_skips_module = ApolloLinkShapesSkipsModule::load_or_build(&s, false).expect("error");
         let link_shapes_skips_nalgebra_module = ApolloLinkShapesSkipsNalgebraModule::from_link_shapes_skips_module(&link_shapes_skips_module);
+        // Optional modules (commented out).
         // let link_shapes_lie_alg_error_models_module = ApolloLinkShapesLieAlgErrorModelsModule::load_or_build(&s, false).expect("error");
         // let link_shapes_lie_alg_error_models_nalgebra_module = ApolloLinkShapesLieAlgErrorModelsNalgebraModule::from_link_shapes_lie_alg_error_models_module(&link_shapes_lie_alg_error_models_module);
         let bounds_module = ApolloBoundsModule::load_or_build(&s, false).expect("error");
 
+        // Return a new `ChainNalgebra` instance with all the loaded modules.
         Self {
             resources_sub_directory: s.clone(),
             urdf_module,
@@ -79,31 +91,46 @@ impl ChainBuildersTrait for ChainNalgebra {
     }
 }
 
+// Trait defining a preprocessing step for refining the link shapes skips module.
 pub trait PreprocessForceBuildModulesTrait {
+    // Refine the link shapes skips module and return the updated instance.
     fn refine_link_shapes_skips_module(self) -> Self;
 }
+
+// Implementation of `PreprocessForceBuildModulesTrait` for the `ChainNalgebra` type.
 impl PreprocessForceBuildModulesTrait for ChainNalgebra {
+    // Refine the link shapes skips module.
     fn refine_link_shapes_skips_module(self) -> Self {
+        // Load or build the link shapes skips module with force and update the `ChainNalgebra` instance.
         let s = &self.resources_sub_directory;
         ApolloLinkShapesSkipsModule::load_or_build(s, true).expect("error");
         s.to_chain_nalgebra()
     }
 }
 
+// Trait defining a conversion from `ResourcesSubDirectory` to `ChainNalgebra`.
 pub trait ToChainNalgebra {
+    // Convert the `ResourcesSubDirectory` to a `ChainNalgebra` instance.
     fn to_chain_nalgebra(&self) -> ChainNalgebra;
 }
+
+// Implementation of `ToChainNalgebra` for `ResourcesSubDirectory`.
 impl ToChainNalgebra for ResourcesSubDirectory {
     fn to_chain_nalgebra(&self) -> ChainNalgebra {
         ChainNalgebra::new_from_sub_directory(self)
     }
 }
 
+// Trait defining a conversion from `ResourcesRootDirectory` and robot name to `ChainNalgebra`.
 pub trait ToChainFromName {
+    // Convert the `ResourcesRootDirectory` and robot name to a `ChainNalgebra` instance.
     fn to_chain(&self, robot_name: &str) -> ChainNalgebra;
 }
+
+// Implementation of `ToChainFromName` for `ResourcesRootDirectory`.
 impl ToChainFromName for ResourcesRootDirectory {
     fn to_chain(&self, robot_name: &str) -> ChainNalgebra {
         ChainNalgebra::new_from_root_directory(self, robot_name)
     }
 }
+
