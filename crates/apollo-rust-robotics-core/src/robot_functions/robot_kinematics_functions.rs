@@ -8,8 +8,23 @@ use apollo_rust_spatial::lie::se3_implicit_quaternion::{ApolloLieAlgPackIse3qTra
 use apollo_rust_spatial::vectors::{V3, V6};
 use crate::modules_runtime::urdf_nalgebra_module::{ApolloURDFAxisNalgebra, ApolloURDFNalgebraModule};
 
+/// The `RobotKinematicsFunctions` struct provides functions for forward and reverse kinematics
+/// on a robot model.
 pub struct RobotKinematicsFunctions;
 impl RobotKinematicsFunctions {
+    /// Computes the forward kinematics (FK) for the robot chain given a state.
+    ///
+    /// # Arguments
+    /// - `state`: A reference to a `V` representing the robot state.
+    /// - `urdf_module`: A reference to the URDF module that holds the robot's URDF structure.
+    /// - `chain_module`: A reference to the chain module containing the kinematic chain.
+    /// - `dof_module`: A reference to the DOF (Degrees of Freedom) module.
+    ///
+    /// # Returns
+    /// A vector of `ISE3q` representing the poses of each link in the chain.
+    ///
+    /// # Panics
+    /// Panics if the length of the state does not match the number of DOFs.
     #[inline]
     pub fn fk(state: &V, urdf_module: &ApolloURDFNalgebraModule, chain_module: &ApolloChainModule, dof_module: &ApolloDOFModule) -> Vec<ISE3q> {
         assert_eq!(state.len(), dof_module.num_dofs);
@@ -45,6 +60,16 @@ impl RobotKinematicsFunctions {
         out
     }
 
+    /// Computes the reverse of forward kinematics, given the link frames.
+    ///
+    /// # Arguments
+    /// - `link_frames`: A reference to a vector of `ISE3q` representing the link frames.
+    /// - `urdf_module`: A reference to the URDF module that holds the robot's URDF structure.
+    /// - `chain_module`: A reference to the chain module containing the kinematic chain.
+    /// - `dof_module`: A reference to the DOF (Degrees of Freedom) module.
+    ///
+    /// # Returns
+    /// A `V` representing the state that would result in the given link poses.
     pub fn reverse_of_fk(link_frames: &Vec<ISE3q>, urdf_module: &ApolloURDFNalgebraModule, chain_module: &ApolloChainModule, dof_module: &ApolloDOFModule) -> V {
         let mut out = V::new(&vec![0.0; dof_module.num_dofs]);
 
@@ -102,11 +127,29 @@ impl RobotKinematicsFunctions {
         out
     }
 
+    /// Retrieves the joint's variable transform from its URDF axis.
+    ///
+    /// # Arguments
+    /// - `joint_type`: A reference to the joint type.
+    /// - `joint_axis`: A reference to the URDF axis.
+    /// - `joint_dofs`: A slice of joint DOFs (Degrees of Freedom).
+    ///
+    /// # Returns
+    /// An `ISE3q` representing the joint's variable transform.
     #[inline(always)]
     fn get_joint_variable_transform_urdf_axis(joint_type: &ApolloURDFJointType, joint_axis: &ApolloURDFAxisNalgebra, joint_dofs: &[f64]) -> ISE3q {
         Self::get_joint_variable_transform(joint_type, &joint_axis.axis, joint_dofs)
     }
 
+    /// Retrieves the joint's variable transform.
+    ///
+    /// # Arguments
+    /// - `joint_type`: A reference to the joint type.
+    /// - `joint_axis`: A reference to the joint axis.
+    /// - `joint_dofs`: A slice of joint DOFs (Degrees of Freedom).
+    ///
+    /// # Returns
+    /// An `ISE3q` representing the joint's variable transform.
     #[inline(always)]
     pub fn get_joint_variable_transform(joint_type: &ApolloURDFJointType, joint_axis: &V3, joint_dofs: &[f64]) -> ISE3q {
         return match joint_type {
