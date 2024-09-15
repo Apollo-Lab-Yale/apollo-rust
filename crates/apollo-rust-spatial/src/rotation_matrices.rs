@@ -6,15 +6,29 @@ use crate::matrices::{ApolloMatrix2Trait, ApolloMatrix3Trait, M2, M3};
 use crate::quaternions::{ApolloUnitQuaternionTrait, UQ};
 use crate::vectors::V3;
 
+/// Alias for `Rotation2<f64>`, representing a 2D rotation with 64-bit floating point precision.
 pub type R2 = Rotation2<f64>;
+
+/// Alias for `Rotation3<f64>`, representing a 3D rotation with 64-bit floating point precision.
 pub type R3 = Rotation3<f64>;
 
+/// Trait for operations on 2D rotations (`R2`).
 pub trait ApolloRotation2Trait {
+    /// Creates an `R2` instance from a dynamic matrix `M`.
+    ///
+    /// - `matrix`: The dynamic matrix `M` to convert from.
     fn from_dmatrix(matrix: &M) -> Self;
+
+    /// Converts the `R2` instance to a dynamic matrix `M`.
     fn to_dmatrix(&self) -> M;
+
+    /// Creates a new random `R2` rotation.
     fn new_random() -> Self;
+
+    /// Converts the `R2` instance to a unit complex number representation (`UC`).
     fn to_unit_complex(&self) -> UC;
 }
+
 impl ApolloRotation2Trait for R2 {
     fn from_dmatrix(matrix: &M) -> Self {
         Self::from_matrix(&M2::from_dmatrix(matrix))
@@ -36,15 +50,39 @@ impl ApolloRotation2Trait for R2 {
     }
 }
 
+/// Trait for operations on 3D rotations (`R3`).
 pub trait ApolloRotation3Trait {
+    /// Creates an `R3` instance from a dynamic matrix `M`.
+    ///
+    /// - `matrix`: The dynamic matrix `M` to convert from.
     fn from_dmatrix(matrix: &M) -> Self;
+
+    /// Converts the `R3` instance to a dynamic matrix `M`.
     fn to_dmatrix(&self) -> M;
+
+    /// Creates a new random `R3` rotation.
     fn new_random() -> Self;
+
+    /// Creates an `R3` instance that points the `axis` in the direction of the `look_at_vector`.
+    ///
+    /// - `look_at_vector`: The vector to look at.
+    /// - `axis`: The axis of the rotation to align with the `look_at_vector`.
     fn from_look_at(look_at_vector: &V3, axis: &V3) -> Self;
+
+    /// Converts the `R3` instance to a unit quaternion (`UQ`).
     fn to_unit_quaternion(&self) -> UQ;
+
+    /// Creates an `R3` instance from a slice of three Euler angles.
+    ///
+    /// - `slice`: A slice representing the Euler angles `[roll, pitch, yaw]`.
     fn from_slice_euler_angles(slice: &[f64]) -> Self;
+
+    /// Creates an `R3` instance from a quaternion slice.
+    ///
+    /// - `slice`: A slice representing the quaternion `[w, x, y, z]`.
     fn from_slice_quaternion(slice: &[f64]) -> Self;
 }
+
 impl ApolloRotation3Trait for R3 {
     fn from_dmatrix(matrix: &M) -> Self {
         Self::from_matrix(&M3::from_dmatrix(matrix))
@@ -57,11 +95,18 @@ impl ApolloRotation3Trait for R3 {
 
     fn new_random() -> Self {
         let mut rng = rand::thread_rng();
-        Self::from_euler_angles(rng.gen_range(-6.28..6.28), rng.gen_range(-6.28..6.28), rng.gen_range(-6.28..6.28))
+        Self::from_euler_angles(
+            rng.gen_range(-6.28..6.28),
+            rng.gen_range(-6.28..6.28),
+            rng.gen_range(-6.28..6.28)
+        )
     }
 
-    /// axis is the vector in the matrix that should be pointing in the look_at_vector direction
-    /// e.g., axis = V::new(&[0.,0.,0.1])
+    /// Creates an `R3` instance that points the `axis` in the direction of the `look_at_vector`.
+    ///
+    /// - `look_at_vector`: The vector to look at.
+    /// - `axis`: The vector that will be rotated to align with `look_at_vector`.
+    ///
     #[inline]
     fn from_look_at(look_at_vector: &V3, axis: &V3) -> Self {
         let look_at_vector = look_at_vector.normalize();
@@ -88,4 +133,3 @@ impl ApolloRotation3Trait for R3 {
         Self::from(UQ::from_slice_quaternion(slice))
     }
 }
-

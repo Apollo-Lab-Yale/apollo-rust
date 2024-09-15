@@ -4,23 +4,67 @@ use crate::rotation_matrices::{ApolloRotation3Trait, R3};
 use crate::translations::{ApolloTranslation3, T3};
 use crate::vectors::V3;
 
+/// Alias for `Isometry3<f64>`, representing a 3D isometry with 64-bit floating point precision.
 pub type I3 = Isometry3<f64>;
+
+/// Alias for `IsometryMatrix3<f64>`, representing a 3D isometry matrix with 64-bit floating point precision.
 pub type I3M = IsometryMatrix3<f64>;
 
-
+/// Trait for operations on 3D isometries (`I3`).
 pub trait ApolloIsometry3Trait {
-    /// range will just be for translation part
+    /// Generates a new random `I3` instance with the translation part within the specified range.
+    ///
+    /// - `min`: Minimum bound for the random values.
+    /// - `max`: Maximum bound for the random values.
     fn new_random_with_range(min: f64, max: f64) -> Self;
+
+    /// Constructs an `I3` instance from translation and scaled axis slices.
+    ///
+    /// - `translation`: A slice representing the translation vector.
+    /// - `scaled_axis`: A slice representing the rotation as a scaled axis.
     fn from_slices_scaled_axis(translation: &[f64], scaled_axis: &[f64]) -> Self;
+
+    /// Constructs an `I3` instance from translation and Euler angles slices.
+    ///
+    /// - `translation`: A slice representing the translation vector.
+    /// - `euler_angles`: A slice representing the Euler angles (rotation).
     fn from_slices_euler_angles(translation: &[f64], euler_angles: &[f64]) -> Self;
+
+    /// Constructs an `I3` instance from translation and quaternion slices.
+    ///
+    /// - `translation`: A slice representing the translation vector.
+    /// - `quaternion`: A slice representing the quaternion `[w, x, y, z]` for rotation.
     fn from_slices_quaternion(translation: &[f64], quaternion: &[f64]) -> Self;
+
+    /// Constructs an `I3` instance from a single slice representing both translation and scaled axis.
+    ///
+    /// - `slice`: A slice representing the translation and scaled axis vectors.
     fn from_slice_scaled_axis(slice: &[f64]) -> Self;
+
+    /// Constructs an `I3` instance from a single slice representing both translation and Euler angles.
+    ///
+    /// - `slice`: A slice representing the translation and Euler angles.
     fn from_slice_euler_angles(slice: &[f64]) -> Self;
+
+    /// Constructs an `I3` instance from a single slice representing both translation and quaternion.
+    ///
+    /// - `slice`: A slice representing the translation and quaternion.
     fn from_slice_quaternion(slice: &[f64]) -> Self;
+
+    /// Converts the `I3` instance to an `I3M` (IsometryMatrix3) instance.
     fn to_isometry_matrix_3(&self) -> I3M;
+
+    /// Checks if the `I3` instance is an identity transformation.
+    ///
+    /// Returns `true` if the transformation is an identity, `false` otherwise.
     fn is_identity(&self) -> bool;
+
+    /// Adds a small amount of noise to the `I3` instance and returns the new noisy transformation.
+    ///
+    /// The noise is uniformly distributed in the range `[-0.00005, 0.00005]`.
     fn add_tiny_bit_of_noise(&self) -> Self;
 }
+
 impl ApolloIsometry3Trait for I3 {
     fn new_random_with_range(min: f64, max: f64) -> Self {
         let t = T3::new_random_with_range(min, max);
@@ -86,19 +130,56 @@ impl ApolloIsometry3Trait for I3 {
     }
 }
 
-
+/// Trait for operations on 3D isometry matrices (`I3M`).
 pub trait ApolloIsometryMatrix3Trait {
-    /// range will just be for translation part
+    /// Generates a new random `I3M` instance with the translation part within the specified range.
+    ///
+    /// - `min`: Minimum bound for the random values.
+    /// - `max`: Maximum bound for the random values.
     fn new_random_with_range(min: f64, max: f64) -> Self;
+
+    /// Constructs an `I3M` instance from translation and scaled axis slices.
+    ///
+    /// - `translation`: A slice representing the translation vector.
+    /// - `scaled_axis`: A slice representing the rotation as a scaled axis.
     fn from_slices_scaled_axis(translation: &[f64], scaled_axis: &[f64]) -> Self;
+
+    /// Constructs an `I3M` instance from translation and Euler angles slices.
+    ///
+    /// - `translation`: A slice representing the translation vector.
+    /// - `euler_angles`: A slice representing the Euler angles (rotation).
     fn from_slices_euler_angles(translation: &[f64], euler_angles: &[f64]) -> Self;
+
+    /// Constructs an `I3M` instance from translation and quaternion slices.
+    ///
+    /// - `translation`: A slice representing the translation vector.
+    /// - `quaternion`: A slice representing the quaternion `[w, x, y, z]` for rotation.
     fn from_slices_quaternion(translation: &[f64], quaternion: &[f64]) -> Self;
+
+    /// Constructs an `I3M` instance from a single slice representing both translation and scaled axis.
+    ///
+    /// - `slice`: A slice representing the translation and scaled axis vectors.
     fn from_slice_scaled_axis(slice: &[f64]) -> Self;
+
+    /// Constructs an `I3M` instance from a single slice representing both translation and Euler angles.
+    ///
+    /// - `slice`: A slice representing the translation and Euler angles.
     fn from_slice_euler_angles(slice: &[f64]) -> Self;
+
+    /// Constructs an `I3M` instance from a single slice representing both translation and quaternion.
+    ///
+    /// - `slice`: A slice representing the translation and quaternion.
     fn from_slice_quaternion(slice: &[f64]) -> Self;
+
+    /// Converts the `I3M` instance to an `I3` (Isometry3) instance.
     fn to_isometry_3(&self) -> I3;
+
+    /// Checks if the `I3M` instance is an identity transformation.
+    ///
+    /// Returns `true` if the transformation is an identity, `false` otherwise.
     fn is_identity(&self) -> bool;
 }
+
 impl ApolloIsometryMatrix3Trait for I3M {
     fn new_random_with_range(min: f64, max: f64) -> Self {
         let t = T3::new_random_with_range(min, max);
