@@ -63,6 +63,12 @@ pub trait ApolloDMatrixTrait {
     /// Constructs a matrix from row vectors.
     fn from_row_vectors(rows: &[V]) -> Self;
 
+    /// Sets a column from the given slice
+    fn set_column_from_slice(&mut self, column_idx: usize, slice: &[f64]);
+
+    /// Sets a row from the given slice
+    fn set_row_from_slice(&mut self, row_idx: usize, slice: &[f64]);
+
     /// Applies the Gram-Schmidt process to the columns of the matrix.
     fn gram_schmidt_on_columns(&self) -> Self;
 
@@ -117,6 +123,14 @@ impl ApolloDMatrixTrait for M {
         rows.iter().enumerate().for_each(|(i, x)| out.set_row(i, &x.transpose()));
 
         out
+    }
+
+    fn set_column_from_slice(&mut self, column_idx: usize, slice: &[f64]) {
+        self.set_column(column_idx, &V::from_column_slice(slice))
+    }
+
+    fn set_row_from_slice(&mut self, row_idx: usize, slice: &[f64]) {
+        self.set_row(row_idx, &V::from_row_slice(slice).transpose())
     }
 
     fn gram_schmidt_on_columns(&self) -> Self {
