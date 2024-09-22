@@ -47,11 +47,8 @@ macro_rules! impl_apollo_matrix_trait {
     };
 }
 
-/// Implements the `ApolloMatrix2Trait` for `M2` (2x2 matrices).
 impl_apollo_matrix_trait!(ApolloMatrix2Trait, M2, 2);
 
-/// Implements the `ApolloMatrix3Trait` for `M3` (3x3 matrices).
 impl_apollo_matrix_trait!(ApolloMatrix3Trait, M3, 3);
 
-/// Implements the `ApolloMatrix4Trait` for `M4` (4x4 matrices).
 impl_apollo_matrix_trait!(ApolloMatrix4Trait, M4, 4);

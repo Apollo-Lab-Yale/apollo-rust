@@ -42,7 +42,6 @@ impl ApolloLinkShapesSimpleSkipsNalgebraModule {
     /// # Returns
     /// A reference to the corresponding `DMatrix<bool>` representing the simple skips.
     #[inline(always)]
-    #[inline(always)]
     pub fn get_skips(&self, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep) -> &DMatrix<bool> {
         match &link_shape_mode {
             LinkShapeMode::Full => {

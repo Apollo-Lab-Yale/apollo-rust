@@ -67,13 +67,11 @@ macro_rules! impl_apollo_vector_trait {
     };
 }
 
-/// Implements the `ApolloVector2Trait` for `V2` (2D vectors).
+
 impl_apollo_vector_trait!(ApolloVector2Trait, V2, 2);
 
-/// Implements the `ApolloVector3Trait` for `V3` (3D vectors).
 impl_apollo_vector_trait!(ApolloVector3Trait, V3, 3);
 
-/// Implements the `ApolloVector6Trait` for `V6` (6D vectors).
 impl_apollo_vector_trait!(ApolloVector6Trait, V6, 6);
 
 /// Trait for converting a 3D vector (`V3`) to a 3D translation (`T3`).
