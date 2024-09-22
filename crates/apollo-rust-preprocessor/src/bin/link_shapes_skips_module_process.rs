@@ -41,9 +41,9 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     assert_eq!(args.len(), 2);
     let chain_name = &args[1];
-    let ss = if let Some(s) = ResourcesRootDirectory::new_from_default_apollo_robots_directory().get_subdirectory_option(chain_name) {
+    let ss = if let Some(s) = ResourcesRootDirectory::new_from_default_apollo_robots_dir().get_subdirectory_option(chain_name) {
         s
-    } else if let Some(s) = ResourcesRootDirectory::new_from_default_apollo_environments_directory().get_subdirectory_option(chain_name) {
+    } else if let Some(s) = ResourcesRootDirectory::new_from_default_apollo_environments_dir().get_subdirectory_option(chain_name) {
         s
     } else {
         panic!("not found")
@@ -68,7 +68,7 @@ fn main() {
 
     let mut app = App::new()
         .apollo_bevy_robotics_base(true)
-        .apollo_bevy_spawn_robot_raw(s, &urdf_nalgebra_module, &chain_module, &dof_module, &plain_meshes_module, &convex_hull_meshes_module, &convex_decomposition_meshes_module, &link_shapes_approximations_module, 0, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
+        .apollo_bevy_spawn_chain_raw(s, &urdf_nalgebra_module, &chain_module, &dof_module, &plain_meshes_module, &convex_hull_meshes_module, &convex_decomposition_meshes_module, &link_shapes_approximations_module, 0, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
 
     #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
     struct S1;

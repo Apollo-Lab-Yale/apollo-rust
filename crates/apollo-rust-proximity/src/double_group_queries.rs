@@ -217,7 +217,6 @@ macro_rules! create_double_group_query {
 
                 let res = $query_func_code(&*ppa, &**sa.shape(), &*ppb, &**sb.shape(), &extra_args);
                 if $push_code(&res) {
-                    // out.push( ((i,j), res) );
                     outputs.push(res);
                     shape_idxs.push((i,j));
                 }

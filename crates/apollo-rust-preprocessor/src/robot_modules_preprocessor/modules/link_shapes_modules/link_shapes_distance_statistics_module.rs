@@ -1,4 +1,3 @@
-use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_modules::robot_modules::bounds_module::ApolloBoundsModule;
 use apollo_rust_modules::robot_modules::chain_module::ApolloChainModule;
 use apollo_rust_modules::robot_modules::dof_module::ApolloDOFModule;
@@ -65,7 +64,7 @@ impl PreprocessorModule for ApolloLinkShapesDistanceStatisticsModule {
                 }
 
                 for _ in 0..num_samples {
-                    let sample = V::new(&bounds_module.sample_random_state());
+                    let sample = bounds_module.sample_random_state();
                     let fk_res = RobotKinematicsFunctions::fk(&sample, &urdf_nalgebra_module, &chain_module, &dof_module);
                     let res = RobotProximityFunctions::self_contact(&link_shapes_module, &fk_res, *link_shape_mode, *link_shape_rep, None, false, 1000000.0);
 

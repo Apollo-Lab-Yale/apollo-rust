@@ -117,14 +117,20 @@ impl ProximaTrait for Proxima2 {
         let lower_bound_delta = match extra_args.lie_alg_mode {
             LieAlgMode::Standard => { -0.3244893534761935*norm }
             LieAlgMode::Pseudo => { -0.33611397097921175*norm }
+            // LieAlgMode::Standard => { -0.1*norm }
+            // LieAlgMode::Pseudo => { -0.1*norm }
         };
         let upper_bound_delta = match extra_args.lie_alg_mode {
             LieAlgMode::Standard => { 1.561538215120098*norm }
             LieAlgMode::Pseudo => { 1.5894634675072785*norm }
+            // LieAlgMode::Standard => { 0.1*norm }
+            // LieAlgMode::Pseudo => { 0.1*norm }
         };
 
         let lower_bound = approximate_distance + lower_bound_delta;
         let upper_bound = approximate_distance + upper_bound_delta;
+
+        // println!("{:?}", (approximate_distance, lower_bound, upper_bound));
 
         Some((approximate_distance, lower_bound, upper_bound))
     }

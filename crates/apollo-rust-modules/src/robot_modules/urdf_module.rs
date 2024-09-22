@@ -186,6 +186,12 @@ impl ApolloURDFPose {
     pub fn new(xyz: [f64; 3], rpy: [f64; 3]) -> Self {
         Self { xyz, rpy }
     }
+    pub fn identity() -> Self {
+        Self {
+            xyz: [0.; 3],
+            rpy: [0.; 3],
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

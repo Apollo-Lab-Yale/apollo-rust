@@ -25,7 +25,7 @@ fn main() {
     let mut app = App::new()
         .apollo_bevy_robotics_base(false);
 
-    app = app.apollo_bevy_spawn_robot(&chain, 0, ISE3q::new(I3::from_slices_euler_angles(&[0.,0.,0.], &[0.,0.,0.])), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
+    app = app.apollo_bevy_spawn_chain(&chain, 0, ISE3q::new(I3::from_slices_euler_angles(&[0.,0.,0.], &[0.,0.,0.])), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
     // app = app.apollo_bevy_spawn_robot(&chain, 1, ISE3q::new(I3::from_slices_euler_angles(&[0.,1.,0.], &[-1.,0.,0.])), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
 
     let s1 = BevyChainSlidersEgui {

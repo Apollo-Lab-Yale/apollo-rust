@@ -38,8 +38,8 @@ pub trait ApolloBevyTrait {
     fn apollo_bevy_pan_orbit_three_style_camera(self) -> Self;
     fn apollo_bevy_starter_lights(self) -> Self;
     fn apollo_bevy_robotics_scene_visuals_start(self) -> Self;
-    fn apollo_bevy_spawn_robot(self, chain: &ChainNalgebra, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>, path_to_bevy_assets: &PathBuf) -> Self;
-    fn apollo_bevy_spawn_robot_raw(self,
+    fn apollo_bevy_spawn_chain(self, chain: &ChainNalgebra, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>, path_to_bevy_assets: &PathBuf) -> Self;
+    fn apollo_bevy_spawn_chain_raw(self,
                                    resources_sub_directory: &ResourcesSubDirectory,
                                    urdf_module: &ApolloURDFNalgebraModule,
                                    chain_module: &ApolloChainModule,
@@ -167,8 +167,8 @@ impl ApolloBevyTrait for App {
         out
     }
 
-    fn apollo_bevy_spawn_robot(self, chain: &ChainNalgebra, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>, path_to_bevy_assets: &PathBuf) -> Self {
-        return self.apollo_bevy_spawn_robot_raw(&chain.resources_sub_directory(),
+    fn apollo_bevy_spawn_chain(self, chain: &ChainNalgebra, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>, path_to_bevy_assets: &PathBuf) -> Self {
+        return self.apollo_bevy_spawn_chain_raw(&chain.resources_sub_directory(),
                                                 &chain.urdf_module,
                                                 &chain.chain_module,
                                                 &chain.dof_module,
@@ -182,7 +182,7 @@ impl ApolloBevyTrait for App {
                                                 path_to_bevy_assets);
     }
 
-    fn apollo_bevy_spawn_robot_raw(self,
+    fn apollo_bevy_spawn_chain_raw(self,
                                    resources_sub_directory: &ResourcesSubDirectory,
                                    urdf_module: &ApolloURDFNalgebraModule,
                                    chain_module: &ApolloChainModule,
@@ -280,7 +280,7 @@ impl ApolloChainBevyTrait for ChainNalgebra {
 
         let mut app = App::new()
             .apollo_bevy_robotics_base(true)
-            .apollo_bevy_spawn_robot(self, 0, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
+            .apollo_bevy_spawn_chain(self, 0, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
 
         let arc_robot = Arc::new(self.clone());
         let c = BevyChainSlidersEgui {
@@ -305,7 +305,7 @@ impl ApolloChainBevyTrait for ChainNalgebra {
 
         let mut app = App::new()
             .apollo_bevy_robotics_base(true)
-            .apollo_bevy_spawn_robot(self, 0, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
+            .apollo_bevy_spawn_chain(self, 0, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
 
         let arc_robot = Arc::new(self.clone());
         let c = BevyChainSlidersEgui {
@@ -373,8 +373,8 @@ impl ApolloChainBevyTrait for ChainNalgebra {
 
         let mut app = App::new()
             .apollo_bevy_robotics_base(true)
-            .apollo_bevy_spawn_robot(self, 0, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir())
-            .apollo_bevy_spawn_robot(other, 1, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
+            .apollo_bevy_spawn_chain(self, 0, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir())
+            .apollo_bevy_spawn_chain(other, 1, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
 
         let arc_robot_a = Arc::new(self.clone());
         let c = BevyChainSlidersEgui {
@@ -415,8 +415,8 @@ impl ApolloChainBevyTrait for ChainNalgebra {
 
         let mut app = App::new()
             .apollo_bevy_robotics_base(true)
-            .apollo_bevy_spawn_robot(self, 0, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir())
-            .apollo_bevy_spawn_robot(other, 1, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
+            .apollo_bevy_spawn_chain(self, 0, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir())
+            .apollo_bevy_spawn_chain(other, 1, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
 
         let arc_chain = Arc::new(self.clone());
         let arc_chain_other = Arc::new(other.clone());

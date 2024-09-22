@@ -30,14 +30,14 @@ impl ResourcesRootDirectory {
         }
     }
 
-    pub fn new_from_default_apollo_robots_directory() -> Self {
+    pub fn new_from_default_apollo_robots_dir() -> Self {
         return Self {
             directory: PathBuf::new_from_default_apollo_robots_dir(),
             resources_type: ResourcesType::Robot,
         }
     }
 
-    pub fn new_from_default_apollo_environments_directory() -> Self {
+    pub fn new_from_default_apollo_environments_dir() -> Self {
         return Self {
             directory: PathBuf::new_from_default_apollo_environments_dir(),
             resources_type: ResourcesType::Environment,

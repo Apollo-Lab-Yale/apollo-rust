@@ -1,6 +1,6 @@
 use parry3d_f64::query::Contact;
 use apollo_rust_linalg::V;
-use apollo_rust_proximity::double_group_queries::{DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput};
+use apollo_rust_proximity::double_group_queries::{ConvertToAverageDistancesTrait, DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput};
 use apollo_rust_proximity::proxima::proxima1::{Proxima1, Proxima1Cache};
 use apollo_rust_proximity::proxima::proxima2::{LieAlgMode, Proxima2, Proxima2Cache};
 use apollo_rust_proximity::proxima::proxima_core::{ProximaBudget, ProximaOutput, ProximaTrait};
@@ -17,6 +17,7 @@ use apollo_rust_modules::robot_modules::mesh_modules::convex_hull_meshes_module:
 use apollo_rust_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
 use apollo_rust_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 use apollo_rust_proximity::bvh::{Bvh, BvhShape};
+use apollo_rust_proximity::proxima::proxima2b::{Proxima2b, Proxima2bCache};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::LinkShapesMaxDistanceFromOriginTrait;
 use crate::modules_runtime::link_shapes_distance_statistics_nalgebra_module::ApolloLinkShapesDistanceStatisticsNalgebraModule;
@@ -246,6 +247,11 @@ impl ChainNalgebra {
         self.dof_module.num_dofs
     }
 
+    #[inline(always)]
+    pub fn zeros_state(&self) -> V {
+        V::from_column_slice(&vec![0.0; self.num_dofs()])
+    }
+
     #[inline]
     pub fn fk(&self, state: &V) -> Vec<ISE3q> {
         RobotKinematicsFunctions::fk(state, self.urdf_module(), self.chain_module(), self.dof_module())
@@ -257,7 +263,7 @@ impl ChainNalgebra {
     }
 
     pub fn self_intersect(&self, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool) -> DoubleGroupProximityQueryOutput<bool> {
-        let skips = self.link_shapes_simple_skips_nalgebra_module().get_skips(link_shape_mode, link_shape_rep);
+        let skips = self.link_shapes_skips_nalgebra_module.get_skips(link_shape_mode, link_shape_rep);
         RobotProximityFunctions::self_intersect(self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, Some(skips), early_stop)
     }
 
@@ -267,12 +273,12 @@ impl ChainNalgebra {
     }
 
     pub fn self_intersect_bvh<B: BvhShape>(&self, bvh: &mut Bvh<B>, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool) -> DoubleGroupProximityQueryOutput<bool> {
-        let skips = self.link_shapes_simple_skips_nalgebra_module().get_skips(link_shape_mode, link_shape_rep);
+        let skips = self.link_shapes_skips_nalgebra_module.get_skips(link_shape_mode, link_shape_rep);
         RobotProximityFunctions::self_intersect_bvh(bvh, self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, Some(skips), early_stop)
     }
 
     pub fn self_distance(&self, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool) -> DoubleGroupProximityQueryOutput<f64> {
-        let skips = self.link_shapes_simple_skips_nalgebra_module().get_skips(link_shape_mode, link_shape_rep);
+        let skips = self.link_shapes_skips_nalgebra_module.get_skips(link_shape_mode, link_shape_rep);
         RobotProximityFunctions::self_distance(self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, Some(skips), early_stop)
     }
 
@@ -281,19 +287,29 @@ impl ChainNalgebra {
         self.self_distance(&link_poses, link_shape_mode, link_shape_rep, early_stop)
     }
 
-    pub fn self_contact(&self, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool, margin: f64) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
-        let skips = self.link_shapes_simple_skips_nalgebra_module().get_skips(link_shape_mode, link_shape_rep);
-        RobotProximityFunctions::self_contact(self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, Some(skips), early_stop, margin)
+    pub fn self_contact(&self, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool, margin: f64, to_wrt_average: bool) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
+        let skips = self.link_shapes_skips_nalgebra_module.get_skips(link_shape_mode, link_shape_rep);
+        let res = RobotProximityFunctions::self_contact(self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, Some(skips), early_stop, margin);
+        return if to_wrt_average {
+            res.to_average_distances(&self.link_shapes_distance_statistics_module.get_stats(&link_shape_rep, &link_shape_mode).averages)
+        } else {
+            res
+        }
     }
 
-    pub fn self_contact_from_state(&self, state: &V, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool, margin: f64) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
+    pub fn self_contact_from_state(&self, state: &V, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool, margin: f64, to_wrt_average: bool) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
         let link_poses = self.fk(state);
-        self.self_contact(&link_poses, link_shape_mode, link_shape_rep, early_stop, margin)
+        self.self_contact(&link_poses, link_shape_mode, link_shape_rep, early_stop, margin, to_wrt_average)
     }
 
-    pub fn self_contact_bvh<B: BvhShape>(&self, bvh: &mut Bvh<B>, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool, margin: f64) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
-        let skips = self.link_shapes_simple_skips_nalgebra_module().get_skips(link_shape_mode, link_shape_rep);
-        RobotProximityFunctions::self_contact_bvh(bvh, self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, Some(skips), early_stop, margin)
+    pub fn self_contact_bvh<B: BvhShape>(&self, bvh: &mut Bvh<B>, link_poses: &Vec<ISE3q>, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, early_stop: bool, margin: f64, to_wrt_average: bool) -> DoubleGroupProximityQueryOutput<Option<Contact>> {
+        let skips = self.link_shapes_skips_nalgebra_module.get_skips(link_shape_mode, link_shape_rep);
+        let res = RobotProximityFunctions::self_contact_bvh(bvh, self.link_shapes_module(), link_poses, link_shape_mode, link_shape_rep, Some(skips), early_stop, margin);
+        return if to_wrt_average {
+            res.to_average_distances(&self.link_shapes_distance_statistics_module.get_stats(&link_shape_rep, &link_shape_mode).averages)
+        } else {
+            res
+        }
     }
 
     pub fn double_chain_intersect(&self,
@@ -454,6 +470,21 @@ impl ChainNalgebra {
         let cache = Proxima1Cache::new(shapes, &poses, shapes, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, Some(skips));
         
         Proxima1 {
+            cache,
+            max_distances_from_origin_a: self.link_shapes_max_distance_from_origin_module.get_shapes_max_distances_from_origin(link_shape_mode, link_shape_rep),
+            max_distances_from_origin_b: self.link_shapes_max_distance_from_origin_module.get_shapes_max_distances_from_origin(link_shape_mode, link_shape_rep),
+            interpolation,
+        }
+    }
+
+    pub fn get_self_proxima2b(&self, interpolation: f64, state: &V, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep) -> Proxima2b {
+        let fk_res = self.fk(state);
+        let shapes = self.link_shapes_module.get_shapes(link_shape_mode, link_shape_rep);
+        let poses = self.link_shapes_module.link_poses_to_shape_poses(&fk_res, link_shape_mode);
+        let skips = self.link_shapes_skips_nalgebra_module.get_skips(link_shape_mode, link_shape_rep);
+        let cache = Proxima2bCache::new(shapes, &poses, shapes, &poses, &DoubleGroupProximityQueryMode::SkipSymmetricalPairs, Some(skips));
+
+        Proxima2b {
             cache,
             max_distances_from_origin_a: self.link_shapes_max_distance_from_origin_module.get_shapes_max_distances_from_origin(link_shape_mode, link_shape_rep),
             max_distances_from_origin_b: self.link_shapes_max_distance_from_origin_module.get_shapes_max_distances_from_origin(link_shape_mode, link_shape_rep),

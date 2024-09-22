@@ -154,7 +154,6 @@ pub trait ProximaTrait {
                              skips: Option<&DMatrix<bool>>,
                              average_distances: Option<&DMatrix<f64>>,
                              frozen: bool) -> ProximaOutput<f64> {
-
         let start = Instant::now();
         let mut proxima_outputs = self.get_all_proxima_outputs_for_proximity(poses_a, poses_b, query_mode, skips, average_distances, cutoff_distance);
 
@@ -190,7 +189,11 @@ pub trait ProximaTrait {
 
             match average_distances {
                 None => { }
-                Some(average_distances) => { new_distance /= average_distances[(i,j)].max(0.00001) }
+                Some(average_distances) => {
+                    let mut average = average_distances[(i, j)];
+                    if average < 0.0 { average = 1.0; }
+                    new_distance /= average
+                }
             }
 
             proxima_output.approximate_distance = new_distance;
@@ -205,6 +208,7 @@ pub trait ProximaTrait {
         }
 
         // return (proximity_value, num_ground_truth_checks);
+        // println!(" >>>> {:?}", proxima_outputs.to_proximity_value(&loss_function, p_norm));
         return ProximaOutput {
             result: proxima_outputs.to_proximity_value(&loss_function, p_norm),
             ground_truth_checks,
@@ -378,7 +382,9 @@ impl ToAverageDistancesProximaOutput for Vec<ProximaPairwiseOutput> {
         let mut out = vec![];
 
         self.iter().for_each(|x| {
-            let average = average_distances[(x.shape_indices.0, x.shape_indices.1)].max(0.00001);
+            let mut average = average_distances[(x.shape_indices.0, x.shape_indices.1)];
+            if average < 0.0 { average = 1.0; }
+
             out.push(ProximaPairwiseOutput {
                 shape_indices: x.shape_indices.clone(),
                 distance_mode: DistanceMode::AverageDistance,

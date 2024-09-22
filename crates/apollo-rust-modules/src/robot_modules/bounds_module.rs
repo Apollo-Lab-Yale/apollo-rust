@@ -1,5 +1,6 @@
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use apollo_rust_linalg::{ApolloDVectorTrait, V};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ApolloBoundsModule {
@@ -9,8 +10,8 @@ pub struct ApolloBoundsModule {
 }
 
 impl ApolloBoundsModule {
-    pub fn sample_random_state(&self) -> Vec<f64> {
+    pub fn sample_random_state(&self) -> V {
         let mut rng = rand::thread_rng();
-        self.bounds.iter().map(|&(lower, upper)| rng.gen_range(lower..upper)).collect()
+        V::new(&self.bounds.iter().map(|&(lower, upper)| rng.gen_range(lower..upper)).collect::<Vec<f64>>())
     }
 }

@@ -3,13 +3,7 @@ use apollo_rust_modules::ResourcesRootDirectory;
 use apollo_rust_robotics::{ToChainNalgebra};
 
 fn main() {
-    let r = ResourcesRootDirectory::new_from_default_apollo_robots_directory();
-    let s = r.get_subdirectory("b1");
-    let c = s.to_chain_nalgebra();
+    let r = ResourcesRootDirectory::new_from_default_apollo_robots_dir();
+    let c = r.get_subdirectory("robotiq_140").to_chain_nalgebra();
     c.bevy_display();
-    // let r = ResourcesRootDirectory::new_from_default_apollo_environments_directory();
-    // let s2 = r.get_subdirectory("test");
-    // let c2 = s2.to_chain_nalgebra();
-    // c.bevy_proximity_vis();
-    // c.bevy_proximity_vis();
 }
