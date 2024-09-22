@@ -2,16 +2,29 @@ use std::fmt::Debug;
 use nalgebra::{DMatrix, DVector};
 use rand::Rng;
 
+/// Type alias for a dynamic vector of `f64`.
 pub type V = DVector<f64>;
 
+/// Trait defining operations for `DVector`.
 pub trait ApolloDVectorTrait {
+    /// Creates a new vector from a slice.
     fn new(slice: &[f64]) -> Self;
+
+    /// Creates a new vector with random values within the specified range.
+    ///
+    /// # Arguments
+    /// * `n` - The size of the vector.
+    /// * `min` - The minimum value in the range.
+    /// * `max` - The maximum value in the range.
     fn new_random_with_range(n: usize, min: f64, max: f64) -> Self;
 }
+
+/// Implementation of `ApolloDVectorTrait` for `DVector<f64>`.
 impl ApolloDVectorTrait for V {
     fn new(slice: &[f64]) -> Self {
         DVector::from_column_slice(slice)
     }
+
     fn new_random_with_range(n: usize, min: f64, max: f64) -> Self {
         let mut rng = rand::thread_rng();
         let mut v = DVector::zeros(n);
@@ -24,31 +37,61 @@ impl ApolloDVectorTrait for V {
     }
 }
 
+/// Type alias for a dynamic matrix of `f64`.
 pub type M = DMatrix<f64>;
 
+/// Trait defining operations for `DMatrix`.
 pub trait ApolloDMatrixTrait {
-    /// Row major slice
+    /// Creates a new matrix from a row-major slice.
     fn new(slice: &[f64], nrows: usize, ncols: usize) -> Self;
+
+    /// Creates a new square matrix from a slice.
     fn new_square(slice: &[f64], dim: usize) -> Self;
+
+    /// Creates a new matrix with random values within the specified range.
+    ///
+    /// # Arguments
+    /// * `nrows` - The number of rows in the matrix.
+    /// * `ncols` - The number of columns in the matrix.
+    /// * `min` - The minimum value in the range.
+    /// * `max` - The maximum value in the range.
     fn new_random_with_range(nrows: usize, ncols: usize, min: f64, max: f64) -> Self;
+
+    /// Constructs a matrix from column vectors.
     fn from_column_vectors(columns: &[V]) -> Self;
+
+    /// Constructs a matrix from row vectors.
     fn from_row_vectors(rows: &[V]) -> Self;
+
+    /// Applies the Gram-Schmidt process to the columns of the matrix.
     fn gram_schmidt_on_columns(&self) -> Self;
+
+    /// Retrieves all columns of the matrix as vectors.
     fn get_all_columns(&self) -> Vec<V>;
+
+    /// Retrieves all rows of the matrix as vectors.
     fn get_all_rows(&self) -> Vec<V>;
+
+    /// Computes the Singular Value Decomposition (SVD) of the matrix.
     fn singular_value_decomposition(&self, svd_type: SVDType) -> SVDResult;
+
+    /// Convenience method to get the fundamental subspaces of the matrix.
     fn fundamental_subspaces(&self) -> FundamentalSubspaces {
         let svd = self.singular_value_decomposition(SVDType::Full);
         svd.to_fundamental_subspaces()
     }
 }
+
+/// Implementation of `ApolloDMatrixTrait` for `DMatrix<f64>`.
 impl ApolloDMatrixTrait for M {
     fn new(slice: &[f64], nrows: usize, ncols: usize) -> Self {
         DMatrix::from_row_slice(nrows, ncols, slice)
     }
+
     fn new_square(slice: &[f64], dim: usize) -> Self {
         Self::new(slice, dim, dim)
     }
+
     fn new_random_with_range(nrows: usize, ncols: usize, min: f64, max: f64) -> Self {
         let mut rng = rand::thread_rng();
         let mut m = DMatrix::zeros(nrows, ncols);
@@ -61,23 +104,27 @@ impl ApolloDMatrixTrait for M {
 
         m
     }
+
     fn from_column_vectors(columns: &[V]) -> Self {
         let mut out = M::zeros(columns[0].len(), columns.len());
         columns.iter().enumerate().for_each(|(i, x)| out.set_column(i, x));
 
         out
     }
+
     fn from_row_vectors(rows: &[V]) -> Self {
         let mut out = M::zeros(rows.len(), rows[0].len());
         rows.iter().enumerate().for_each(|(i, x)| out.set_row(i, &x.transpose()));
 
         out
     }
+
     fn gram_schmidt_on_columns(&self) -> Self {
         let columns = self.get_all_columns();
         let res = columns.gram_schmidt_process();
-        return Self::from_column_vectors(&res);
+        Self::from_column_vectors(&res)
     }
+
     fn get_all_columns(&self) -> Vec<V> {
         let mut out = vec![];
         let ncols = self.ncols();
@@ -86,17 +133,19 @@ impl ApolloDMatrixTrait for M {
         }
         out
     }
+
     fn get_all_rows(&self) -> Vec<V> {
         let transpose = self.transpose();
-        return transpose.get_all_columns();
+        transpose.get_all_columns()
     }
+
     fn singular_value_decomposition(&self, svd_type: SVDType) -> SVDResult {
         let svd = self.clone().svd(true, true);
         let u = svd.u.expect("error");
         let vt = svd.v_t.expect("error");
         let rank = self.rank(0.0001);
 
-       return match svd_type {
+        match svd_type {
             SVDType::Full => {
                 let m = self.nrows();
                 let n = self.ncols();
@@ -105,12 +154,12 @@ impl ApolloDMatrixTrait for M {
                 let v = vt.transpose();
                 let mut v_cols = v.get_all_columns();
 
-                for _ in 0..m-rank {
+                for _ in 0..m - rank {
                     u_cols.push(V::new_random_with_range(m, -1.0, 1.0));
                 }
                 u_cols = u_cols.gram_schmidt_process();
 
-                for _ in 0..n-rank {
+                for _ in 0..n - rank {
                     v_cols.push(V::new_random_with_range(n, -1.0, 1.0));
                 }
                 v_cols = v_cols.gram_schmidt_process();
@@ -155,9 +204,13 @@ impl ApolloDMatrixTrait for M {
     }
 }
 
+/// Trait defining operations for a collection of `DVector`.
 pub trait ApolloMultipleDVectorsTrait {
+    /// Applies the Gram-Schmidt process to a collection of vectors.
     fn gram_schmidt_process(&self) -> Vec<V>;
 }
+
+/// Implementation of `ApolloMultipleDVectorsTrait` for a slice of `DVector`.
 impl ApolloMultipleDVectorsTrait for &[V] {
     fn gram_schmidt_process(&self) -> Vec<V> {
         let mut out: Vec<V> = Vec::new();
@@ -179,17 +232,21 @@ impl ApolloMultipleDVectorsTrait for &[V] {
         out
     }
 }
+
+/// Implementations of `ApolloMultipleDVectorsTrait` for mutable and owned vectors.
 impl ApolloMultipleDVectorsTrait for &mut Vec<V> {
     fn gram_schmidt_process(&self) -> Vec<V> {
         (**self).gram_schmidt_process()
     }
 }
+
 impl ApolloMultipleDVectorsTrait for Vec<V> {
     fn gram_schmidt_process(&self) -> Vec<V> {
         self.as_slice().gram_schmidt_process()
     }
 }
 
+/// Struct to hold the results of Singular Value Decomposition.
 #[derive(Clone, Debug)]
 pub struct SVDResult {
     u: M,
@@ -197,8 +254,9 @@ pub struct SVDResult {
     vt: M,
     singular_values: Vec<f64>,
     rank: usize,
-    svd_type: SVDType
+    svd_type: SVDType,
 }
+
 impl SVDResult {
     pub fn u(&self) -> &M {
         &self.u
@@ -249,22 +307,26 @@ impl SVDResult {
     }
 }
 
+/// Enum to specify the type of Singular Value Decomposition.
 #[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub enum SVDType {
-    Full, Compact
+    Full,
+    Compact,
 }
 
+/// Struct to hold the fundamental subspaces resulting from SVD.
 #[derive(Clone, Debug)]
 pub struct FundamentalSubspaces {
-    /// U_1
+    /// Basis for column space.
     column_space_basis: Option<M>,
-    /// U_2
+    /// Basis for left null space.
     left_null_space_basis: Option<M>,
-    /// V_1
+    /// Basis for row space.
     row_space_basis: Option<M>,
-    /// V_2
-    null_space_basis: Option<M>
+    /// Basis for null space.
+    null_space_basis: Option<M>,
 }
+
 impl FundamentalSubspaces {
     pub fn column_space_basis(&self) -> &Option<M> {
         &self.column_space_basis
@@ -280,19 +342,17 @@ impl FundamentalSubspaces {
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/// Function to create a `DMatrix` from a 2D vector.
 pub fn dmatrix_from_2dvec<T: Clone + PartialEq + Debug + 'static>(v: &Vec<Vec<T>>) -> DMatrix<T> {
     let v = v.clone();
-
     let rows = v.len();
     let cols = v[0].len();
-
     let data: Vec<T> = v.into_iter().flatten().collect();
 
     DMatrix::from_vec(rows, cols, data)
 }
 
+/// Function to convert a `DMatrix` to a 2D vector.
 pub fn dmatrix_to_2dvec<T: Clone>(matrix: &DMatrix<T>) -> Vec<Vec<T>> {
     let (rows, cols) = matrix.shape();
     let mut vec_2d = Vec::with_capacity(rows);
@@ -307,4 +367,3 @@ pub fn dmatrix_to_2dvec<T: Clone>(matrix: &DMatrix<T>) -> Vec<Vec<T>> {
 
     vec_2d
 }
-
