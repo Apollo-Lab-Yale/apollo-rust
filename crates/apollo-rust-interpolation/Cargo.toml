@@ -1,0 +1,8 @@
+[package]
+name = "apollo-rust-interpolation"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+apollo-rust-linalg = { path = "../apollo-rust-linalg" }
+nalgebra = { version = "0.33.0", features = ["rand", "serde-serialize"] }

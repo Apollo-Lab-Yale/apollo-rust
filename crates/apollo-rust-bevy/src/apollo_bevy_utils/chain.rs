@@ -6,15 +6,16 @@ use bevy::asset::{Assets, AssetServer};
 use bevy::color::Color;
 use bevy::math::Quat;
 use bevy::pbr::{PbrBundle, StandardMaterial};
-use bevy::prelude::{Changed, Commands, Component, Cuboid, default, Entity, Gizmos, Mesh, Query, Res, ResMut, Sphere, Transform, Window as Window1, With, Without};
+use bevy::prelude::{Changed, Commands, Component, Cuboid, default, Entity, Gizmos, Mesh, Query, Res, ResMut, Sphere, Time, Transform, Window as Window1, With, Without};
 use bevy::window::PrimaryWindow;
-use bevy_egui::egui::{Color32, ComboBox, RichText, ScrollArea, SidePanel, Slider, Ui};
+use bevy_egui::egui::{Color32, ComboBox, RichText, ScrollArea, SidePanel, Slider, TopBottomPanel, Ui};
 use bevy_egui::EguiContexts;
 use bevy_mod_outline::{OutlineBundle, OutlineMode, OutlineVolume};
 use nalgebra::DMatrix;
 use parry3d_f64::query::Contact;
 use apollo_rust_algs::VecOfOptionsToVecOfVecsTrait;
 use apollo_rust_file::ApolloPathBufTrait;
+use apollo_rust_interpolation::{InterpolatorTraitLite};
 use apollo_rust_lie::LieGroupElement;
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_proximity::double_group_queries::{ConvertToAverageDistancesTrait, DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput, SortDoubleGroupProximityQueryOutputTrait};
@@ -581,7 +582,10 @@ impl BevyChainSlidersEguiRaw {
         });
     }
 
-    pub fn action_chain_sliders_egui(&self, state_text_edit_string: &mut String, color_change_engine: &mut ResMut<ColorChangeEngine>, query: &mut Query<&mut ChainState>, ui: &mut Ui) {
+    pub fn action_chain_sliders_egui(&self,
+                                     state_text_edit_string: &mut String,
+                                     color_change_engine: &mut ResMut<ColorChangeEngine>,
+                                     query: &mut Query<&mut ChainState>, ui: &mut Ui) {
         Self::action_chain_sliders_egui_static(self.chain_instance_idx, &self.urdf_module, &self.chain_module, &self.dof_module, &self.bounds_module, self.color_changes, state_text_edit_string, color_change_engine, query, ui);
     }
 
@@ -1188,6 +1192,114 @@ impl BevyChainProximityVisualizer {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+pub struct BevyChainMotionPlaybackRaw {
+    pub chain_instance_idx: usize
+}
+impl BevyChainMotionPlaybackRaw {
+    pub fn action_motion_playback_static(
+        interpolator: &Arc<dyn InterpolatorTraitLite>,
+        t: &mut f64,
+        speed: &mut f64,
+        playback_mode: &mut PlaybackMode,
+        delta_t: f64,
+        state: &mut V,
+        ui: &mut Ui) {
+
+        match playback_mode {
+            PlaybackMode::Play => { *t += delta_t * *speed; *t = *t % interpolator.max_t(); }
+            PlaybackMode::Paused => { }
+            PlaybackMode::Reversed => { *t -= delta_t * *speed; if *t <= 0.0 { *t = interpolator.max_t() - t.abs() - 0.000001; } }
+        }
+
+        let ss = interpolator.interpolate(*t);
+        *state = ss.clone();
+
+        ui.horizontal(|ui| {
+            ui.add_space(40.0);
+
+            if ui.button(RichText::new("⏮").size(30.0)).clicked() {
+                *playback_mode = PlaybackMode::Paused;
+                *t -= 0.01;
+                if *t <= 0.0 { *t = interpolator.max_t() - t.abs() - 0.000001; }
+            }
+
+            match playback_mode {
+                PlaybackMode::Play => {
+                    if ui.button(RichText::new("⏸").size(30.0)).clicked() {
+                        *playback_mode = PlaybackMode::Paused;
+                    }
+                }
+                PlaybackMode::Paused => {
+                    if ui.button(RichText::new("⏵").size(30.0)).clicked() {
+                        *playback_mode = PlaybackMode::Play;
+                    }
+                }
+                PlaybackMode::Reversed => {}
+            }
+
+            if ui.button(RichText::new("⏭").size(30.0)).clicked() {
+                *playback_mode = PlaybackMode::Paused;
+                *t += 0.01;
+                *t = *t % interpolator.max_t();
+            }
+
+            if ui.add(Slider::new(t, 0.0..=interpolator.max_t()).text("playback slider")).changed() {
+                *playback_mode = PlaybackMode::Paused;
+            };
+
+            ui.add(Slider::new(speed, 0.0001..=3.0).text("playback speed"));
+        });
+
+
+    }
+    pub fn action_motion_playback(&self,
+                                  interpolator: &Arc<dyn InterpolatorTraitLite>,
+                                  t: &mut f64,
+                                  speed: &mut f64,
+                                  playback_mode: &mut PlaybackMode,
+                                  delta_t: f64,
+                                  state: &mut V,
+                                  ui: &mut Ui) {
+        Self::action_motion_playback_static(interpolator, t, speed, playback_mode, delta_t, state, ui);
+    }
+    pub fn get_system_bottom_panel(self, interpolator: Arc<dyn InterpolatorTraitLite>) -> impl FnMut(EguiContexts, Res<Time>, Query<&mut ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>) + 'static {
+        let mut t = 0.0;
+        let mut speed = 1.0;
+        let mut playback_mode = PlaybackMode::Play;
+        let interpolator = interpolator.clone();
+
+        move |mut egui_contexts: EguiContexts, time: Res<Time>, mut qq: Query<&mut ChainState>, mut cursor_is_over_egui: ResMut<CursorIsOverEgui>, query2: Query<&Window1, With<PrimaryWindow>>| {
+            let mut state = qq.iter_mut().find(|x| x.chain_instance_idx == self.chain_instance_idx).expect("error");
+            let delta_t = time.delta_seconds_f64();
+
+            TopBottomPanel::bottom("bottom").show(egui_contexts.ctx_mut(), |ui| {
+                self.action_motion_playback(&interpolator, &mut t, &mut speed, &mut playback_mode, delta_t, &mut state.state, ui);
+                set_cursor_is_over_egui_default(ui, &mut cursor_is_over_egui, &query2);
+            });
+        }
+    }
+}
+
+pub struct BevyChainMotionPlayback {
+    pub chain_instance_idx: usize
+}
+impl BevyChainMotionPlayback {
+    pub fn to_raw(&self) -> BevyChainMotionPlaybackRaw {
+        BevyChainMotionPlaybackRaw {
+            chain_instance_idx: self.chain_instance_idx
+        }
+    }
+    pub fn get_system_bottom_panel(self, interpolator: Arc<dyn InterpolatorTraitLite>) -> impl FnMut(EguiContexts, Res<Time>, Query<&mut ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>) + 'static {
+        self.to_raw().get_system_bottom_panel(interpolator)
+    }
+}
+
+#[derive(Clone, Debug, Copy)]
+pub enum PlaybackMode { Play, Paused, Reversed }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 #[derive(Component)]
 pub struct ChainState {

@@ -10,6 +10,7 @@ use bevy_egui::egui::{ComboBox, SidePanel};
 use bevy_mod_outline::{AsyncSceneInheritOutlinePlugin, AutoGenerateOutlineNormalsPlugin, OutlinePlugin};
 use bevy_obj::ObjPlugin;
 use apollo_rust_file::ApolloPathBufTrait;
+use apollo_rust_interpolation::{InterpolatorTraitLite};
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_modules::ResourcesSubDirectory;
 use apollo_rust_modules::robot_modules::chain_module::ApolloChainModule;
@@ -23,7 +24,7 @@ use apollo_rust_robotics_core::modules_runtime::link_shapes_module::{LinkShapeMo
 use apollo_rust_robotics_core::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModule;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::apollo_bevy_utils::camera::CameraSystems;
-use crate::apollo_bevy_utils::chain::{BevyChainLinkVisibilitySelector, BevyChainProximityVisualizer, BevyChainSlidersEgui, BevyChainStateUpdaterLoopRaw, BevySpawnChainLinkApproximationsRaw, BevySpawnChainMeshesRaw, ChainMeshesRepresentation, ChainState};
+use crate::apollo_bevy_utils::chain::{BevyChainLinkVisibilitySelector, BevyChainMotionPlayback, BevyChainProximityVisualizer, BevyChainSlidersEgui, BevyChainStateUpdaterLoopRaw, BevySpawnChainLinkApproximationsRaw, BevySpawnChainMeshesRaw, ChainMeshesRepresentation, ChainState};
 use crate::apollo_bevy_utils::colors::{ColorChangeEngine, ColorChangeSystems};
 use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, reset_cursor_is_over_egui, set_cursor_is_over_egui_default};
 use crate::apollo_bevy_utils::meshes::MeshType;
@@ -272,6 +273,12 @@ pub trait ApolloChainBevyTrait {
     fn bevy_proximity_vis_with_other_chain(&self, other: &ChainNalgebra) { self.bevy_proximity_vis_with_other_chain_app(other).run(); }
 
     fn bevy_proximity_vis_with_other_chain_app(&self, other: &ChainNalgebra) -> App;
+
+    fn bevy_motion_playback_app<I: InterpolatorTraitLite + 'static>(&self, interpolator: I) -> App;
+
+    fn bevy_motion_playback<I: InterpolatorTraitLite + 'static>(&self, interpolator: I) {
+        self.bevy_motion_playback_app(interpolator).run();
+    }
 }
 impl ApolloChainBevyTrait for ChainNalgebra {
     fn bevy_display_app(&self) -> App {
@@ -490,6 +497,19 @@ impl ApolloChainBevyTrait for ChainNalgebra {
                 set_cursor_is_over_egui_default(ui, &mut cursor_is_over_egui, &query2);
             });
         }).after(S2));
+
+        app
+    }
+
+    fn bevy_motion_playback_app<I: InterpolatorTraitLite + 'static>(&self, interpolator: I) -> App {
+        let mut app = App::new()
+            .apollo_bevy_robotics_base(true)
+            .apollo_bevy_spawn_chain(self, 0, ISE3q::identity(), get_default_mesh_specs(), &PathBuf::new_from_default_apollo_bevy_assets_dir());
+
+        let c = BevyChainMotionPlayback {
+            chain_instance_idx: 0
+        };
+        app.add_systems(Update, c.get_system_bottom_panel(Arc::new(interpolator)));
 
         app
     }
