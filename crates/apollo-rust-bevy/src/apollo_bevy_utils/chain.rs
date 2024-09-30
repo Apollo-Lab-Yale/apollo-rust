@@ -39,6 +39,8 @@ use apollo_rust_robotics_core::robot_functions::robot_kinematics_functions::Robo
 use apollo_rust_robotics_core::robot_functions::robot_proximity_functions::RobotProximityFunctions;
 use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, I3};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
+use apollo_rust_spatial::rotation_matrices::ApolloRotation3Trait;
+use apollo_rust_spatial::translations::ApolloTranslation3;
 use apollo_rust_spatial::vectors::V3;
 use crate::apollo_bevy_utils::colors::{BaseColor, ColorChangeEngine, ColorChangeRequest, ColorChangeRequestType};
 use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, set_cursor_is_over_egui_default};
@@ -633,6 +635,7 @@ pub struct BevyChainLinkVisibilitySelectorRaw {
     pub chain_instance_idx: usize,
     pub urdf_module: ApolloURDFNalgebraModule,
     pub chain_module: ApolloChainModule,
+    pub dof_module: ApolloDOFModule,
     plain_meshes_glb_visibility: Vec<bool>,
     plain_meshes_obj_visibility: Vec<bool>,
     convex_hull_meshes_obj_visibility: Vec<bool>,
@@ -640,10 +643,11 @@ pub struct BevyChainLinkVisibilitySelectorRaw {
     bounding_spheres_full_visibility: Vec<bool>,
     obbs_full_visibility: Vec<bool>,
     bounding_spheres_decomposition_visibility: Vec<bool>,
-    obbs_decomposition_visibility: Vec<bool>
+    obbs_decomposition_visibility: Vec<bool>,
+    frames_visibility: Vec<bool>
 }
 impl BevyChainLinkVisibilitySelectorRaw {
-    pub fn new(chain_instance_idx: usize, urdf_module: ApolloURDFNalgebraModule, chain_module: ApolloChainModule) -> Self {
+    pub fn new(chain_instance_idx: usize, urdf_module: ApolloURDFNalgebraModule, chain_module: ApolloChainModule, dof_module: ApolloDOFModule) -> Self {
         let num_links = urdf_module.links.len();
 
         let plain_meshes_glb_visibility = vec![false; num_links];
@@ -654,11 +658,13 @@ impl BevyChainLinkVisibilitySelectorRaw {
         let obbs_full_visibility = vec![false; num_links];
         let bounding_spheres_decomposition_visibility = vec![false; num_links];
         let obbs_decomposition_visibility = vec![false; num_links];
+        let frames_visibility = vec![false; num_links];
 
         Self {
             chain_instance_idx,
             urdf_module,
             chain_module,
+            dof_module,
             plain_meshes_glb_visibility,
             plain_meshes_obj_visibility,
             convex_hull_meshes_obj_visibility,
@@ -667,11 +673,13 @@ impl BevyChainLinkVisibilitySelectorRaw {
             obbs_full_visibility,
             bounding_spheres_decomposition_visibility,
             obbs_decomposition_visibility,
+            frames_visibility,
         }
     }
     pub fn action_chain_link_visibility_selector_static(chain_instance_idx: usize,
                                                         urdf_module: &ApolloURDFNalgebraModule,
                                                         chain_module: &ApolloChainModule,
+                                                        dof_module: &ApolloDOFModule,
                                                         plain_meshes_glb_visibility: &mut Vec<bool>,
                                                         plain_meshes_obj_visibility: &mut Vec<bool>,
                                                         convex_hull_meshes_obj_visibility: &mut Vec<bool>,
@@ -680,8 +688,14 @@ impl BevyChainLinkVisibilitySelectorRaw {
                                                         obbs_full_visibility: &mut Vec<bool>,
                                                         bounding_spheres_decomposition_visibility: &mut Vec<bool>,
                                                         obbs_decomposition_visibility: &mut Vec<bool>,
+                                                        frames_visibility: &mut Vec<bool>,
+                                                        state: &V,
+                                                        gizmos: &mut Gizmos,
                                                         ui: &mut Ui,
                                                         visibility_change_engine: &mut ResMut<VisibilityChangeEngine>) {
+
+        let fk_res = RobotKinematicsFunctions::fk(state, urdf_module, chain_module, dof_module);
+
         ui.heading("Link Visibility");
         ui.group(|ui| {
             ScrollArea::vertical().id_source("sa1").max_height(400.0).show(ui, |ui| {
@@ -698,6 +712,7 @@ impl BevyChainLinkVisibilitySelectorRaw {
                     ui.checkbox(&mut obbs_full_visibility[link_idx], "OBB full");
                     ui.checkbox(&mut bounding_spheres_decomposition_visibility[link_idx], "Bounding sphere decomp.");
                     ui.checkbox(&mut obbs_decomposition_visibility[link_idx], "OBB decomp.");
+                    ui.checkbox(&mut frames_visibility[link_idx], "Frame");
 
                     ui.separator();
 
@@ -739,6 +754,24 @@ impl BevyChainLinkVisibilitySelectorRaw {
                     visibility_change_engine.add_base_change_request(VisibilityChangeRequest::new(VisibilityChangeRequestType::new_from_bool(b), Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainInstanceIdx(chain_instance_idx),
                                                                                                                                                                                      ChainMeshComponent::LinkIdx(link_idx),
                                                                                                                                                                                      ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::OBBDecomposition)])));
+
+                    let b = frames_visibility[link_idx];
+                    if b {
+                        let frame = &fk_res[link_idx];
+
+                        let position = frame.0.translation.to_vector3();
+                        let frame_vectors = frame.0.rotation.to_rotation_matrix().frame_vectors();
+
+                        let p1 = TransformUtils::util_convert_z_up_v3_to_y_up_vec3(position +  0.2 * frame_vectors[0]);
+                        let p2 = TransformUtils::util_convert_z_up_v3_to_y_up_vec3(position +  0.2 * frame_vectors[1]);
+                        let p3 = TransformUtils::util_convert_z_up_v3_to_y_up_vec3(position +  0.2 * frame_vectors[2]);
+
+                        let center = TransformUtils::util_convert_z_up_v3_to_y_up_vec3(position);
+
+                        gizmos.line( center, p1, Color::srgb(1.0, 0.0, 0.0) );
+                        gizmos.line( center, p2, Color::srgb(0.0, 1.0, 0.0) );
+                        gizmos.line( center, p3, Color::srgb(0.0, 0.0, 1.0) );
+                    }
                 }
             });
         });
@@ -829,18 +862,21 @@ impl BevyChainLinkVisibilitySelectorRaw {
             });
         });
     }
-
     pub fn action_chain_link_visibility_selector(&mut self,
+                                                 state: &V,
+                                                 gizmos: &mut Gizmos,
                                                  ui: &mut Ui,
                                                  visibility_change_engine: &mut ResMut<VisibilityChangeEngine>) {
-        Self::action_chain_link_visibility_selector_static(self.chain_instance_idx, &self.urdf_module, &self.chain_module, &mut self.plain_meshes_glb_visibility, &mut self.plain_meshes_obj_visibility, &mut self.convex_hull_meshes_obj_visibility, &mut self.convex_decomposition_meshes_obj_visibility, &mut self.bounding_spheres_full_visibility, &mut self.obbs_full_visibility, &mut self.bounding_spheres_decomposition_visibility, &mut self.obbs_decomposition_visibility, ui, visibility_change_engine);
+        Self::action_chain_link_visibility_selector_static(self.chain_instance_idx, &self.urdf_module, &self.chain_module, &self.dof_module, &mut self.plain_meshes_glb_visibility, &mut self.plain_meshes_obj_visibility, &mut self.convex_hull_meshes_obj_visibility, &mut self.convex_decomposition_meshes_obj_visibility, &mut self.bounding_spheres_full_visibility, &mut self.obbs_full_visibility, &mut self.bounding_spheres_decomposition_visibility, &mut self.obbs_decomposition_visibility, &mut self.frames_visibility, state, gizmos, ui, visibility_change_engine);
     }
 
-    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<VisibilityChangeEngine>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>) + 'static {
+    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<VisibilityChangeEngine>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, Query<&ChainState>, Gizmos) + 'static {
         let mut self_clone = self.clone();
-        move |mut egui_contexts: EguiContexts, mut visibility_change_engine: ResMut<VisibilityChangeEngine>, mut cursor_is_over_eugi: ResMut<CursorIsOverEgui>, query: Query<&Window1, With<PrimaryWindow>>| {
+        move |mut egui_contexts: EguiContexts, mut visibility_change_engine: ResMut<VisibilityChangeEngine>, mut cursor_is_over_eugi: ResMut<CursorIsOverEgui>, query: Query<&Window1, With<PrimaryWindow>>, query2: Query<&ChainState>, mut gizmos: Gizmos| {
+            let state = &query2.iter().find(|x| x.chain_instance_idx == self.chain_instance_idx).unwrap().state;
+
             SidePanel::left(format!("chain_link_visibility_selctor_side_panel_{}", self.chain_instance_idx)).show(egui_contexts.ctx_mut(), |ui| {
-                self_clone.action_chain_link_visibility_selector(ui, &mut visibility_change_engine);
+                self_clone.action_chain_link_visibility_selector(state, &mut gizmos, ui, &mut visibility_change_engine);
                 set_cursor_is_over_egui_default(ui, &mut cursor_is_over_eugi, &query);
             });
         }
@@ -853,8 +889,8 @@ pub struct BevyChainLinkVisibilitySelector {
     pub chain: Arc<ChainNalgebra>
 }
 impl BevyChainLinkVisibilitySelector {
-    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<VisibilityChangeEngine>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>) + 'static {
-        let c = BevyChainLinkVisibilitySelectorRaw::new(self.chain_instance_idx, self.chain.urdf_module.clone(), self.chain.chain_module.clone());
+    pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<VisibilityChangeEngine>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, Query<&ChainState>, Gizmos) + 'static {
+        let c = BevyChainLinkVisibilitySelectorRaw::new(self.chain_instance_idx, self.chain.urdf_module.clone(), self.chain.chain_module.clone(), self.chain.dof_module.clone());
         c.get_system_side_panel_left()
     }
 }

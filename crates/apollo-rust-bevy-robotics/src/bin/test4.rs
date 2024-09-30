@@ -19,8 +19,8 @@ fn main() {
         .apollo_bevy_robotics_base(true)
         .apollo_bevy_spawn_chain_default(&c, 0, ISE3q::identity())
         .apollo_bevy_chain_motion_playback(0, i)
-        .apollo_bevy_chain_proximity_vis(&c, true)
-        .apollo_bevy_draw_frame(&ISE3q::new(I3::from_slices_euler_angles(&[1.,0.,1.], &[0.,0.,0.])), 0.2);
+        .apollo_bevy_chain_display(&c)
+        .apollo_bevy_draw_frame(&ISE3q::new(I3::from_slices_euler_angles(&[0.2,0.,0.5], &[0.,0.,0.])), 0.2);
 
     app.run();
 }
