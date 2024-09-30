@@ -81,6 +81,8 @@ pub trait ApolloRotation3Trait {
     ///
     /// - `slice`: A slice representing the quaternion `[w, x, y, z]`.
     fn from_slice_quaternion(slice: &[f64]) -> Self;
+
+    fn frame_vectors(&self) -> [ V3; 3 ];
 }
 
 impl ApolloRotation3Trait for R3 {
@@ -131,5 +133,13 @@ impl ApolloRotation3Trait for R3 {
 
     fn from_slice_quaternion(slice: &[f64]) -> Self {
         Self::from(UQ::from_slice_quaternion(slice))
+    }
+
+    fn frame_vectors(&self) -> [V3; 3] {
+        let c1 = V3::from_column_slice(self.matrix().column(0).as_slice());
+        let c2 = V3::from_column_slice(self.matrix().column(1).as_slice());
+        let c3 = V3::from_column_slice(self.matrix().column(2).as_slice());
+
+        [c1, c2, c3]
     }
 }

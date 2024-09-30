@@ -1266,7 +1266,7 @@ impl BevyChainMotionPlaybackRaw {
     pub fn get_system_bottom_panel(self, interpolator: Arc<dyn InterpolatorTraitLite>) -> impl FnMut(EguiContexts, Res<Time>, Query<&mut ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>) + 'static {
         let mut t = 0.0;
         let mut speed = 1.0;
-        let mut playback_mode = PlaybackMode::Play;
+        let mut playback_mode = PlaybackMode::Paused;
         let interpolator = interpolator.clone();
 
         move |mut egui_contexts: EguiContexts, time: Res<Time>, mut qq: Query<&mut ChainState>, mut cursor_is_over_egui: ResMut<CursorIsOverEgui>, query2: Query<&Window1, With<PrimaryWindow>>| {
