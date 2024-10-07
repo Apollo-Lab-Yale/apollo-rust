@@ -5,4 +5,5 @@ edition = "2021"
 
 [dependencies]
 nalgebra = { version = "0.33.0", features = ["rand"] }
+nalgebra-sparse = "0.10.0"
 rand = { version="0.9.0-alpha.1" }

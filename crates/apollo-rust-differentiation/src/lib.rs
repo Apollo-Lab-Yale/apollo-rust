@@ -20,11 +20,12 @@ pub trait DerivativeNalgebraTrait<F: FunctionNalgebraTrait> {
 }
 
 pub struct FDDerivativeEngine<F: FunctionNalgebraTrait> {
-    pub f: F
+    pub f: F,
+    pub epsilon: f64
 }
 impl<F: FunctionNalgebraTrait> FDDerivativeEngine<F> {
-    pub fn new(f: F) -> Self {
-        Self { f }
+    pub fn new(f: F, epsilon: f64) -> Self {
+        Self { f, epsilon }
     }
 }
 impl<F: FunctionNalgebraTrait> DerivativeNalgebraTrait<F> for FDDerivativeEngine<F> {
@@ -34,13 +35,12 @@ impl<F: FunctionNalgebraTrait> DerivativeNalgebraTrait<F> for FDDerivativeEngine
         let mut out = M::zeros(self.f.output_dim(), self.f.input_dim());
 
         let f0 = self.f.call(x);
-        let epsilon = 0.000001;
 
         for i in 0..x.len() {
             let mut xh = x.clone();
-            xh[i] += epsilon;
+            xh[i] += self.epsilon;
             let fh = self.f.call(&xh);
-            let jvp = (fh - &f0) / epsilon;
+            let jvp = (fh - &f0) / self.epsilon;
             out.set_column_from_slice(i, jvp.as_slice());
         }
 
