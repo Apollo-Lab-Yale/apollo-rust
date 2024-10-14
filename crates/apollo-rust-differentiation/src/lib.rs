@@ -19,7 +19,7 @@ pub trait FunctionNalgebraTrait {
     fn output_dim(&self) -> usize;
 }
 
-pub trait DifferentiableFunctionEngineNalgebraTrait {
+pub trait DifferentiableFunctionEngineNalgebraTrait : Clone {
     fn function(&self) -> &Arc<dyn FunctionNalgebraTrait>;
     fn derivative(&mut self, x: &V) -> M;
     #[inline(always)]

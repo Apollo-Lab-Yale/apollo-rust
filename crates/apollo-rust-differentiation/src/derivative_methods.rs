@@ -2,6 +2,7 @@ use std::sync::Arc;
 use apollo_rust_linalg::{ApolloDMatrixTrait, M, V};
 use crate::{DifferentiableFunctionEngineNalgebraTrait, FunctionNalgebraTrait};
 
+#[derive(Clone)]
 pub struct DummyDifferentiableFunction;
 impl DifferentiableFunctionEngineNalgebraTrait for DummyDifferentiableFunction {
     fn function(&self) -> &Arc<dyn FunctionNalgebraTrait> {
@@ -13,6 +14,7 @@ impl DifferentiableFunctionEngineNalgebraTrait for DummyDifferentiableFunction {
     }
 }
 
+#[derive(Clone)]
 pub struct FDDifferentiableFunctionEngine {
     pub f: Arc<dyn FunctionNalgebraTrait>,
     pub epsilon: f64
