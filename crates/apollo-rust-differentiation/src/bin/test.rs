@@ -1,4 +1,4 @@
-use apollo_rust_differentiation::{DerivativeNalgebraTrait, FDDerivativeEngine, FunctionNalgebraTrait};
+use apollo_rust_differentiation::{DifferentiableFunctionEngineNalgebraTrait, FDFunctionAndDerivativeEngine, FunctionNalgebraTrait};
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
 
 pub struct Test;
@@ -18,7 +18,7 @@ impl FunctionNalgebraTrait for Test {
 }
 
 fn main() {
-    let mut fd = FDDerivativeEngine::new(Test);
+    let mut fd = FDFunctionAndDerivativeEngine::new(Test);
     let res = fd.derivative(&V::new(&[1.,1.]));
     println!("{}", res);
 }

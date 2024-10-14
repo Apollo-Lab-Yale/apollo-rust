@@ -1,0 +1,8 @@
+[package]
+name = "apollo-rust-optimization"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+apollo-rust-differentiation = { path = "../apollo-rust-differentiation" }
+apollo-rust-linalg = { path = "../apollo-rust-linalg" }
