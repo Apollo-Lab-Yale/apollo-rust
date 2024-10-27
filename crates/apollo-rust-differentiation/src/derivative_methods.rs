@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc};
 use apollo_rust_linalg::{ApolloDMatrixTrait, M, V};
 use crate::{DifferentiableFunctionEngineNalgebraTrait, FunctionNalgebraTrait};
 
@@ -7,6 +7,25 @@ pub struct DummyDifferentiableFunction;
 impl DifferentiableFunctionEngineNalgebraTrait for DummyDifferentiableFunction {
     fn function(&self) -> &Arc<dyn FunctionNalgebraTrait> {
         unimplemented!()
+    }
+
+    fn derivative(&mut self, _x: &V) -> M {
+        unimplemented!()
+    }
+}
+
+#[derive(Clone)]
+pub struct WrapperDifferentiableFunction {
+    pub f: Arc<dyn FunctionNalgebraTrait>
+}
+impl WrapperDifferentiableFunction {
+    pub fn new<F: FunctionNalgebraTrait + 'static>(f: F) -> Self {
+        Self { f: Arc::new(f) }
+    }
+}
+impl DifferentiableFunctionEngineNalgebraTrait for WrapperDifferentiableFunction {
+    fn function(&self) -> &Arc<dyn FunctionNalgebraTrait> {
+        &self.f
     }
 
     fn derivative(&mut self, _x: &V) -> M {
@@ -29,9 +48,7 @@ impl FDDifferentiableFunctionEngine {
 }
 impl DifferentiableFunctionEngineNalgebraTrait for FDDifferentiableFunctionEngine {
     #[inline(always)]
-    fn function(&self) -> &Arc<dyn FunctionNalgebraTrait> {
-        &self.f
-    }
+    fn function(&self) -> &Arc<dyn FunctionNalgebraTrait> { &self.f }
 
     /// Derivative for finite differencing method
     #[inline]

@@ -1,7 +1,6 @@
-use apollo_rust_differentiation::derivative_methods::{DummyDifferentiableFunction, FDDifferentiableFunctionEngine};
-use apollo_rust_differentiation::{DifferentiableFunctionEngineNalgebraTrait, FunctionNalgebraTrait};
+use std::sync::Arc;
+use apollo_rust_differentiation::{DifferentiableFunctionEngineNalgebraTrait, FunctionNalgebraConversionTrait, FunctionNalgebraTrait};
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
-use apollo_rust_optimization::GradientBasedOptimizerTrait;
 
 pub struct Test;
 impl FunctionNalgebraTrait for Test {
@@ -18,18 +17,8 @@ impl FunctionNalgebraTrait for Test {
     }
 }
 
-pub struct Test2;
-impl GradientBasedOptimizerTrait for Test2 {
-    type OutputType = ();
-
-    fn optimize(&self, objective_function: &impl DifferentiableFunctionEngineNalgebraTrait, equality_constraint: Option<&impl DifferentiableFunctionEngineNalgebraTrait>, inequality_constraint: Option<&impl DifferentiableFunctionEngineNalgebraTrait>) -> Self::OutputType {
-        ()
-    }
-}
-
 fn main() {
-    let fd = FDDifferentiableFunctionEngine::new_default(Test);
-
-    let o = Test2;
-    o.optimize(&fd, None::<&DummyDifferentiableFunction>, None::<&DummyDifferentiableFunction>);
+    let handle = Arc::new(Test);
+    let res = handle.clone().to_wrapper_differentiable_function();
+    println!("{:?}", res.output_dim());
 }

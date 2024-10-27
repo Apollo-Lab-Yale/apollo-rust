@@ -65,7 +65,7 @@ fn main() {
     };
     app.add_systems(Update, c.get_system_side_panel_left().in_set(S1));
 
-    let c = BevyChainLinkVisibilitySelectorRaw::new(0, urdf_nalgebra_module.clone(), chain_module.clone());
+    let c = BevyChainLinkVisibilitySelectorRaw::new(0, urdf_nalgebra_module.clone(), chain_module.clone(), dof_module.clone());
     app.add_systems(Update, c.get_system_side_panel_left().in_set(S2).after(S1));
 
     app.add_systems(Update, (move |mut exit: EventWriter<AppExit>, mut egui_contexts: EguiContexts, mut cursor_is_over_egui: ResMut<CursorIsOverEgui>, query2: Query<&Window, With<PrimaryWindow>>| {

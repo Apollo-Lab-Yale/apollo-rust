@@ -1,4 +1,5 @@
-use apollo_rust_differentiation::derivative_methods::DummyDifferentiableFunction;
+mod optimizers;
+
 use apollo_rust_differentiation::DifferentiableFunctionEngineNalgebraTrait;
 use apollo_rust_linalg::V;
 
@@ -10,8 +11,9 @@ pub trait OptimizerOutputTrait {
     fn f_star(&self) -> f64;
 }
 
+/*
 pub trait GradientBasedOptimizerTrait {
-    type OutputType;
+    type OutputType : OptimizerOutputTrait;
 
     fn optimize(&self,
                 objective_function: &impl DifferentiableFunctionEngineNalgebraTrait,
@@ -37,6 +39,19 @@ pub trait GradientBasedOptimizerTrait {
                                   inequality_constraint: &impl DifferentiableFunctionEngineNalgebraTrait) -> Self::OutputType {
         self.optimize(objective_function, Some(equality_constraint), Some(inequality_constraint))
     }
+}
+*/
+
+pub trait OptimizerTrait {
+    type OutputType : OptimizerOutputTrait;
+
+    fn optimize(&self) -> Self::OutputType;
+
+    fn objective_function(&self) -> &impl DifferentiableFunctionEngineNalgebraTrait;
+
+    fn equality_constraint_function(&self) -> Option<&impl DifferentiableFunctionEngineNalgebraTrait>;
+
+    fn inequality_constraint_function(&self) -> Option<&impl DifferentiableFunctionEngineNalgebraTrait>;
 }
 
 pub trait LineSearchTrait {
