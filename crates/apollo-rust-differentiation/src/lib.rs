@@ -1,10 +1,9 @@
 pub mod derivative_methods;
 pub mod functions;
 
-use std::ops::Deref;
+use std::ops::{Deref};
 use std::sync::{Arc, Mutex, RwLock};
 use apollo_rust_linalg::{M, V};
-use crate::derivative_methods::{FDDifferentiableFunctionEngine, WrapperDifferentiableFunction};
 
 pub trait FunctionNalgebraTrait  {
     fn call(&self, x: &V) -> V {
@@ -75,61 +74,32 @@ impl<T: FunctionNalgebraTrait> FunctionNalgebraTrait for RwLock<T> {
     }
 }
 
-pub trait FunctionNalgebraConversionTrait : FunctionNalgebraTrait + Sized + 'static {
-    fn to_wrapper_differentiable_function(self) -> WrapperDifferentiableFunction {
-        WrapperDifferentiableFunction::new(self)
-    }
 
-    fn to_fd_differentiable_function(self) -> FDDifferentiableFunctionEngine {
-        FDDifferentiableFunctionEngine::new_default(self)
+pub trait DerivativeMethodNalgebraTrait {
+    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> M;
+}
+impl<T: DerivativeMethodNalgebraTrait> DerivativeMethodNalgebraTrait for Arc<T> {
+    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> M {
+        self.deref().derivative(f, x)
     }
 }
-impl<T: FunctionNalgebraTrait + Sized + 'static> FunctionNalgebraConversionTrait for T { }
+impl<T: DerivativeMethodNalgebraTrait> DerivativeMethodNalgebraTrait for Mutex<T> {
+    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> M {
+        let tmp = self.lock().unwrap();
+        tmp.derivative(f, x)
+    }
+}
+impl<T: DerivativeMethodNalgebraTrait> DerivativeMethodNalgebraTrait for RwLock<T> {
+    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> M {
+        let tmp = self.read().unwrap();
+        tmp.derivative(f, x)
+    }
+}
 
-/// If you need to mutate part of the function at run-time, make sure those fields are wrapped
-/// in a Mutex or something similar, then mutate the original from the outer loop in between calls.
-/// Alternatively, you can wrap the whole function in an RwLock or Mutex and do a similar thing
-/// ```
-/// use apollo_rust_differentiation::derivative_methods::FDDifferentiableFunctionEngine;
-/// use apollo_rust_differentiation::{DifferentiableFunctionEngineNalgebraTrait, FunctionNalgebraTrait};
-/// use apollo_rust_linalg::{ApolloDVectorTrait, V};
-/// use std::sync::{Arc, RwLock};
-///
-/// pub struct Test {
-///     pub a: f64
-/// }
-/// impl FunctionNalgebraTrait for Test {
-///     fn call_raw(&self, x: &V) -> V {
-///         V::new(&[x[0]* self.a])
-///     }
-///
-///     fn input_dim(&self) -> usize {
-///         1
-///     }
-///
-///     fn output_dim(&self) -> usize {
-///         1
-///     }
-/// }
-///
-/// fn main() {
-///     let t = Test { a: 1.0 };
-///     let handle = Arc::new(RwLock::new(t));
-///
-///     let mut d = FDDifferentiableFunctionEngine::new(handle.clone(), 0.0000001);
-///
-///     println!("{}", d.derivative(&V::new(&[1.0])));
-///
-///     let mut tmp = handle.write().unwrap();
-///     tmp.a = 5.0;
-///     drop(tmp);
-///
-///     println!("{}", d.derivative(&V::new(&[1.0])));
-/// }
-/// ```
-pub trait DifferentiableFunctionEngineNalgebraTrait : Clone {
+
+/// Soon to be deprecated
+pub trait DifferentiableFunctionEngineNalgebraTrait: Clone {
     fn function(&self) -> &Arc<dyn FunctionNalgebraTrait>;
-
     fn derivative(&mut self, x: &V) -> M;
     #[inline(always)]
     fn call(&self, x: &V) -> V {
@@ -142,6 +112,40 @@ pub trait DifferentiableFunctionEngineNalgebraTrait : Clone {
     #[inline(always)]
     fn output_dim(&self) -> usize {
         self.function().output_dim()
+    }
+}
+
+#[derive(Clone)]
+pub struct FunctionEngine {
+    function: Arc<dyn FunctionNalgebraTrait>,
+    derivative_method: Arc<dyn DerivativeMethodNalgebraTrait>
+}
+impl FunctionEngine {
+    pub fn new<F: FunctionNalgebraTrait + 'static, D: DerivativeMethodNalgebraTrait + 'static>(f: F, d: D) -> Self {
+        Self {
+            function: Arc::new(f),
+            derivative_method: Arc::new(d),
+        }
+    }
+
+    #[inline(always)]
+    pub fn call(&self, x: &V) -> V {
+        self.function.call(x)
+    }
+
+    #[inline(always)]
+    pub fn derivative(&self, x: &V) -> M {
+        self.derivative_method.derivative(&self.function, x)
+    }
+
+    #[inline(always)]
+    pub fn input_dim(&self) -> usize {
+        self.function.input_dim()
+    }
+
+    #[inline(always)]
+    pub fn output_dim(&self) -> usize {
+        self.function.output_dim()
     }
 }
 

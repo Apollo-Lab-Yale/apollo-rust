@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use apollo_rust_differentiation::{DifferentiableFunctionEngineNalgebraTrait, FunctionNalgebraConversionTrait, FunctionNalgebraTrait};
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
 
@@ -18,7 +18,7 @@ impl FunctionNalgebraTrait for Test {
 }
 
 fn main() {
-    let handle = Arc::new(Test);
+    let handle = Arc::new(RwLock::new(Test));
     let res = handle.clone().to_wrapper_differentiable_function();
     println!("{:?}", res.output_dim());
 }
