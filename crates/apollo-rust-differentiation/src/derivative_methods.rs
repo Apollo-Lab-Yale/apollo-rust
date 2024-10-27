@@ -76,7 +76,7 @@ impl DifferentiableFunctionEngineNalgebraTrait for FDDifferentiableFunctionEngin
 
 pub struct DerivativeMethodDummy;
 impl DerivativeMethodNalgebraTrait for DerivativeMethodDummy {
-    fn derivative(&self, _f: &Arc<dyn FunctionNalgebraTrait>, _x: &V) -> M {
+    fn derivative(&self, _f: &Arc<dyn FunctionNalgebraTrait>, _x: &V) -> (V, M) {
         unimplemented!("derivative call not supported in DummyDerivative")
     }
 }
@@ -95,7 +95,7 @@ impl Default for DerivativeMethodFD {
     }
 }
 impl DerivativeMethodNalgebraTrait for DerivativeMethodFD {
-    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> M {
+    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> (V, M) {
         let mut out = M::zeros(f.output_dim(), f.input_dim());
 
         let f0 = f.call(x);
@@ -108,6 +108,6 @@ impl DerivativeMethodNalgebraTrait for DerivativeMethodFD {
             out.set_column_from_slice(i, jvp.as_slice());
         }
 
-        out
+        (f0, out)
     }
 }

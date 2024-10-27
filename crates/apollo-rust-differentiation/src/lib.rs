@@ -76,21 +76,21 @@ impl<T: FunctionNalgebraTrait> FunctionNalgebraTrait for RwLock<T> {
 
 
 pub trait DerivativeMethodNalgebraTrait {
-    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> M;
+    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> (V, M);
 }
 impl<T: DerivativeMethodNalgebraTrait> DerivativeMethodNalgebraTrait for Arc<T> {
-    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> M {
+    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> (V, M) {
         self.deref().derivative(f, x)
     }
 }
 impl<T: DerivativeMethodNalgebraTrait> DerivativeMethodNalgebraTrait for Mutex<T> {
-    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> M {
+    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> (V, M) {
         let tmp = self.lock().unwrap();
         tmp.derivative(f, x)
     }
 }
 impl<T: DerivativeMethodNalgebraTrait> DerivativeMethodNalgebraTrait for RwLock<T> {
-    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> M {
+    fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> (V, M) {
         let tmp = self.read().unwrap();
         tmp.derivative(f, x)
     }
@@ -134,7 +134,7 @@ impl FunctionEngine {
     }
 
     #[inline(always)]
-    pub fn derivative(&self, x: &V) -> M {
+    pub fn derivative(&self, x: &V) -> (V, M) {
         self.derivative_method.derivative(&self.function, x)
     }
 

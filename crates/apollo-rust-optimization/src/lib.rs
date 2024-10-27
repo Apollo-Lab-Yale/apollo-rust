@@ -1,6 +1,6 @@
 mod optimizers;
 
-use apollo_rust_differentiation::DifferentiableFunctionEngineNalgebraTrait;
+use apollo_rust_differentiation::{DifferentiableFunctionEngineNalgebraTrait, FunctionEngine};
 use apollo_rust_linalg::V;
 
 pub trait OptimizerOutputTrait {
@@ -9,6 +9,24 @@ pub trait OptimizerOutputTrait {
 
     /// the objective function output at x_star
     fn f_star(&self) -> f64;
+}
+
+#[derive(Clone, Debug)]
+pub struct SimpleOptimizerOutput {
+    pub x_star: V,
+    pub f_star: f64,
+    pub num_iters: usize
+}
+impl OptimizerOutputTrait for SimpleOptimizerOutput {
+    #[inline(always)]
+    fn x_star(&self) -> &V {
+        &self.x_star
+    }
+
+    #[inline(always)]
+    fn f_star(&self) -> f64 {
+        self.f_star
+    }
 }
 
 /*
@@ -47,11 +65,11 @@ pub trait OptimizerTrait {
 
     fn optimize(&self) -> Self::OutputType;
 
-    fn objective_function(&self) -> &impl DifferentiableFunctionEngineNalgebraTrait;
+    fn objective_function(&self) -> &FunctionEngine;
 
-    fn equality_constraint_function(&self) -> Option<&impl DifferentiableFunctionEngineNalgebraTrait>;
+    fn equality_constraint_function(&self) -> Option<&FunctionEngine>;
 
-    fn inequality_constraint_function(&self) -> Option<&impl DifferentiableFunctionEngineNalgebraTrait>;
+    fn inequality_constraint_function(&self) -> Option<&FunctionEngine>;
 }
 
 pub trait LineSearchTrait {
