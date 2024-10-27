@@ -1,4 +1,4 @@
-mod optimizers;
+pub mod optimizers;
 
 use apollo_rust_differentiation::{DifferentiableFunctionEngineNalgebraTrait, FunctionEngine};
 use apollo_rust_linalg::V;
@@ -29,47 +29,35 @@ impl OptimizerOutputTrait for SimpleOptimizerOutput {
     }
 }
 
-/*
-pub trait GradientBasedOptimizerTrait {
+pub trait IterativeOptimizerTrait {
     type OutputType : OptimizerOutputTrait;
 
     fn optimize(&self,
-                objective_function: &impl DifferentiableFunctionEngineNalgebraTrait,
-                equality_constraint: Option<&impl DifferentiableFunctionEngineNalgebraTrait>,
-                inequality_constraint: Option<&impl DifferentiableFunctionEngineNalgebraTrait>) -> Self::OutputType;
+                init_condition: &V,
+                objective_function: &FunctionEngine,
+                equality_constraint: Option<&FunctionEngine>,
+                inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType;
 
-    fn optimize_unconstrained(&self, objective_function: &impl DifferentiableFunctionEngineNalgebraTrait) -> Self::OutputType {
-        self.optimize(objective_function, None::<&DummyDifferentiableFunction>, None::<&DummyDifferentiableFunction>)
+    fn optimize_unconstrained(&self, init_condition: &V, objective_function: &FunctionEngine) -> Self::OutputType {
+        self.optimize(init_condition, objective_function, None, None)
     }
 
-    fn optimize_equality_constrained(&self, objective_function: &impl DifferentiableFunctionEngineNalgebraTrait,
-                                     equality_constraint: &impl DifferentiableFunctionEngineNalgebraTrait) -> Self::OutputType {
-        self.optimize(objective_function, Some(equality_constraint), None::<&DummyDifferentiableFunction>)
+    fn optimize_equality_constrained(&self, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: &FunctionEngine) -> Self::OutputType {
+        self.optimize(init_condition, objective_function, Some(equality_constraint), None)
     }
 
-    fn optimize_inequality_constrained(&self, objective_function: &impl DifferentiableFunctionEngineNalgebraTrait,
-                                       inequality_constraint: &impl DifferentiableFunctionEngineNalgebraTrait) -> Self::OutputType {
-        self.optimize(objective_function, None::<&DummyDifferentiableFunction>, Some(inequality_constraint))
+    fn optimize_inequality_constrained(&self, init_condition: &V,
+                                       objective_function: &FunctionEngine,
+                                       inequality_constraint: &FunctionEngine) -> Self::OutputType {
+        self.optimize(init_condition, objective_function, None, Some(inequality_constraint))
     }
 
-    fn optimize_fully_constrained(&self, objective_function: &impl DifferentiableFunctionEngineNalgebraTrait,
-                                  equality_constraint: &impl DifferentiableFunctionEngineNalgebraTrait,
-                                  inequality_constraint: &impl DifferentiableFunctionEngineNalgebraTrait) -> Self::OutputType {
-        self.optimize(objective_function, Some(equality_constraint), Some(inequality_constraint))
+    fn optimize_fully_constrained(&self, init_condition: &V,
+                                  objective_function: &FunctionEngine,
+                                  equality_constraint: &FunctionEngine,
+                                  inequality_constraint: &FunctionEngine) -> Self::OutputType {
+        self.optimize(init_condition, objective_function, Some(equality_constraint), Some(inequality_constraint))
     }
-}
-*/
-
-pub trait OptimizerTrait {
-    type OutputType : OptimizerOutputTrait;
-
-    fn optimize(&self) -> Self::OutputType;
-
-    fn objective_function(&self) -> &FunctionEngine;
-
-    fn equality_constraint_function(&self) -> Option<&FunctionEngine>;
-
-    fn inequality_constraint_function(&self) -> Option<&FunctionEngine>;
 }
 
 pub trait LineSearchTrait {
