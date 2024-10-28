@@ -1,6 +1,6 @@
 pub mod optimizers;
 
-use apollo_rust_differentiation::{DifferentiableFunctionEngineNalgebraTrait, FunctionEngine};
+use apollo_rust_differentiation::{FunctionEngine};
 use apollo_rust_linalg::V;
 
 pub trait OptimizerOutputTrait {
@@ -61,5 +61,5 @@ pub trait IterativeOptimizerTrait {
 }
 
 pub trait LineSearchTrait {
-    fn line_search(&self, function: &impl DifferentiableFunctionEngineNalgebraTrait, x_k: &V, dir: &V) -> f64;
+    fn line_search(&self, function: &FunctionEngine, x_k: &V, dir: &V) -> f64;
 }

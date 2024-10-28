@@ -23,8 +23,8 @@ impl FunctionNalgebraTrait for Test {
 fn main() {
     let f = FunctionEngine::new(Test, DerivativeMethodFD::default());
 
-    let o = SimpleGradientDescent::new(0.1);
+    let o = SimpleGradientDescent::new(1.0);
 
-    let res = o.optimize_unconstrained(&V::new(&[1.0]), &f);
+    let res = o.optimize_unconstrained(&V::new(&[3.0]), &f);
     println!("{:?}", res);
 }

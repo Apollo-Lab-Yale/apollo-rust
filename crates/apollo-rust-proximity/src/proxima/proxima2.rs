@@ -1,3 +1,5 @@
+/*
+
 use std::borrow::Cow;
 use nalgebra::DMatrix;
 use optimization_engine::panoc::{PANOCCache, PANOCOptimizer};
@@ -350,3 +352,5 @@ pub enum LieAlgMode {
     Standard,
     Pseudo
 }
+
+*/

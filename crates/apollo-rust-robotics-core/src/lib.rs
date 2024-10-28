@@ -2,7 +2,6 @@ use parry3d_f64::query::Contact;
 use apollo_rust_linalg::V;
 use apollo_rust_proximity::double_group_queries::{ConvertToAverageDistancesTrait, DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput};
 use apollo_rust_proximity::proxima::proxima1::{Proxima1, Proxima1Cache};
-use apollo_rust_proximity::proxima::proxima2::{LieAlgMode, Proxima2, Proxima2Cache};
 use apollo_rust_proximity::proxima::proxima_core::{ProximaBudget, ProximaOutput, ProximaTrait};
 use apollo_rust_proximity::ProximityLossFunction;
 use apollo_rust_modules::{ResourcesSubDirectory};
@@ -17,7 +16,6 @@ use apollo_rust_modules::robot_modules::mesh_modules::convex_hull_meshes_module:
 use apollo_rust_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
 use apollo_rust_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 use apollo_rust_proximity::bvh::{Bvh, BvhShape};
-use apollo_rust_proximity::proxima::proxima2b::{Proxima2b, Proxima2bCache};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::LinkShapesMaxDistanceFromOriginTrait;
 use crate::modules_runtime::link_shapes_distance_statistics_nalgebra_module::ApolloLinkShapesDistanceStatisticsNalgebraModule;
@@ -140,7 +138,6 @@ impl ResourcesSingleRobotDirectory {
     }
 }
 */
-
 
 #[derive(Clone)]
 pub struct ChainNalgebra {
@@ -477,6 +474,7 @@ impl ChainNalgebra {
         }
     }
 
+    /*
     pub fn get_self_proxima2b(&self, interpolation: f64, state: &V, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep) -> Proxima2b {
         let fk_res = self.fk(state);
         let shapes = self.link_shapes_module.get_shapes(link_shape_mode, link_shape_rep);
@@ -491,6 +489,7 @@ impl ChainNalgebra {
             interpolation,
         }
     }
+    */
 
     pub fn get_double_chain_proxima1(&self, interpolation: f64, other_chain: &ChainNalgebra, self_state: &V, self_link_shape_mode: LinkShapeMode, self_link_shape_rep: LinkShapeRep, other_state: &V, other_link_shape_mode: LinkShapeMode, other_link_shape_rep: LinkShapeRep) -> Proxima1 {
         let self_fk_res = self.fk(self_state);
@@ -510,6 +509,7 @@ impl ChainNalgebra {
         }
     }
 
+    /*
     pub fn get_self_proxima2(&self, state: &V, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, lie_alg_mode: LieAlgMode) -> Proxima2 {
         let fk_res = self.fk(state);
         let shapes = self.link_shapes_module.get_shapes(link_shape_mode, link_shape_rep);
@@ -522,7 +522,9 @@ impl ChainNalgebra {
             lie_alg_mode,
         }
     }
+    */
 
+    /*
     pub fn get_double_chain_proxima2(&self, other_chain: &ChainNalgebra, self_state: &V, self_link_shape_mode: LinkShapeMode, self_link_shape_rep: LinkShapeRep, other_state: &V, other_link_shape_mode: LinkShapeMode, other_link_shape_rep: LinkShapeRep, lie_alg_mode: LieAlgMode) -> Proxima2 {
         let self_fk_res = self.fk(self_state);
         let self_shapes = self.link_shapes_module.get_shapes(self_link_shape_mode, self_link_shape_rep);
@@ -539,6 +541,7 @@ impl ChainNalgebra {
             lie_alg_mode,
         }
     }
+    */
 
     pub fn get_bvh<B: BvhShape>(&self, state: &V, link_shape_mode: LinkShapeMode, link_shape_rep: LinkShapeRep, branch_factor: usize) -> Bvh<B> {
         let fk_res = self.fk(state);
