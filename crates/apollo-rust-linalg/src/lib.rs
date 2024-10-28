@@ -86,6 +86,9 @@ pub trait ApolloDMatrixTrait {
         let svd = self.singular_value_decomposition(SVDType::Full);
         svd.to_fundamental_subspaces()
     }
+
+    /// Computes the full QR factorization of the matrix using the Gram-Schmidt process.
+    fn full_qr_factorization(&self) -> QRResult;
 }
 
 /// Implementation of `ApolloDMatrixTrait` for `DMatrix<f64>`.
@@ -216,6 +219,65 @@ impl ApolloDMatrixTrait for M {
             }
         }
     }
+
+    fn full_qr_factorization(&self) -> QRResult {
+        let m = self.nrows();
+        let n = self.ncols();
+        let min_dim = m.min(n);
+
+        let a_cols = self.get_all_columns();
+
+        let mut q_cols: Vec<V> = Vec::with_capacity(m);
+        let mut r = M::zeros(m, n);
+
+        for j in 0..min_dim {
+            let mut v = a_cols[j].clone();
+
+            for i in 0..j {
+                let q_i = &q_cols[i];
+                let r_ij = q_i.dot(&a_cols[j]);
+                r[(i, j)] = r_ij;
+                v -= q_i * r_ij;
+            }
+
+            let v_norm = v.norm();
+            if v_norm > 1e-10 {
+                r[(j, j)] = v_norm;
+                v /= v_norm;
+            }
+
+            q_cols.push(v);
+        }
+
+        if n > m {
+            for j in m..n {
+                for i in 0..m {
+                    let q_i = &q_cols[i];
+                    let r_ij = q_i.dot(&a_cols[j]);
+                    r[(i, j)] = r_ij;
+                }
+            }
+        }
+
+        for _ in min_dim..m {
+            let mut v = V::new_random_with_range(m, -1.0, 1.0);
+
+            for q_i in &q_cols {
+                let proj = q_i.dot(&v);
+                v -= q_i * proj;
+            }
+
+            let v_norm = v.norm();
+            if v_norm > 1e-10 {
+                v /= v_norm;
+                q_cols.push(v);
+            }
+        }
+
+        let q = M::from_column_vectors(&q_cols);
+
+        QRResult { q, r }
+    }
 }
 
 /// Trait defining operations for a collection of `DVector`.
@@ -319,6 +381,14 @@ impl SVDResult {
             null_space_basis: if v2_cols.len() > 0 { Some(M::from_column_vectors(&v2_cols)) } else { None },
         }
     }
+}
+
+#[derive(Clone, Debug)]
+pub struct QRResult {
+    /// Q matrix with orthonormal columns
+    pub q: M,
+    /// Upper triangular R matrix
+    pub r: M
 }
 
 /// Enum to specify the type of Singular Value Decomposition.
