@@ -1,5 +1,5 @@
 [package]
-name = "apollo-rust-planning"
+name = "apollo-rust-continuous-planning"
 version = "0.1.0"
 edition = "2021"
 
