@@ -1,5 +1,8 @@
 pub mod optimizers;
+pub mod line_searches;
 
+use std::ops::Deref;
+use std::sync::{Arc, Mutex, RwLock};
 use apollo_rust_differentiation::{FunctionEngine};
 use apollo_rust_linalg::V;
 
@@ -32,11 +35,20 @@ impl OptimizerOutputTrait for SimpleOptimizerOutput {
 pub trait IterativeOptimizerTrait {
     type OutputType : OptimizerOutputTrait;
 
+    fn optimize_raw(&self,
+                    init_condition: &V,
+                    objective_function: &FunctionEngine,
+                    equality_constraint: Option<&FunctionEngine>,
+                    inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType;
+
     fn optimize(&self,
                 init_condition: &V,
                 objective_function: &FunctionEngine,
                 equality_constraint: Option<&FunctionEngine>,
-                inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType;
+                inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
+        assert_eq!(objective_function.output_dim(), 1);
+        self.optimize_raw(init_condition, objective_function, equality_constraint, inequality_constraint)
+    }
 
     fn optimize_unconstrained(&self, init_condition: &V, objective_function: &FunctionEngine) -> Self::OutputType {
         self.optimize(init_condition, objective_function, None, None)
@@ -59,7 +71,47 @@ pub trait IterativeOptimizerTrait {
         self.optimize(init_condition, objective_function, Some(equality_constraint), Some(inequality_constraint))
     }
 }
+impl<T: IterativeOptimizerTrait> IterativeOptimizerTrait for Arc<T> {
+    type OutputType = T::OutputType;
+
+    fn optimize_raw(&self, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
+        self.deref().optimize(init_condition, objective_function, equality_constraint, inequality_constraint)
+    }
+}
+impl<T: IterativeOptimizerTrait> IterativeOptimizerTrait for RwLock<T> {
+    type OutputType = T::OutputType;
+
+    fn optimize_raw(&self, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
+        let tmp = self.read().unwrap();
+        tmp.optimize(init_condition, objective_function, equality_constraint, inequality_constraint)
+    }
+}
+impl<T: IterativeOptimizerTrait> IterativeOptimizerTrait for Mutex<T> {
+    type OutputType = T::OutputType;
+
+    fn optimize_raw(&self, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
+        let tmp = self.lock().unwrap();
+        tmp.optimize(init_condition, objective_function, equality_constraint, inequality_constraint)
+    }
+}
 
 pub trait LineSearchTrait {
     fn line_search(&self, function: &FunctionEngine, x_k: &V, dir: &V) -> f64;
+}
+impl<T: LineSearchTrait> LineSearchTrait for Arc<T> {
+    fn line_search(&self, function: &FunctionEngine, x_k: &V, dir: &V) -> f64 {
+        self.deref().line_search(function, x_k, dir)
+    }
+}
+impl<T: LineSearchTrait> LineSearchTrait for RwLock<T> {
+    fn line_search(&self, function: &FunctionEngine, x_k: &V, dir: &V) -> f64 {
+        let tmp = self.read().unwrap();
+        tmp.line_search(function, x_k, dir)
+    }
+}
+impl<T: LineSearchTrait> LineSearchTrait for Mutex<T> {
+    fn line_search(&self, function: &FunctionEngine, x_k: &V, dir: &V) -> f64 {
+        let tmp = self.lock().unwrap();
+        tmp.line_search(function, x_k, dir)
+    }
 }

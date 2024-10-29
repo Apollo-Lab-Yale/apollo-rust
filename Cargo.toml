@@ -20,7 +20,9 @@ members = [
     "crates/apollo-rust-bevy-robotics",
     "crates/apollo-rust-algs",
     "crates/apollo-rust-differentiation",
-    "crates/apollo-rust-interpolation", "crates/apollo-rust-optimization"]
+    "crates/apollo-rust-interpolation",
+    "crates/apollo-rust-optimization",
+    "crates/apollo-rust-continuous-planning"]
 [dependencies]
 
 

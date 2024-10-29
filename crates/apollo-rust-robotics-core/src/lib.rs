@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use parry3d_f64::query::Contact;
 use apollo_rust_linalg::V;
 use apollo_rust_proximity::double_group_queries::{ConvertToAverageDistancesTrait, DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput};
@@ -160,6 +161,9 @@ pub struct ChainNalgebra {
     pub bounds_module: ApolloBoundsModule
 }
 impl ChainNalgebra {
+    pub fn to_arc_chain(self) -> Arc<ChainNalgebra> {
+        Arc::new(self)
+    }
     #[inline(always)]
     pub fn resources_sub_directory(&self) -> &ResourcesSubDirectory {
         &self.resources_sub_directory

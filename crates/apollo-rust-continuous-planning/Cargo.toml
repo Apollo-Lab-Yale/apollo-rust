@@ -1,0 +1,11 @@
+[package]
+name = "apollo-rust-planning"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+apollo-rust-linalg = { path = "../apollo-rust-linalg" }
+apollo-rust-robotics-core = { path = "../apollo-rust-robotics-core" }
+apollo-rust-modules = { path = "../apollo-rust-modules" }
+apollo-rust-robotics = { path = "../apollo-rust-robotics" }
+apollo-rust-proximity = { path = "../apollo-rust-proximity" }
