@@ -71,7 +71,7 @@ impl IterativeOptimizerTrait for GradientDescent {
                 }
             }
             let g_k = V::from_column_slice(g_k.as_slice());
-            let lambda = self.line_search.line_search(objective_function, &x_k, &-&g_k);
+            let lambda = self.line_search.line_search(objective_function, &x_k, &f_k[0], &-&g_k, &g_k);
             x_k = &x_k - lambda*&g_k;
 
             num_iters += 1;
