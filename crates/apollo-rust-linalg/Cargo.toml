@@ -7,3 +7,8 @@ edition = "2021"
 nalgebra = { version = "0.33.0", features = ["rand"] }
 nalgebra-sparse = "0.10.0"
 rand = { version="0.9.0-alpha.1" }
+ad_trait = { git = "https://github.com/djrakita/ad_trait", optional = true }
+
+[features]
+default = [ "ad" ]
+ad = [ "ad_trait" ]

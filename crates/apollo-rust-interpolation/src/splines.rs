@@ -267,8 +267,6 @@ pub fn get_interpolation_range_num_steps(range_start: f64, range_stop: f64, num_
     get_interpolation_range(range_start, range_stop, step_size)
 }
 
-
-
 #[derive(Clone, Debug)]
 pub struct BSpline {
     control_points: Vec<DVector<f64>>,

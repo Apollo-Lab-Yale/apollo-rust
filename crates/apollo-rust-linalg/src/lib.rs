@@ -1,3 +1,8 @@
+#[cfg(feature = "ad")]
+pub mod linalg_ad;
+
+extern crate core;
+
 use std::fmt::Debug;
 use nalgebra::{DMatrix, DVector};
 use rand::Rng;
@@ -18,8 +23,6 @@ pub trait ApolloDVectorTrait {
     /// * `max` - The maximum value in the range.
     fn new_random_with_range(n: usize, min: f64, max: f64) -> Self;
 }
-
-/// Implementation of `ApolloDVectorTrait` for `DVector<f64>`.
 impl ApolloDVectorTrait for V {
     fn new(slice: &[f64]) -> Self {
         DVector::from_column_slice(slice)
@@ -36,6 +39,8 @@ impl ApolloDVectorTrait for V {
         v
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Type alias for a dynamic matrix of `f64`.
 pub type M = DMatrix<f64>;
@@ -90,8 +95,6 @@ pub trait ApolloDMatrixTrait {
     /// Computes the full QR factorization of the matrix using the Gram-Schmidt process.
     fn full_qr_factorization(&self) -> QRResult;
 }
-
-/// Implementation of `ApolloDMatrixTrait` for `DMatrix<f64>`.
 impl ApolloDMatrixTrait for M {
     fn new(slice: &[f64], nrows: usize, ncols: usize) -> Self {
         DMatrix::from_row_slice(nrows, ncols, slice)
@@ -285,8 +288,6 @@ pub trait ApolloMultipleDVectorsTrait {
     /// Applies the Gram-Schmidt process to a collection of vectors.
     fn gram_schmidt_process(&self) -> Vec<V>;
 }
-
-/// Implementation of `ApolloMultipleDVectorsTrait` for a slice of `DVector`.
 impl ApolloMultipleDVectorsTrait for &[V] {
     fn gram_schmidt_process(&self) -> Vec<V> {
         let mut out: Vec<V> = Vec::new();
@@ -315,7 +316,6 @@ impl ApolloMultipleDVectorsTrait for &mut Vec<V> {
         (**self).gram_schmidt_process()
     }
 }
-
 impl ApolloMultipleDVectorsTrait for Vec<V> {
     fn gram_schmidt_process(&self) -> Vec<V> {
         self.as_slice().gram_schmidt_process()
@@ -332,7 +332,6 @@ pub struct SVDResult {
     rank: usize,
     svd_type: SVDType,
 }
-
 impl SVDResult {
     pub fn u(&self) -> &M {
         &self.u
@@ -410,7 +409,6 @@ pub struct FundamentalSubspaces {
     /// Basis for null space.
     null_space_basis: Option<M>,
 }
-
 impl FundamentalSubspaces {
     pub fn column_space_basis(&self) -> &Option<M> {
         &self.column_space_basis
