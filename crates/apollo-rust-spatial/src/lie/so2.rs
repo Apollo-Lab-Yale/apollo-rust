@@ -1,13 +1,13 @@
+use ad_trait::AD;
 use serde::{Deserialize, Serialize};
 use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
 use crate::lie::Rotation2DLieGroupElement;
-use crate::matrices::M2;
-use crate::rotation_matrices::R2;
+use crate::matrices::{M2};
+use crate::rotation_matrices::{R2, R2AD};
 
 /// Struct representing a Lie group element in SO(2) rotation.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupSO2(pub R2);
-
 impl LieGroupSO2 {
     /// Creates a new `LieGroupSO2` instance.
     ///
@@ -142,5 +142,22 @@ pub trait ApolloLieAlgPackSO2Trait {
 impl ApolloLieAlgPackSO2Trait for f64 {
     fn to_lie_alg_so2(&self) -> LieAlgSO2 {
         LieAlgSO2::new(M2::new(0.0, -*self, *self, 0.0))
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// Struct representing a Lie group element in SO(2) rotation.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct LieGroupSO2AD<A: AD>(
+    #[serde(deserialize_with = "R2AD::deserialize")]
+    pub R2AD<A>
+);
+impl<A: AD> LieGroupSO2AD<A> {
+    /// Creates a new `LieGroupSO2` instance.
+    ///
+    /// - `field0`: The 2D rotation matrix `R2` representing the Lie group element.
+    pub fn new(field0: R2AD<A>) -> Self {
+        Self(field0)
     }
 }

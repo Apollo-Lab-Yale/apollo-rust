@@ -1,3 +1,5 @@
+#![allow(elided_named_lifetimes)]
+
 use std::borrow::Cow;
 use nalgebra::Point3;
 use parry3d_f64::na::UnitQuaternion;

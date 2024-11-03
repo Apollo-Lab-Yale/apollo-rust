@@ -2,7 +2,7 @@ use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_modules::robot_modules::chain_module::ApolloChainModule;
 use apollo_rust_modules::robot_modules::dof_module::ApolloDOFModule;
-use apollo_rust_modules::robot_modules::urdf_module::ApolloURDFJointType;
+use apollo_rust_modules::robot_modules::urdf_module::{ApolloURDFJointType};
 use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, I3};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::{ApolloLieAlgPackIse3qTrait, ISE3q};
 use apollo_rust_spatial::vectors::{V3, V6};
@@ -45,10 +45,23 @@ impl RobotKinematicsFunctions {
                 let parent_link_idx = link_in_chain.parent_link_idx().expect("error");
                 let parent_joint_idx = link_in_chain.parent_joint_idx().expect("error");
                 let parent_joint = &joints[parent_joint_idx];
-
                 let constant_transform = &parent_joint.origin.ise3q;
-                let dof_idxs = &joint_idx_to_dofs_mapping[parent_joint_idx];
-                let joint_dofs: Vec<f64> = dof_idxs.iter().map(|i| state[*i]).collect();
+
+                let joint_dofs = match &parent_joint.mimic {
+                    None => {
+                        let dof_idxs = &joint_idx_to_dofs_mapping[parent_joint_idx];
+                        let joint_dofs: Vec<f64> = dof_idxs.iter().map(|i| state[*i]).collect();
+                        joint_dofs
+                    }
+                    Some(mimic) => {
+                        let mimic_joint_name = mimic.joint.clone();
+                        let mimic_joint_in_chain = chain_module.joints_in_chain.iter().find(|x| x.joint_name == mimic_joint_name).expect("error");
+                        let dof_idxs = &joint_idx_to_dofs_mapping[mimic_joint_in_chain.joint_idx];
+                        let joint_dofs: Vec<f64> = dof_idxs.iter().map(|i| mimic.offset.unwrap_or(0.0) + mimic.multiplier.unwrap_or(1.0) * state[*i]).collect();
+                        joint_dofs
+                    }
+                };
+
                 let joint_axis = &parent_joint.axis;
                 let joint_type = &parent_joint.joint_type;
                 let variable_transform = Self::get_joint_variable_transform_urdf_axis(joint_type, joint_axis, &joint_dofs);

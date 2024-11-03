@@ -14,41 +14,50 @@ impl DOFModuleBuilders for ApolloDOFModule {
         let mut joint_idx_to_dofs_mapping = vec![];
 
         urdf_module.joints.iter().enumerate().for_each(|(i, j)| {
-            match j.joint_type {
-                ApolloURDFJointType::Revolute => {
-                    dof_idx_to_joint_mapping_idx.push(i);
-                    joint_idx_to_dofs_mapping.push(vec![num_dofs]);
-                    num_dofs += 1;
+            match &j.mimic {
+                None => {
+                    match j.joint_type {
+                        ApolloURDFJointType::Revolute => {
+                            dof_idx_to_joint_mapping_idx.push(i);
+                            joint_idx_to_dofs_mapping.push(vec![num_dofs]);
+                            num_dofs += 1;
+                        }
+                        ApolloURDFJointType::Continuous => {
+                            dof_idx_to_joint_mapping_idx.push(i);
+                            joint_idx_to_dofs_mapping.push(vec![num_dofs]);
+                            num_dofs += 1;
+                        }
+                        ApolloURDFJointType::Prismatic => {
+                            dof_idx_to_joint_mapping_idx.push(i);
+                            joint_idx_to_dofs_mapping.push(vec![num_dofs]);
+                            num_dofs += 1;
+                        }
+                        ApolloURDFJointType::Fixed => {
+                            joint_idx_to_dofs_mapping.push(vec![]);
+                        }
+                        ApolloURDFJointType::Floating => {
+                            for _ in 0..6 { dof_idx_to_joint_mapping_idx.push(i); }
+                            joint_idx_to_dofs_mapping.push(vec![num_dofs, num_dofs+1, num_dofs+2, num_dofs+3, num_dofs+4, num_dofs+5]);
+                            num_dofs += 6;
+                        }
+                        ApolloURDFJointType::Planar => {
+                            for _ in 0..3 { dof_idx_to_joint_mapping_idx.push(i); }
+                            joint_idx_to_dofs_mapping.push(vec![num_dofs, num_dofs+1, num_dofs+2]);
+                            num_dofs += 3;
+                        }
+                        ApolloURDFJointType::Spherical => {
+                            for _ in 0..3 { dof_idx_to_joint_mapping_idx.push(i); }
+                            joint_idx_to_dofs_mapping.push(vec![num_dofs, num_dofs+1, num_dofs+2]);
+                            num_dofs += 3;
+                        }
+                    }
                 }
-                ApolloURDFJointType::Continuous => {
-                    dof_idx_to_joint_mapping_idx.push(i);
-                    joint_idx_to_dofs_mapping.push(vec![num_dofs]);
-                    num_dofs += 1;
-                }
-                ApolloURDFJointType::Prismatic => {
-                    dof_idx_to_joint_mapping_idx.push(i);
-                    joint_idx_to_dofs_mapping.push(vec![num_dofs]);
-                    num_dofs += 1;
-                }
-                ApolloURDFJointType::Fixed => {
+                Some(_) => {
                     joint_idx_to_dofs_mapping.push(vec![]);
                 }
-                ApolloURDFJointType::Floating => {
-                    for _ in 0..6 { dof_idx_to_joint_mapping_idx.push(i); }
-                    joint_idx_to_dofs_mapping.push(vec![num_dofs, num_dofs+1, num_dofs+2, num_dofs+3, num_dofs+4, num_dofs+5]);
-                    num_dofs += 6;
-                }
-                ApolloURDFJointType::Planar => {
-                    for _ in 0..3 { dof_idx_to_joint_mapping_idx.push(i); }
-                    joint_idx_to_dofs_mapping.push(vec![num_dofs, num_dofs+1, num_dofs+2]);
-                    num_dofs += 3;
-                }
-                ApolloURDFJointType::Spherical => {
-                    for _ in 0..3 { dof_idx_to_joint_mapping_idx.push(i); }
-                    joint_idx_to_dofs_mapping.push(vec![num_dofs, num_dofs+1, num_dofs+2]);
-                    num_dofs += 3;
-                }
             }
+
+
         });
 
         progress_bar.done_preset();
