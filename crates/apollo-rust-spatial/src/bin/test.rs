@@ -1,7 +1,7 @@
 use std::time::Instant;
-use apollo_lie::{LieAlgebraElement, LieGroupElement};
-use apollo_spatial::lie::se3_implicit_quaternion::{ApolloLieAlgPackIse3qTrait, ApolloPseudoLieAlgPackIse3qTrait};
-use apollo_spatial::vectors::{V6};
+use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
+use apollo_rust_spatial::lie::se3_implicit_quaternion::{ApolloLieAlgPackIse3qTrait, ApolloPseudoLieAlgPackIse3qTrait};
+use apollo_rust_spatial::vectors::{V6};
 
 fn main() {
     let v = V6::new(0.1512,0.2, 0.3, 0.3127, 0.2, 0.1);

@@ -51,17 +51,21 @@ impl IterativeOptimizerTrait for BFGS {
             }
             // compute descending step
             let p_k = -&h_k*&g_k;
-            let lambda = self.line_search.line_search(objective_function, &x_k, &f_k[0], &p_k, &g_k);
+            let lambda = self.line_search.line_search(objective_function, &x_k, &f_k, &p_k, &g_k);
             let s_k = lambda * p_k;
             // update
             x_k = x_k + &s_k;
             let (f_k_next, g_k_next) = objective_function.derivative(&x_k);
             let g_k_next = V::from_column_slice(g_k_next.as_slice());
             let y_k = &g_k_next-g_k;
-            let rho_k  = 1.0/s_k.dot(&y_k);
-            h_k = (&id-rho_k*&s_k*y_k.transpose())*h_k*(&id-rho_k*y_k*s_k.transpose())+rho_k*&s_k*s_k.transpose();
             g_k = g_k_next;
             f_k = f_k_next[0];
+            // in case Wolfe's condition is not satisfied
+            let inv_rho_k = s_k.dot(&y_k);
+            if inv_rho_k > 1e-6 {
+                let rho_k = 1.0 / inv_rho_k;
+                h_k = (&id - rho_k * &s_k * y_k.transpose()) * h_k * (&id - rho_k * y_k * s_k.transpose()) + rho_k * &s_k * s_k.transpose();
+            }
             num_iters += 1;
         }
     }
@@ -130,14 +134,18 @@ impl IterativeOptimizerTrait for LBFGS {
             let y_k = &g_k_next - g_k;
             g_k = g_k_next;
             f_k = f_k_next[0];
-            if num_iters >=self.m {
-                s_queue.pop_front();
-                y_queue.pop_front();
-                rho_queue.pop_front();
+            // in case Wolfe's condition is not satisfied
+            let inv_rho_k = s_k.dot(&y_k);
+            if inv_rho_k > 1e-6 {
+                if num_iters >= self.m {
+                    s_queue.pop_front();
+                    y_queue.pop_front();
+                    rho_queue.pop_front();
+                }
+                rho_queue.push_back(1.0 /inv_rho_k);
+                s_queue.push_back(s_k);
+                y_queue.push_back(y_k);
             }
-            rho_queue.push_back(1.0/s_k.dot(&y_k));
-            s_queue.push_back(s_k);
-            y_queue.push_back(y_k);
             num_iters+=1;
         }
     }
