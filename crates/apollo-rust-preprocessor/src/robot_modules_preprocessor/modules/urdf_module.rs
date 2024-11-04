@@ -119,6 +119,12 @@ impl URDFModuleBuilders for ApolloURDFModule {
                 joint_clone.name = format!("robot_{}_{}", i, joint_clone.name);
                 joint_clone.parent = ApolloURDFLinkName { link: format!("robot_{}_{}", i, joint_clone.parent.link) };
                 joint_clone.child = ApolloURDFLinkName { link: format!("robot_{}_{}", i, joint_clone.child.link) };
+                match &mut joint_clone.mimic {
+                    None => { }
+                    Some(mimic) => {
+                       mimic.joint = format!("robot_{}_{}", i, mimic.joint);
+                    }
+                }
                 joints.push(joint_clone);
             });
 
@@ -322,7 +328,7 @@ impl PreprocessorModule for ApolloURDFModule {
     }
 
     fn current_version() -> String {
-        "0.0.1".to_string()
+        "0.0.3".to_string()
     }
 
     fn build_raw(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {

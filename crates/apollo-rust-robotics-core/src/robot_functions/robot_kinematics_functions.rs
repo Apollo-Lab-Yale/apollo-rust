@@ -55,7 +55,7 @@ impl RobotKinematicsFunctions {
                     }
                     Some(mimic) => {
                         let mimic_joint_name = mimic.joint.clone();
-                        let mimic_joint_in_chain = chain_module.joints_in_chain.iter().find(|x| x.joint_name == mimic_joint_name).expect("error");
+                        let mimic_joint_in_chain = chain_module.joints_in_chain.iter().find(|x| x.joint_name == mimic_joint_name).expect(&format!("{} could not be found", mimic_joint_name));
                         let dof_idxs = &joint_idx_to_dofs_mapping[mimic_joint_in_chain.joint_idx];
                         let joint_dofs: Vec<f64> = dof_idxs.iter().map(|i| mimic.offset.unwrap_or(0.0) + mimic.multiplier.unwrap_or(1.0) * state[*i]).collect();
                         joint_dofs

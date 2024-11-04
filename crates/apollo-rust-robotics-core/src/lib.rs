@@ -7,7 +7,7 @@ use apollo_rust_proximity::proxima::proxima_core::{ProximaBudget, ProximaOutput,
 use apollo_rust_proximity::ProximityLossFunction;
 use apollo_rust_modules::{ResourcesSubDirectory};
 use apollo_rust_modules::robot_modules::bounds_module::ApolloBoundsModule;
-use apollo_rust_modules::robot_modules::chain_module::ApolloChainModule;
+use apollo_rust_modules::robot_modules::chain_module::{ApolloChainModule};
 use apollo_rust_modules::robot_modules::connections_module::ApolloConnectionsModule;
 use apollo_rust_modules::robot_modules::dof_module::ApolloDOFModule;
 use apollo_rust_modules::robot_modules::link_shapes_modules::link_shapes_approximations_module::ApolloLinkShapesApproximationsModule;
@@ -168,7 +168,6 @@ impl ChainNalgebra {
     pub fn resources_sub_directory(&self) -> &ResourcesSubDirectory {
         &self.resources_sub_directory
     }
-
     #[inline(always)]
     pub fn urdf_module(&self) -> &ApolloURDFNalgebraModule {
         &self.urdf_module

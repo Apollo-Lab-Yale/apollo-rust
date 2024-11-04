@@ -29,6 +29,7 @@ use apollo_rust_modules::robot_modules::mesh_modules::convex_decomposition_meshe
 use apollo_rust_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 use apollo_rust_modules::robot_modules::urdf_module::ApolloURDFModule;
+use apollo_rust_preprocessor::robot_modules_preprocessor::CombinedRobot;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_distance_statistics_nalgebra_module::ApolloLinkShapesDistanceStatisticsNalgebraModule;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_module::{ApolloLinkShapesModule, LinkShapeMode, LinkShapeRep};
 use apollo_rust_robotics_core::modules_runtime::link_shapes_simple_skips_nalgebra_module::ApolloLinkShapesSimpleSkipsNalgebraModule;
@@ -109,6 +110,7 @@ fn main() {
     let mut decomposition_convex_hulls_skips;
     let mut decomposition_obbs_skips;
     let mut decomposition_bounding_spheres_skips;
+
     match &link_shapes_skips_module_result {
         Ok(link_shapes_skips_module) => {
             full_convex_hulls_skips = dmatrix_from_2dvec(&link_shapes_skips_module.full_convex_hulls_skips.clone());
@@ -128,12 +130,106 @@ fn main() {
         }
     }
 
-    let original_full_convex_hulls_skips = link_shapes_simple_skips_module.full_convex_hulls_simple_skips.clone();
-    let original_full_obbs_skips = link_shapes_simple_skips_module.full_obbs_simple_skips.clone();
-    let original_full_bounding_spheres_skips = link_shapes_simple_skips_module.full_bounding_spheres_simple_skips.clone();
-    let original_decomposition_convex_hulls_skips = link_shapes_simple_skips_module.decomposition_convex_hulls_simple_skips.clone();
-    let original_decomposition_obbs_skips = link_shapes_simple_skips_module.decomposition_obbs_simple_skips.clone();
-    let original_decomposition_bounding_spheres_skips = link_shapes_simple_skips_module.decomposition_bounding_spheres_simple_skips.clone();
+    let mut original_full_convex_hulls_skips = link_shapes_simple_skips_module.full_convex_hulls_simple_skips.clone();
+    let mut original_full_obbs_skips = link_shapes_simple_skips_module.full_obbs_simple_skips.clone();
+    let mut original_full_bounding_spheres_skips = link_shapes_simple_skips_module.full_bounding_spheres_simple_skips.clone();
+    let mut original_decomposition_convex_hulls_skips = link_shapes_simple_skips_module.decomposition_convex_hulls_simple_skips.clone();
+    let mut original_decomposition_obbs_skips = link_shapes_simple_skips_module.decomposition_obbs_simple_skips.clone();
+    let mut original_decomposition_bounding_spheres_skips = link_shapes_simple_skips_module.decomposition_bounding_spheres_simple_skips.clone();
+
+    let combined_robot = CombinedRobot::load(s);
+    match &combined_robot {
+        Ok(combined_robot) => {
+            let info = combined_robot.to_combined_sub_chain_info(s);
+
+            for (chain_idx, attached_robot) in combined_robot.attached_robots().iter().enumerate() {
+                let ss = ResourcesRootDirectory::new(s.root_directory.clone(), s.resources_type.clone()).get_subdirectory(attached_robot.robot_name());
+
+                let ss_convex_hull_meshes_module = ApolloConvexHullMeshesModule::load_or_build(&ss, false).expect("error");
+                let ss_convex_decomposition_meshes_module = ApolloConvexDecompositionMeshesModule::load_or_build(&ss, false).expect("error");
+                let ss_link_shapes_module = ApolloLinkShapesModule::from_mesh_modules(&ss, &ss_convex_hull_meshes_module, &ss_convex_decomposition_meshes_module);
+                let ss_link_shapes_skips_module = ApolloLinkShapesSkipsModule::load_or_build(&ss, false).expect("error");
+
+                let num_full = ss_link_shapes_skips_module.full_convex_hulls_skips.len();
+                let num_decomposition = ss_link_shapes_skips_module.decomposition_convex_hulls_skips.len();
+
+                for i in 0..num_full {
+                    let sub_link_idx_i = ss_link_shapes_module.full_shape_idx_to_link_idx[i];
+                    let combined_link_idx_i = info.sub_chain_and_link_idx_to_combined_chain_link_idx[chain_idx][sub_link_idx_i].clone();
+                    let combined_shape_idx_i = link_shapes_module.link_idx_to_full_shape_idx[combined_link_idx_i].unwrap();
+                    for j in 0..num_full {
+                        let sub_link_idx_j = ss_link_shapes_module.full_shape_idx_to_link_idx[j];
+                        let combined_link_idx_j = info.sub_chain_and_link_idx_to_combined_chain_link_idx[chain_idx][sub_link_idx_j].clone();
+                        let combined_shape_idx_j = link_shapes_module.link_idx_to_full_shape_idx[combined_link_idx_j].unwrap();
+
+                        let sub_skip = ss_link_shapes_skips_module.full_bounding_spheres_skips[i][j];
+                        if sub_skip {
+                            full_bounding_spheres_skips[(combined_shape_idx_i, combined_shape_idx_j)] = true;
+                            full_bounding_spheres_skips[(combined_shape_idx_j, combined_shape_idx_i)] = true;
+                            original_full_bounding_spheres_skips[(combined_shape_idx_i, combined_shape_idx_j)] = true;
+                            original_full_bounding_spheres_skips[(combined_shape_idx_j, combined_shape_idx_i)] = true;
+                        }
+
+                        let sub_skip = ss_link_shapes_skips_module.full_obbs_skips[i][j];
+                        if sub_skip {
+                            full_obbs_skips[(combined_shape_idx_i, combined_shape_idx_j)] = true;
+                            full_obbs_skips[(combined_shape_idx_j, combined_shape_idx_i)] = true;
+                            original_full_obbs_skips[(combined_shape_idx_i, combined_shape_idx_j)] = true;
+                            original_full_obbs_skips[(combined_shape_idx_j, combined_shape_idx_i)] = true;
+                        }
+
+                        let sub_skip = ss_link_shapes_skips_module.full_convex_hulls_skips[i][j];
+                        if sub_skip {
+                            full_convex_hulls_skips[(combined_shape_idx_i, combined_shape_idx_j)] = true;
+                            full_convex_hulls_skips[(combined_shape_idx_j, combined_shape_idx_i)] = true;
+                            original_full_convex_hulls_skips[(combined_shape_idx_i, combined_shape_idx_j)] = true;
+                            original_full_convex_hulls_skips[(combined_shape_idx_j, combined_shape_idx_i)] = true;
+                        }
+
+                    }
+                }
+
+                for i in 0..num_decomposition {
+                    let (sub_link_idx_i, aa) = ss_link_shapes_module.decomposition_shape_idx_to_link_idx_and_link_sub_idx[i];
+                    let combined_link_idx_i = info.sub_chain_and_link_idx_to_combined_chain_link_idx[chain_idx][sub_link_idx_i].clone();
+                    let combined_shape_idxs_i = link_shapes_module.link_idx_to_decomposition_shape_idxs[combined_link_idx_i].clone();
+                    let combined_shape_idx_i = combined_shape_idxs_i[aa];
+                    for j in 0..num_decomposition {
+                        let (sub_link_idx_j, bb) = ss_link_shapes_module.decomposition_shape_idx_to_link_idx_and_link_sub_idx[j];
+                        let combined_link_idx_j = info.sub_chain_and_link_idx_to_combined_chain_link_idx[chain_idx][sub_link_idx_j].clone();
+                        let combined_shape_idxs_j = link_shapes_module.link_idx_to_decomposition_shape_idxs[combined_link_idx_j].clone();
+                        let combined_shape_idx_j = combined_shape_idxs_j[bb];
+
+                        let sub_skip = ss_link_shapes_skips_module.decomposition_bounding_spheres_skips[i][j];
+                        if sub_skip {
+                            decomposition_bounding_spheres_skips[(combined_shape_idx_i, combined_shape_idx_j)] = true;
+                            decomposition_bounding_spheres_skips[(combined_shape_idx_j, combined_shape_idx_i)] = true;
+                            original_decomposition_bounding_spheres_skips[(combined_shape_idx_i, combined_shape_idx_j)] = true;
+                            original_decomposition_bounding_spheres_skips[(combined_shape_idx_j, combined_shape_idx_i)] = true;
+                        }
+
+                        let sub_skip = ss_link_shapes_skips_module.decomposition_obbs_skips[i][j];
+                        if sub_skip {
+                            decomposition_obbs_skips[(combined_shape_idx_i, combined_shape_idx_j)] = true;
+                            decomposition_obbs_skips[(combined_shape_idx_j, combined_shape_idx_i)] = true;
+                            original_decomposition_obbs_skips[(combined_shape_idx_i, combined_shape_idx_j)] = true;
+                            original_decomposition_obbs_skips[(combined_shape_idx_j, combined_shape_idx_i)] = true;
+                        }
+
+                        let sub_skip = ss_link_shapes_skips_module.decomposition_convex_hulls_skips[i][j];
+                        if sub_skip {
+                            decomposition_convex_hulls_skips[(combined_shape_idx_i, combined_shape_idx_j)] = true;
+                            decomposition_convex_hulls_skips[(combined_shape_idx_j, combined_shape_idx_i)] = true;
+                            original_decomposition_convex_hulls_skips[(combined_shape_idx_i, combined_shape_idx_j)] = true;
+                            original_decomposition_convex_hulls_skips[(combined_shape_idx_j, combined_shape_idx_i)] = true;
+                        }
+
+                    }
+                }
+            }
+        }
+        Err(_) => { }
+    }
 
     let link_shapes_distance_statistics_module_clone = link_shapes_distance_statistics_module.clone();
     let link_shapes_module_clone = link_shapes_module.clone();

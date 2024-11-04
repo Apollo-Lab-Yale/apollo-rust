@@ -37,7 +37,6 @@ pub struct ApolloLinkInChain {
     /// A vector of indices of the child links.
     pub children_link_idxs: Vec<usize>,
 }
-
 impl ApolloLinkInChain {
     /// Returns the name of the link.
     #[inline(always)]
@@ -97,7 +96,6 @@ pub struct ApolloJointInChain {
     /// Index of the child link connected by this joint.
     pub child_link_idx: usize,
 }
-
 impl ApolloJointInChain {
     /// Returns the name of the joint.
     #[inline(always)]

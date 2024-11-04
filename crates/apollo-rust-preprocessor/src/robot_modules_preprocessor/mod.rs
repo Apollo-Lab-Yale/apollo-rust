@@ -229,6 +229,41 @@ impl CombinedRobot {
     pub fn new(name: &str) -> Self {
         Self { name: name.to_string(), attached_robots: vec![] }
     }
+    pub fn load(s: &ResourcesSubDirectory) -> Result<Self, String> {
+        s.directory.clone().append("combined_robot_module/module.yaml").load_object_from_yaml_file_result::<Self>()
+    }
+    pub fn load_from_name(r: &ResourcesRootDirectory, name: &str) -> Result<Self, String> {
+        let s = r.get_subdirectory(name);
+        Self::load(&s)
+    }
+    pub fn to_combined_sub_chain_info(&self, s: &ResourcesSubDirectory) -> CombinedSubChainInfo {
+        let chain_module = ApolloChainModule::load_or_build(s, false).expect("error");
+
+        let mut combined_chain_link_idx_to_sub_chain_and_link_idx = vec![None];
+        let mut sub_chain_and_link_idx_to_combined_chain_link_idx = vec![vec![]; self.attached_robots.len()];
+
+        let links = chain_module.links_in_chain.clone();
+        // let joints = chain_module.joints_in_chain.clone();
+
+        for (chain_idx, attached_robot) in self.attached_robots().iter().enumerate() {
+            let ss = ResourcesRootDirectory::new(s.root_directory.clone(), s.resources_type.clone()).get_subdirectory(&attached_robot.robot_name);
+
+            let ss_chain_module = ApolloChainModule::load_or_build(&ss, false).expect("error");
+            let ss_links = ss_chain_module.links_in_chain.clone();
+            // let ss_joints = ss_chain_module.joints_in_chain.clone();
+
+            for (i, ss_link) in ss_links.iter().enumerate() {
+                let idx = links.iter().position(|x| x.name == format!("robot_{}_{}", chain_idx, ss_link.name)).expect("error");
+                sub_chain_and_link_idx_to_combined_chain_link_idx[chain_idx].push(idx);
+                combined_chain_link_idx_to_sub_chain_and_link_idx.push( Some((chain_idx, i)) );
+            }
+        }
+
+        CombinedSubChainInfo {
+            combined_chain_link_idx_to_sub_chain_and_link_idx,
+            sub_chain_and_link_idx_to_combined_chain_link_idx,
+        }
+    }
     pub fn attach_robot(self,
                         robot_name: &str,
                         attachment_point: AttachmentPoint,
@@ -325,6 +360,14 @@ impl AttachedRobot {
     pub fn safety_controller(&self) -> &Option<ApolloURDFSafetyController> {
         &self.safety_controller
     }
+}
+
+#[derive(Clone, Debug)]
+/// contains information about subchain links and joints in a CombinedRobot
+pub struct CombinedSubChainInfo {
+    pub combined_chain_link_idx_to_sub_chain_and_link_idx: Vec<Option<(usize, usize)>>,
+    // pub combined_chain_joint_idx_to_sub_chain_and_joint_idx: Vec<Option<(usize, usize)>>,
+    pub sub_chain_and_link_idx_to_combined_chain_link_idx: Vec<Vec<usize>>
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
