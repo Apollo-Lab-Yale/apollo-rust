@@ -12,5 +12,5 @@ serde = { version="1.0.203", features = ["derive"] }
 ad_trait = { git = "https://github.com/djrakita/ad_trait", optional = true }
 
 [features]
-default = [ "ad" ]
+default = [ ]
 ad = [ "apollo-rust-linalg/ad", "ad_trait" ]

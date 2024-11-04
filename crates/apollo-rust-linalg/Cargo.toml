@@ -10,5 +10,5 @@ rand = { version="0.9.0-alpha.1" }
 ad_trait = { git = "https://github.com/djrakita/ad_trait", optional = true }
 
 [features]
-default = [ "ad" ]
+default = [ ]
 ad = [ "ad_trait" ]

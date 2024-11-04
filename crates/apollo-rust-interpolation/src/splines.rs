@@ -271,53 +271,101 @@ pub fn get_interpolation_range_num_steps(range_start: f64, range_stop: f64, num_
 pub struct BSpline {
     control_points: Vec<DVector<f64>>,
     knot_vector: Vec<f64>,
-    k: usize,
-    k_2: f64,
+    k: usize
 }
+
 impl BSpline {
-    pub fn new(control_points: Vec<DVector<f64>>, k: usize) -> Self {
+    pub fn new(
+        control_points: Vec<DVector<f64>>,
+        k: usize,
+        interpolate_first_control_point: bool,
+        interpolate_last_control_point: bool,
+    ) -> Self {
         assert!(k > 1);
-        let mut knot_vector = vec![];
-        let k_2 = k as f64 / 2.0;
-        for i in 0..(k + control_points.len()) {
-            knot_vector.push(-k_2 + i as f64);
+        let n = control_points.len() - 1; // Number of control points minus one
+        let p = k - 1;
+        let m = n + k + 1;
+        let mut knot_vector = vec![0.0; m];
+
+        if interpolate_first_control_point && interpolate_last_control_point {
+            for i in 0..m {
+                if i < k {
+                    knot_vector[i] = 0.0;
+                } else if i >= m - k {
+                    knot_vector[i] = (n - p + 1) as f64;
+                } else {
+                    knot_vector[i] = (i - k + 1) as f64;
+                }
+            }
+        } else if interpolate_first_control_point {
+            for i in 0..m {
+                if i < k {
+                    knot_vector[i] = 0.0;
+                } else {
+                    knot_vector[i] = (i - k + 1) as f64;
+                }
+            }
+        } else if interpolate_last_control_point {
+            for i in 0..m {
+                if i < m - k {
+                    knot_vector[i] = i as f64;
+                } else {
+                    knot_vector[i] = (m - k) as f64;
+                }
+            }
+        } else {
+            for i in 0..m {
+                knot_vector[i] = i as f64;
+            }
         }
+
         Self {
             control_points,
             knot_vector,
-            k,
-            k_2,
+            k
         }
     }
 
     #[inline]
     pub fn cox_de_boor_recurrence(&self, i: usize, k: usize, t: f64) -> f64 {
-        assert!(k > 0);
         if k == 1 {
-            return if self.knot_vector[i] <= t && t < self.knot_vector[i + 1] {
+            if (self.knot_vector[i] <= t && t < self.knot_vector[i + 1])
+                || (t == self.knot_vector[self.knot_vector.len() - 1] && i == self.control_points.len() - 1)
+            {
                 1.0
             } else {
                 0.0
+            }
+        } else {
+            let denom1 = self.knot_vector[i + k - 1] - self.knot_vector[i];
+            let denom2 = self.knot_vector[i + k] - self.knot_vector[i + 1];
+
+            let c0 = if denom1 != 0.0 {
+                (t - self.knot_vector[i]) / denom1 * self.cox_de_boor_recurrence(i, k - 1, t)
+            } else {
+                0.0
             };
+
+            let c1 = if denom2 != 0.0 {
+                (self.knot_vector[i + k] - t) / denom2 * self.cox_de_boor_recurrence(i + 1, k - 1, t)
+            } else {
+                0.0
+            };
+
+            c0 + c1
         }
-
-        let c0 = (t - self.knot_vector[i]) / (self.knot_vector[i + k - 1] - self.knot_vector[i]);
-        let c1 = (self.knot_vector[i + k] - t) / (self.knot_vector[i + k] - self.knot_vector[i + 1]);
-
-        return c0 * self.cox_de_boor_recurrence(i, k - 1, t) + c1 * self.cox_de_boor_recurrence(i + 1, k - 1, t);
     }
 
     #[inline]
     fn bspline_interpolate(&self, t: f64) -> DVector<f64> {
-        let k_2 = self.k_2;
-
+        let n = self.control_points.len() - 1;
         let mut out_sum = DVector::zeros(self.control_points[0].len());
-        for (control_point_idx, control_point) in self.control_points.iter().enumerate() {
-            let c = control_point_idx as f64;
-            if c - k_2 <= t && t < c + k_2 {
-                out_sum += control_point * self.cox_de_boor_recurrence(control_point_idx, self.k, t);
-            }
+
+        for i in 0..=n {
+            let basis = self.cox_de_boor_recurrence(i, self.k, t);
+            out_sum += self.control_points[i].clone() * basis;
         }
+
         out_sum
     }
 
@@ -333,16 +381,12 @@ impl BSpline {
 
     #[inline(always)]
     fn max_allowable_t_value(&self) -> f64 {
-        self.control_points.len() as f64 - 1.0
+        self.knot_vector[self.knot_vector.len() - self.k]
     }
 
-    pub fn map_spline_segment_idx_to_control_point_idxs(&self, spline_segment_idx: usize) -> Vec<usize> {
-        assert!(spline_segment_idx < self.control_points.len(),
-                "spline_segment_idx: {}, num_spline_segments: {}", spline_segment_idx, self.control_points.len());
-
-        let start_idx = spline_segment_idx;
-
-        (start_idx..start_idx + self.k).collect()
+    #[inline(always)]
+    fn min_allowable_t_value(&self) -> f64 {
+        self.knot_vector[self.k - 1]
     }
 }
 
@@ -355,5 +399,15 @@ impl InterpolatorTraitLite for BSpline {
     #[inline(always)]
     fn max_t(&self) -> f64 {
         self.max_allowable_t_value()
+    }
+
+    fn interpolate_normalized(&self, u: f64) -> DVector<f64> {
+        assert!(0.0 <= u && u <= 1.0);
+        let t_start = self.min_allowable_t_value();
+        let t_end = self.max_t();
+        let t = t_start + (t_end - t_start) * u;
+        // Handle floating-point precision
+        let t = if t > t_end { t_end } else { t };
+        self.interpolate(t)
     }
 }

@@ -7,6 +7,8 @@ pub mod quaternions;
 pub mod isometry3;
 pub mod translations;
 pub mod lie;
+#[cfg(feature = "ad")]
+pub mod ad;
 
 
 

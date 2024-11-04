@@ -1,13 +1,18 @@
-use apollo_rust_interpolation::{InterpolatorTrait, InterpolatorTraitLite};
-use apollo_rust_interpolation::splines::{BSpline, InterpolatingSpline, InterpolatingSplineType};
-use apollo_rust_linalg::{ApolloDVectorTrait, V};
+use apollo_rust_interpolation::InterpolatorTraitLite;
+use apollo_rust_interpolation::splines::{BSpline, get_interpolation_range};
+use apollo_rust_linalg::V;
 
 fn main() {
-    let i = InterpolatingSpline::new(vec![V::new(&[0.,0.]), V::new(&[1.,1.])], InterpolatingSplineType::Linear).to_timed_interpolator(5.0);
-    println!("{:?}", i.interpolate(5.0));
-    println!("{:?}", i.max_t());
+    let control_points: Vec<V> = (0..10).map(|_| V::new_random(3)).collect();
+    println!("{}", control_points.first().unwrap());
+    println!("{}", control_points.last().unwrap());
+    println!("---");
 
-    let i = BSpline::new(vec![V::new(&[0.,0.]), V::new(&[1.,1.])], 2).to_timed_interpolator(5.0);
-    println!("{:?}", i.interpolate(5.0));
-    println!("{:?}", i.max_t());
+    let b = BSpline::new(control_points.clone(), 5, true, true);
+
+    let a = get_interpolation_range(0.0, 1.0, 0.1);
+    a.iter().for_each(|x| {
+        println!("{}", x);
+        println!("{}", b.interpolate_normalized(*x));
+    });
 }
