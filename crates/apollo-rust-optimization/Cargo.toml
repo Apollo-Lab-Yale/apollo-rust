@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 apollo-rust-differentiation = { path = "../apollo-rust-differentiation" }
 apollo-rust-linalg = { path = "../apollo-rust-linalg" }
+optimization_engine = { version = "0.9.1" }

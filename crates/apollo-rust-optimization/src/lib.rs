@@ -96,21 +96,21 @@ impl<T: IterativeOptimizerTrait> IterativeOptimizerTrait for Mutex<T> {
 }
 
 pub trait LineSearchTrait {
-    fn line_search(&self, function: &FunctionEngine, x_k: &V, f_k: &f64, dir: &V, g_k: &V) -> f64;
+    fn line_search(&self, function: &FunctionEngine, x_k: &V, f_k: f64, dir: &V, g_k: &V) -> f64;
 }
 impl<T: LineSearchTrait> LineSearchTrait for Arc<T> {
-    fn line_search(&self, function: &FunctionEngine, x_k: &V, f_k: &f64, dir: &V, g_k: &V) -> f64 {
+    fn line_search(&self, function: &FunctionEngine, x_k: &V, f_k: f64, dir: &V, g_k: &V) -> f64 {
         self.deref().line_search(function, x_k, f_k, dir, g_k)
     }
 }
 impl<T: LineSearchTrait> LineSearchTrait for RwLock<T> {
-    fn line_search(&self, function: &FunctionEngine, x_k: &V, f_k: &f64, dir: &V, g_k: &V) -> f64 {
+    fn line_search(&self, function: &FunctionEngine, x_k: &V, f_k: f64, dir: &V, g_k: &V) -> f64 {
         let tmp = self.read().unwrap();
         tmp.line_search(function, x_k, f_k, dir, g_k)
     }
 }
 impl<T: LineSearchTrait> LineSearchTrait for Mutex<T> {
-    fn line_search(&self, function: &FunctionEngine, x_k: &V, f_k: &f64, dir: &V, g_k: &V) -> f64 {
+    fn line_search(&self, function: &FunctionEngine, x_k: &V, f_k: f64, dir: &V, g_k: &V) -> f64 {
         let tmp = self.lock().unwrap();
         tmp.line_search(function, x_k, f_k, dir, g_k)
     }

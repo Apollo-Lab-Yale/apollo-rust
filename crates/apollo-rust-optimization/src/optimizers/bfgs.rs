@@ -51,7 +51,7 @@ impl IterativeOptimizerTrait for BFGS {
             }
             // compute descending step
             let p_k = -&h_k*&g_k;
-            let lambda = self.line_search.line_search(objective_function, &x_k, &f_k, &p_k, &g_k);
+            let lambda = self.line_search.line_search(objective_function, &x_k, f_k, &p_k, &g_k);
             let s_k = lambda * p_k;
             // update
             x_k = x_k + &s_k;
@@ -125,7 +125,7 @@ impl IterativeOptimizerTrait for LBFGS {
                 let beta = rho*y.dot(&p_k);
                 p_k = p_k + (alpha-beta)*s;
             }
-            let lambda = self.line_search.line_search(objective_function, &x_k, &f_k, &p_k, &g_k);
+            let lambda = self.line_search.line_search(objective_function, &x_k, f_k, &p_k, &g_k);
             let s_k = lambda * p_k;
             // update
             x_k = x_k + &s_k;

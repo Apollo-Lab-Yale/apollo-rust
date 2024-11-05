@@ -18,7 +18,7 @@ impl BacktrackingLineSearch {
 }
 
 impl LineSearchTrait for BacktrackingLineSearch {
-    fn line_search(&self, function: &FunctionEngine, x_k: &V, f_k: &f64, dir: &V, g_k: &V) -> f64{
+    fn line_search(&self, function: &FunctionEngine, x_k: &V, f_k: f64, dir: &V, g_k: &V) -> f64{
         let mut alpha=self.alpha;
         while alpha > self.alpha_min {
             let x = x_k + alpha*dir;
