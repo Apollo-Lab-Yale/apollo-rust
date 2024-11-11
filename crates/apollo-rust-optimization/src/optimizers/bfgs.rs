@@ -112,18 +112,20 @@ impl IterativeOptimizerTrait for LBFGS {
             }
             let mut p_k = -&g_k;
             // two-loop recursion
-            alpha_queue.clear();
-            for ((s,y),rho) in s_queue.iter().rev().zip(y_queue.iter().rev()).zip(rho_queue.iter().rev()) {
-                let alpha = rho*s.dot(&p_k);
-                p_k = p_k - alpha * y;
-                alpha_queue.push_back(alpha);
-            }
-            let s_rear = s_queue.back().unwrap();
-            let y_rear = y_queue.back().unwrap();
-            p_k*=s_rear.dot(y_rear)/y_rear.dot(y_rear);
-            for (((s,y),rho),alpha) in s_queue.iter().zip(y_queue.iter()) .zip(rho_queue.iter()) .zip(alpha_queue.iter().rev()) {
-                let beta = rho*y.dot(&p_k);
-                p_k = p_k + (alpha-beta)*s;
+            if s_queue.len()>0 {
+                alpha_queue.clear();
+                for ((s, y), rho) in s_queue.iter().rev().zip(y_queue.iter().rev()).zip(rho_queue.iter().rev()) {
+                    let alpha = rho * s.dot(&p_k);
+                    p_k = p_k - alpha * y;
+                    alpha_queue.push_back(alpha);
+                }
+                let s_rear = s_queue.back().unwrap();
+                let y_rear = y_queue.back().unwrap();
+                p_k *= s_rear.dot(y_rear) / y_rear.dot(y_rear);
+                for (((s, y), rho), alpha) in s_queue.iter().zip(y_queue.iter()).zip(rho_queue.iter()).zip(alpha_queue.iter().rev()) {
+                    let beta = rho * y.dot(&p_k);
+                    p_k = p_k + (alpha-beta)*s;
+                }
             }
             let lambda = self.line_search.line_search(objective_function, &x_k, f_k, &p_k, &g_k);
             let s_k = lambda * p_k;

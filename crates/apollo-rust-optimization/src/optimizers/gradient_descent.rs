@@ -32,8 +32,8 @@ impl IterativeOptimizerTrait for SimpleGradientDescent {
                     num_iters,
                 }
             }
+            let g_k = V::from_column_slice(g_k.as_slice());
             x_k = &x_k - self.lambda*&g_k;
-
             num_iters += 1;
         }
     }
