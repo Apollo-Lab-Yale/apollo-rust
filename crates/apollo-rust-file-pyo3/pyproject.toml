@@ -3,7 +3,7 @@ requires = ["maturin>=1.6,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "apollo-rust-file-pyo3"
+name = "apollo_rust_file_pyo3"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Rust",

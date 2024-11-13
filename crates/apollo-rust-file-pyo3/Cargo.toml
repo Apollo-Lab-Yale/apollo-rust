@@ -1,13 +1,13 @@
 [package]
 name = "apollo-rust-file-pyo3"
-version = "0.0.4"
+version = "0.0.8"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "apollo_rust_file_pyo3"
 crate-type = ["cdylib"]
 
 [dependencies]
-apollo-rust-file = { path = "../apollo-rust-file" }
-pyo3 = "0.22.0"
+# apollo-rust-file = { path = "../apollo-rust-file" }
+apollo-rust-file = { git = "https://github.com/Apollo-Lab-Yale/apollo-rust", package = "apollo-rust-file" }
+pyo3 = { version = "0.22.0", features = ["extension-module"] }

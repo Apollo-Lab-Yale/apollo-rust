@@ -1,4 +1,4 @@
-
+use std::time::Instant;
 use apollo_rust_differentiation::{FunctionEngine, FunctionNalgebraTrait};
 use apollo_rust_differentiation::derivative_methods::DerivativeMethodFD;
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
@@ -26,11 +26,14 @@ fn main() {
 
     let o = SimpleGradientDescent::new(1.0);
 
+    let start = Instant::now();
     let res = o.optimize_unconstrained(&V::new(&[3.0]), &f);
-    println!("{:?}", res);
+    println!("{:?}", start.elapsed());
+    // println!("{:?}", res);
 
     let open = OpENUnconstrained::new(1, 10, vec![-100.0], vec![100.0]);
+    let start = Instant::now();
     let res = open.optimize_unconstrained(&V::new(&[3.0]), &f);
-
-    println!("{:?}", res);
+    println!("{:?}", start.elapsed());
+   // println!("{:?}", res);
 }

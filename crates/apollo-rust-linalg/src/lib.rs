@@ -94,6 +94,10 @@ pub trait ApolloDMatrixTrait {
 
     /// Computes the full QR factorization of the matrix using the Gram-Schmidt process.
     fn full_qr_factorization(&self) -> QRResult;
+
+    fn hstack(&self, other: &DMatrix<f64>) -> Option<DMatrix<f64>>;
+
+    fn vstack(&self, other: &DMatrix<f64>) -> Option<DMatrix<f64>>;
 }
 impl ApolloDMatrixTrait for M {
     fn new(slice: &[f64], nrows: usize, ncols: usize) -> Self {
@@ -280,6 +284,30 @@ impl ApolloDMatrixTrait for M {
         let q = M::from_column_vectors(&q_cols);
 
         QRResult { q, r }
+    }
+
+    fn hstack(&self, other: &DMatrix<f64>) -> Option<DMatrix<f64>> {
+        if self.nrows() != other.nrows() {
+            return None;
+        }
+
+        let mut result = DMatrix::zeros(self.nrows(), self.ncols() + other.ncols());
+        result.view_mut((0, 0), (self.nrows(), self.ncols())).copy_from(self);
+        result.view_mut((0, self.ncols()), (other.nrows(), other.ncols())).copy_from(other);
+
+        Some(result)
+    }
+
+    fn vstack(&self, other: &DMatrix<f64>) -> Option<DMatrix<f64>> {
+        if self.ncols() != other.ncols() {
+            return None;
+        }
+
+        let mut result = DMatrix::zeros(self.nrows() + other.nrows(), self.ncols());
+        result.view_mut((0, 0), (self.nrows(), self.ncols())).copy_from(self);
+        result.view_mut((self.nrows(), 0), (other.nrows(), other.ncols())).copy_from(other);
+
+        Some(result)
     }
 }
 

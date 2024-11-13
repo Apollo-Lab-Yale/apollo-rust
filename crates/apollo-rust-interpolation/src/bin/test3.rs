@@ -14,4 +14,14 @@ fn main() {
 
     let rr = get_interpolation_range(0.0, 5.0, 0.1);
     let samples: Vec<V> = rr.iter().map(|x| b.interpolate(*x)).collect();
+    samples.iter().for_each(|x| {
+        println!("{}", x);
+    });
+
+    /*
+    imagine taking one wasp derivative gradient step
+    */
+
+    let solution = b.interpolate(0.001);
+    println!("{}", solution);
 }
