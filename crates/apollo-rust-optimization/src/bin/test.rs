@@ -106,10 +106,13 @@ fn benchmark_bfgs(f: &FunctionEngine, init: &V) {
 fn main() {
     let sine = FunctionEngine::new(Sine, DerivativeMethodFD::default());
     let rosenbrock = FunctionEngine::new(Rosenbrock::new(20), DerivativeMethodFD::default());
+    println!("Benchmark gradient descent on Sine");
     benchmark_gradient_descent(&sine,&V::new(&[3.0]));
     println!();
+    println!("Benchmark gradient descent on {}-dim Rosenbrock",rosenbrock.input_dim());
     benchmark_gradient_descent(&rosenbrock,&V::new(&vec![0.; rosenbrock.input_dim()]));
     println!();
+    println!("Benchmark (L)BFGS on {}-dim Rosenbrock",rosenbrock.input_dim());
     benchmark_bfgs(&rosenbrock, &V::new(&vec![0.; rosenbrock.input_dim()]));
     println!();
 }
