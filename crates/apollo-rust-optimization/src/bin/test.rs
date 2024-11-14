@@ -1,9 +1,8 @@
-use std::f64::consts::PI;
 use std::sync::Arc;
 use apollo_rust_differentiation::{FunctionEngine, FunctionNalgebraTrait};
 use apollo_rust_differentiation::derivative_methods::DerivativeMethodFD;
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
-use apollo_rust_optimization::{IterativeOptimizerTrait, OptimizerOutputTrait, SimpleOptimizerOutput};
+use apollo_rust_optimization::{IterativeOptimizerTrait};
 use apollo_rust_optimization::optimizers::gradient_descent::{GradientDescent, SimpleGradientDescent};
 use apollo_rust_optimization::optimizers::open::OpENUnconstrained;
 use apollo_rust_optimization::optimizers::bfgs::{BFGS, LBFGS};
@@ -25,38 +24,30 @@ impl FunctionNalgebraTrait for Sine {
     }
 }
 
-pub struct Rosenbrock;
-impl FunctionNalgebraTrait for Rosenbrock {
-    fn call_raw(&self, x: &V) -> V {
-        let a = 1.0;
-        let b=100.0;
-        let ret = (a-x[0]).powf(2.)+b*((x[1]-x[0]*x[0]).powf(2.));
-        V::new(&[ret])
-    }
+pub struct Rosenbrock{
+    dim: usize
+}
 
-    fn input_dim(&self) -> usize {
-        2
-    }
-
-    fn output_dim(&self) -> usize {
-        1
+impl Rosenbrock {
+    pub fn new(dim: usize) -> Self {
+        Self { dim }
     }
 }
 
-pub struct NDRosenbrock;
-impl FunctionNalgebraTrait for NDRosenbrock {
+impl FunctionNalgebraTrait for Rosenbrock {
     fn call_raw(&self, x: &V) -> V {
+        assert_eq!(x.len(), self.dim);
         let a = 1.0;
         let b=100.0;
         let mut ret = 0.;
         for i in 0..x.len()/2{
-            ret += (a-x[2*i]).powf(2.)+b*(x[2*i+1]-x[2*i]*x[2*i]).powf(2.);
+            ret += (a-x[2*i]).powi(2)+b*(x[2*i+1]-x[2*i]*x[2*i]).powi(2);
         }
         V::new(&[ret])
     }
 
     fn input_dim(&self) -> usize {
-        20
+        self.dim
     }
 
     fn output_dim(&self) -> usize {
@@ -64,11 +55,10 @@ impl FunctionNalgebraTrait for NDRosenbrock {
     }
 }
 
-
-fn benchmark_gradient_descent(f: &FunctionEngine, init:&V, dim: usize) {
+fn benchmark_gradient_descent(f: &FunctionEngine, init:&V) {
     let o1 = SimpleGradientDescent::new(1.0);
     let o2 = GradientDescent::new(Arc::new(BacktrackingLineSearch::default()));
-    let open = OpENUnconstrained::new(dim, 100, vec![-100.0;dim], vec![100.0;dim]);
+    let open = OpENUnconstrained::new(init.len(), 100, vec![-100.0;init.len()], vec![100.0;init.len()]);
 
     // simple gradient without line search
     let o1_start = Instant::now();
@@ -89,10 +79,10 @@ fn benchmark_gradient_descent(f: &FunctionEngine, init:&V, dim: usize) {
     println!("Open Engine: res={:?},time_elapsed={:?}", res, open_elapsed);
 }
 
-fn benchmark_bfgs(f: &FunctionEngine, init: &V, dim: usize) {
+fn benchmark_bfgs(f: &FunctionEngine, init: &V) {
     let o1=BFGS::new(Arc::new(BacktrackingLineSearch::default()), None);
     let o2 = LBFGS::new(Arc::new(BacktrackingLineSearch::default()), 5);
-    let open = OpENUnconstrained::new(dim, 100, vec![-100.0;dim], vec![100.0;dim]);
+    let open = OpENUnconstrained::new(init.len(), 100, vec![-100.0;init.len()], vec![100.0;init.len()]);
 
     // BFGS
     let o1_start = Instant::now();
@@ -115,9 +105,11 @@ fn benchmark_bfgs(f: &FunctionEngine, init: &V, dim: usize) {
 }
 fn main() {
     let sine = FunctionEngine::new(Sine, DerivativeMethodFD::default());
-    let rosenbrock = FunctionEngine::new(Rosenbrock, DerivativeMethodFD::default());
-    let ndrosenbrock = FunctionEngine::new(NDRosenbrock, DerivativeMethodFD::default());
-    //benchmark_gradient_descent(&sine,&V::new(&[3.0]),1);
-    //benchmark_gradient_descent(&rosenbrock,&V::new(&vec![0.; 2]),2);
-     benchmark_bfgs(&ndrosenbrock, &V::new(&vec![0.; 20]), 20);
+    let rosenbrock = FunctionEngine::new(Rosenbrock::new(20), DerivativeMethodFD::default());
+    benchmark_gradient_descent(&sine,&V::new(&[3.0]));
+    println!();
+    benchmark_gradient_descent(&rosenbrock,&V::new(&vec![0.; rosenbrock.input_dim()]));
+    println!();
+    benchmark_bfgs(&rosenbrock, &V::new(&vec![0.; rosenbrock.input_dim()]));
+    println!();
 }
