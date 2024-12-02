@@ -44,9 +44,9 @@ pub struct GradientDescent {
     pub line_search: Arc<dyn LineSearchTrait>
 }
 impl GradientDescent {
-    pub fn new<L: LineSearchTrait + 'static>(line_search: L) -> Self {
+    pub fn new(line_search: Arc<dyn LineSearchTrait>) -> Self {
         Self {
-            line_search: Arc::new(line_search),
+            line_search,
         }
     }
 }

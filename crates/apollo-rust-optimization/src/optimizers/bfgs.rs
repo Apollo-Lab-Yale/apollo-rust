@@ -10,9 +10,9 @@ pub struct BFGS {
 }
 
 impl BFGS {
-    pub fn new<L: LineSearchTrait + 'static>(line_search: L, init_h: Option<M>) -> Self {
+    pub fn new (line_search: Arc<dyn LineSearchTrait>, init_h: Option<M>) -> Self {
         Self {
-            line_search: Arc::new(line_search),
+            line_search,
             init_h
         }
     }
