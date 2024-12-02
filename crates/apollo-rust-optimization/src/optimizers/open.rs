@@ -8,19 +8,17 @@ use crate::{IterativeOptimizerTrait, SimpleOptimizerOutput};
 pub struct OpENUnconstrained {
     n: usize,
     panoc_cache: RwLock<PANOCCache>,
-    max_iters: usize,
     lower_bounds: Vec<f64>,
     upper_bounds: Vec<f64>
 }
 impl OpENUnconstrained {
-    pub fn new(n: usize, max_iters: usize, lower_bounds: Vec<f64>, upper_bounds: Vec<f64>) -> Self {
+    pub fn new(n: usize, lower_bounds: Vec<f64>, upper_bounds: Vec<f64>) -> Self {
         assert_eq!(lower_bounds.len(), n);
         assert_eq!(upper_bounds.len(), n);
 
         Self {
             n,
             panoc_cache: RwLock::new(PANOCCache::new(n, 1e-6, 10)),
-            max_iters,
             lower_bounds,
             upper_bounds
         }
@@ -29,7 +27,7 @@ impl OpENUnconstrained {
 impl IterativeOptimizerTrait for OpENUnconstrained {
     type OutputType = SimpleOptimizerOutput;
 
-    fn optimize_raw(&self, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
+    fn optimize_raw(&self, max_iterations: usize, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
         assert!(equality_constraint.is_none());
         assert!(inequality_constraint.is_none());
 
@@ -53,7 +51,7 @@ impl IterativeOptimizerTrait for OpENUnconstrained {
         let mut binding = self.panoc_cache.write();
         let cache = binding.as_mut().unwrap();
         let mut panoc = PANOCOptimizer::new(problem, cache);
-        panoc = panoc.with_max_iter(self.max_iters);
+        panoc = panoc.with_max_iter(max_iterations);
 
         let mut x = init_condition + V::new_random_with_range(self.n, -0.00000001, 0.00000001);
         let solver_status = panoc.solve(x.as_mut_slice()).expect("error");

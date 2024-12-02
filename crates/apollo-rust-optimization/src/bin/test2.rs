@@ -142,9 +142,9 @@ fn main() {
         m,
     };
     let fe2 = FunctionEngine::new(f2, DerivativeMethodFD::new(0.0000001));
-
-    let o = OpENUnconstrained::new(nn, 1000, vec![-10000.0; nn], vec![10000.0; nn]);
-    let res = o.optimize_unconstrained(&V::new(&vec![0.001; nn]), &fe1);
+    let max_iters:usize=1000;
+    let o = OpENUnconstrained::new(nn,  vec![-10000.0; nn], vec![10000.0; nn]);
+    let res = o.optimize_unconstrained(max_iters, &V::new(&vec![0.001; nn]), &fe1);
 
     let (u1, u2, s, v1, v2) = split(&res.x_star, n, m);
     println!("{}", res.f_star);
@@ -153,8 +153,8 @@ fn main() {
     println!("{}", mm*x.clone());
     println!("---");
 
-    let o = OpENUnconstrained::new(m*n, 1000, vec![-10000.0; m*n], vec![10000.0; m*n]);
-    let res = o.optimize_unconstrained(&V::new(&vec![0.001; m*n]), &fe2);
+    let o = OpENUnconstrained::new(m*n,  vec![-10000.0; m*n], vec![10000.0; m*n]);
+    let res = o.optimize_unconstrained(max_iters, &V::new(&vec![0.001; m*n]), &fe2);
 
     println!("{}", res.f_star);
     let mm = M::from_column_slice(m, n, &res.x_star.as_slice());

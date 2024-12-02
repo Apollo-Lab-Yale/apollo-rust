@@ -58,23 +58,24 @@ impl FunctionNalgebraTrait for Rosenbrock {
 fn benchmark_gradient_descent(f: &FunctionEngine, init:&V) {
     let o1 = SimpleGradientDescent::new(1.0);
     let o2 = GradientDescent::new(Arc::new(BacktrackingLineSearch::default()));
-    let open = OpENUnconstrained::new(init.len(), 100, vec![-100.0;init.len()], vec![100.0;init.len()]);
+    let max_iters:usize = 1000;
+    let open = OpENUnconstrained::new(init.len(), vec![-100.0;init.len()], vec![100.0;init.len()]);
 
     // simple gradient without line search
     let o1_start = Instant::now();
-    let res = o1.optimize_unconstrained(init, f);
+    let res = o1.optimize_unconstrained(max_iters, init, f);
     let o1_elapsed = o1_start.elapsed();
     println!("Simple Gradient: res={:?},time_elapsed={:?}", res, o1_elapsed);
 
     // gradient descent
     let o2_start = Instant::now();
-    let res = o2.optimize_unconstrained(init, f);
+    let res = o2.optimize_unconstrained(max_iters, init, f);
     let o2_elapsed = o2_start.elapsed();
     println!("Gradient Descent: res={:?},time_elapsed={:?}", res, o2_elapsed);
 
     // OpEn
     let open_start=Instant::now();
-    let res = open.optimize_unconstrained(init, f);
+    let res = open.optimize_unconstrained(max_iters, init, f);
     let open_elapsed = open_start.elapsed();
     println!("Open Engine: res={:?},time_elapsed={:?}", res, open_elapsed);
 }
@@ -82,23 +83,24 @@ fn benchmark_gradient_descent(f: &FunctionEngine, init:&V) {
 fn benchmark_bfgs(f: &FunctionEngine, init: &V) {
     let o1=BFGS::new(Arc::new(BacktrackingLineSearch::default()), None);
     let o2 = LBFGS::new(Arc::new(BacktrackingLineSearch::default()), 5);
-    let open = OpENUnconstrained::new(init.len(), 100, vec![-100.0;init.len()], vec![100.0;init.len()]);
+    let max_iters:usize = 1000;
+    let open = OpENUnconstrained::new(init.len(), vec![-100.0;init.len()], vec![100.0;init.len()]);
 
     // BFGS
     let o1_start = Instant::now();
-    let res = o1.optimize_unconstrained(init, f);
+    let res = o1.optimize_unconstrained(max_iters, init, f);
     let o1_elapsed = o1_start.elapsed();
     println!("BFGS: res={:?},time_elapsed={:?}", res, o1_elapsed);
 
     // LBFGS
     let o2_start = Instant::now();
-    let res = o2.optimize_unconstrained(init, f);
+    let res = o2.optimize_unconstrained(max_iters, init, f);
     let o2_elapsed = o2_start.elapsed();
     println!("LBFGS: res={:?},time_elapsed={:?}", res, o2_elapsed);
 
     // OpEn
     let open_start=Instant::now();
-    let res = open.optimize_unconstrained(init, f);
+    let res = open.optimize_unconstrained(max_iters, init, f);
     let open_elapsed = open_start.elapsed();
     println!("Open Engine: res={:?},time_elapsed={:?}", res, open_elapsed);
 
