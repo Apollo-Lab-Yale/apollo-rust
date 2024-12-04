@@ -36,62 +36,64 @@ pub trait IterativeOptimizerTrait {
     type OutputType : OptimizerOutputTrait;
 
     fn optimize_raw(&self,
+                    max_iterations: usize,
                     init_condition: &V,
                     objective_function: &FunctionEngine,
                     equality_constraint: Option<&FunctionEngine>,
                     inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType;
 
     fn optimize(&self,
+                max_iterations: usize,
                 init_condition: &V,
                 objective_function: &FunctionEngine,
                 equality_constraint: Option<&FunctionEngine>,
                 inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
         assert_eq!(objective_function.output_dim(), 1);
-        self.optimize_raw(init_condition, objective_function, equality_constraint, inequality_constraint)
+        self.optimize_raw(max_iterations, init_condition, objective_function, equality_constraint, inequality_constraint)
     }
 
-    fn optimize_unconstrained(&self, init_condition: &V, objective_function: &FunctionEngine) -> Self::OutputType {
-        self.optimize(init_condition, objective_function, None, None)
+    fn optimize_unconstrained(&self, max_iterations: usize, init_condition: &V, objective_function: &FunctionEngine) -> Self::OutputType {
+        self.optimize(max_iterations, init_condition, objective_function, None, None)
     }
 
-    fn optimize_equality_constrained(&self, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: &FunctionEngine) -> Self::OutputType {
-        self.optimize(init_condition, objective_function, Some(equality_constraint), None)
+    fn optimize_equality_constrained(&self, max_iterations: usize, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: &FunctionEngine) -> Self::OutputType {
+        self.optimize(max_iterations, init_condition, objective_function, Some(equality_constraint), None)
     }
 
-    fn optimize_inequality_constrained(&self, init_condition: &V,
+    fn optimize_inequality_constrained(&self, max_iterations: usize, init_condition: &V,
                                        objective_function: &FunctionEngine,
                                        inequality_constraint: &FunctionEngine) -> Self::OutputType {
-        self.optimize(init_condition, objective_function, None, Some(inequality_constraint))
+        self.optimize(max_iterations, init_condition, objective_function, None, Some(inequality_constraint))
     }
 
-    fn optimize_fully_constrained(&self, init_condition: &V,
+    fn optimize_fully_constrained(&self, max_iterations: usize, init_condition: &V,
                                   objective_function: &FunctionEngine,
                                   equality_constraint: &FunctionEngine,
                                   inequality_constraint: &FunctionEngine) -> Self::OutputType {
-        self.optimize(init_condition, objective_function, Some(equality_constraint), Some(inequality_constraint))
+        self.optimize(max_iterations, init_condition, objective_function, Some(equality_constraint), Some(inequality_constraint))
     }
 }
 impl<T: IterativeOptimizerTrait> IterativeOptimizerTrait for Arc<T> {
     type OutputType = T::OutputType;
 
-    fn optimize_raw(&self, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
-        self.deref().optimize(init_condition, objective_function, equality_constraint, inequality_constraint)
+    fn optimize_raw(&self, max_iterations: usize, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
+        self.deref().optimize(max_iterations, init_condition, objective_function, equality_constraint, inequality_constraint)
     }
 }
 impl<T: IterativeOptimizerTrait> IterativeOptimizerTrait for RwLock<T> {
     type OutputType = T::OutputType;
 
-    fn optimize_raw(&self, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
+    fn optimize_raw(&self, max_iterations: usize,init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
         let tmp = self.read().unwrap();
-        tmp.optimize(init_condition, objective_function, equality_constraint, inequality_constraint)
+        tmp.optimize(max_iterations, init_condition, objective_function, equality_constraint, inequality_constraint)
     }
 }
 impl<T: IterativeOptimizerTrait> IterativeOptimizerTrait for Mutex<T> {
     type OutputType = T::OutputType;
 
-    fn optimize_raw(&self, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
+    fn optimize_raw(&self, max_iterations: usize, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
         let tmp = self.lock().unwrap();
-        tmp.optimize(init_condition, objective_function, equality_constraint, inequality_constraint)
+        tmp.optimize(max_iterations, init_condition, objective_function, equality_constraint, inequality_constraint)
     }
 }
 

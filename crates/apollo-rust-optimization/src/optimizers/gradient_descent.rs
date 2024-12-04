@@ -15,7 +15,7 @@ impl SimpleGradientDescent {
 impl IterativeOptimizerTrait for SimpleGradientDescent {
     type OutputType = SimpleOptimizerOutput;
 
-    fn optimize_raw(&self, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
+    fn optimize_raw(&self, max_iterations: usize, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
         assert!(equality_constraint.is_none());
         assert!(inequality_constraint.is_none());
 
@@ -25,7 +25,7 @@ impl IterativeOptimizerTrait for SimpleGradientDescent {
         loop {
             let (f_k, g_k) = objective_function.derivative(&x_k);
             let norm = g_k.norm();
-            if norm < 0.01 {
+            if num_iters>=max_iterations || norm < 0.01 {
                 return SimpleOptimizerOutput {
                     x_star: x_k,
                     f_star: f_k[0],
@@ -44,16 +44,16 @@ pub struct GradientDescent {
     pub line_search: Arc<dyn LineSearchTrait>
 }
 impl GradientDescent {
-    pub fn new<L: LineSearchTrait + 'static>(line_search: L) -> Self {
+    pub fn new(line_search: Arc<dyn LineSearchTrait>) -> Self {
         Self {
-            line_search: Arc::new(line_search),
+            line_search,
         }
     }
 }
 impl IterativeOptimizerTrait for GradientDescent {
     type OutputType = SimpleOptimizerOutput;
 
-    fn optimize_raw(&self, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
+    fn optimize_raw(&self, max_iterations:usize, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
         assert!(equality_constraint.is_none());
         assert!(inequality_constraint.is_none());
 
@@ -63,7 +63,7 @@ impl IterativeOptimizerTrait for GradientDescent {
         loop {
             let (f_k, g_k) = objective_function.derivative(&x_k);
             let norm = g_k.norm();
-            if norm < 0.01 {
+            if num_iters>=max_iterations || norm < 0.01 {
                 return SimpleOptimizerOutput {
                     x_star: x_k,
                     f_star: f_k[0],

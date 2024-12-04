@@ -10,9 +10,9 @@ pub struct BFGS {
 }
 
 impl BFGS {
-    pub fn new<L: LineSearchTrait + 'static>(line_search: L, init_h: Option<M>) -> Self {
+    pub fn new (line_search: Arc<dyn LineSearchTrait>, init_h: Option<M>) -> Self {
         Self {
-            line_search: Arc::new(line_search),
+            line_search,
             init_h
         }
     }
@@ -21,7 +21,7 @@ impl BFGS {
 impl IterativeOptimizerTrait for BFGS {
     type OutputType = SimpleOptimizerOutput;
 
-    fn optimize_raw(&self, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
+    fn optimize_raw(&self, max_iterations: usize, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
         assert!(equality_constraint.is_none());
         assert!(inequality_constraint.is_none());
 
@@ -42,7 +42,7 @@ impl IterativeOptimizerTrait for BFGS {
         // optimize
         loop{
             let norm = g_k.norm();
-            if norm < 0.01 {
+            if num_iters>=max_iterations || norm < 0.01 {
                 return SimpleOptimizerOutput {
                     x_star: x_k,
                     f_star: f_k,
@@ -86,7 +86,7 @@ impl LBFGS {
 impl IterativeOptimizerTrait for LBFGS {
     type OutputType = SimpleOptimizerOutput;
 
-    fn optimize_raw(&self, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
+    fn optimize_raw(&self, max_iterations: usize, init_condition: &V, objective_function: &FunctionEngine, equality_constraint: Option<&FunctionEngine>, inequality_constraint: Option<&FunctionEngine>) -> Self::OutputType {
         assert!(equality_constraint.is_none());
         assert!(inequality_constraint.is_none());
 
@@ -103,7 +103,7 @@ impl IterativeOptimizerTrait for LBFGS {
         // optimize
         loop{
             let norm = g_k.norm();
-            if norm < 0.01 {
+            if num_iters>=max_iterations || norm < 0.01 {
                 return SimpleOptimizerOutput {
                     x_star: x_k,
                     f_star: f_k,
