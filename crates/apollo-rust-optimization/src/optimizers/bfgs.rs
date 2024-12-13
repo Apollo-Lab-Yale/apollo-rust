@@ -8,7 +8,6 @@ pub struct BFGS {
     pub line_search: Arc<dyn LineSearchTrait>,
     init_h: Option<M>
 }
-
 impl BFGS {
     pub fn new (line_search: Arc<dyn LineSearchTrait>, init_h: Option<M>) -> Self {
         Self {

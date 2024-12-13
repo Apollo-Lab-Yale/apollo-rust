@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use bevy::app::App;
 use apollo_rust_bevy::ApolloBevyTrait;
 use apollo_rust_differentiation::{FunctionEngine, FunctionNalgebraTrait};
@@ -8,6 +8,10 @@ use apollo_rust_interpolation::splines::{InterpolatingSpline, InterpolatingSplin
 use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_modules::ResourcesRootDirectory;
+use apollo_rust_optimization::IterativeOptimizerTrait;
+use apollo_rust_optimization::line_searches::backtracking_line_search::BacktrackingLineSearch;
+use apollo_rust_optimization::optimizers::bfgs::{BFGS, LBFGS};
+use apollo_rust_optimization::optimizers::open::OpENUnconstrained;
 use apollo_rust_robotics::ToChainNalgebra;
 use apollo_rust_robotics_core::ChainNalgebra;
 use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, I3};
@@ -64,46 +68,55 @@ impl FunctionNalgebraTrait for IKObjectiveFunction2 {
     }
 }
 
-fn main() {
 
+fn main() {
     let r = ResourcesRootDirectory::new_from_default_apollo_robots_dir();
     let c = r.get_subdirectory("ur5").to_chain_nalgebra();
     let ac = c.clone().to_arc_chain();
+    let init_condition = V::new(&[0.001; 6]);
 
-    let ik_goal = ISE3q::new(I3::from_slices_euler_angles(&[0.2, 0.0, 0.5], &[0.,0.,0.]));
+    let ee_targets = vec![
+        ISE3q::new(I3::from_slices_euler_angles(&[0.2, 0.0, 0.5], &[0.,0.,0.])),
+        ISE3q::new(I3::from_slices_euler_angles(&[0.3, 0.0, 0.5], &[0.,0.,0.])),
+        ISE3q::new(I3::from_slices_euler_angles(&[0.4, 0.1, 0.6], &[0.,0.,0.])),
+        ISE3q::new(I3::from_slices_euler_angles(&[0.5, 0.2, 0.7], &[0.,0.,0.])),
+    ];
 
-    let objective_function = IKObjectiveFunction2 {
+    // let o = OpENUnconstrained::new(ac.num_dofs(), ac.bounds_module.dof_lower_bounds.clone(), ac.bounds_module.dof_upper_bounds.clone());
+    let o = BFGS::new(Arc::new(BacktrackingLineSearch::default()), None);
+
+    let f = Arc::new(Mutex::new(IKObjectiveFunction2 {
         c: ac.clone(),
         goal_link_idx: 9,
-        ik_goal: ik_goal.clone(),
-    };
+        ik_goal: ee_targets[0].clone(),
+    }));
 
-    let function_engine = FunctionEngine::new(objective_function, DerivativeMethodFD::new(0.000001));
+    let function_engine = FunctionEngine::new(f.clone(), DerivativeMethodFD::new(0.00001));
 
-    let mut output_states = vec![];
-    let mut curr_state = V::new(&[0.2; 6]);
-    output_states.push(curr_state.clone());
-    let lambda = 0.1;
-    let max_iters = 2000;
-
-    for _ in 0..max_iters {
-        let (f, g) = function_engine.derivative(&curr_state);
-        curr_state += -lambda*&g.transpose();
-        output_states.push(curr_state.clone());
-        println!("{:?}", f[0]);
+    let mut solutions = vec![init_condition.clone()];
+    for ee_target in &ee_targets {
+        let mut m = f.lock().unwrap();
+        m.ik_goal = ee_target.clone();
+        drop(m);
+        let output = o.optimize_unconstrained(1000, &init_condition, &function_engine);
+        solutions.push(output.x_star.clone());
     }
 
-    let linear_spline = InterpolatingSpline::new(output_states, InterpolatingSplineType::Linear).to_timed_interpolator(5.0);
+    let spline = InterpolatingSpline::new(solutions, InterpolatingSplineType::Linear)
+        .to_timed_interpolator(5.0);
+
+    //////////// drawing code
 
     let mut app = App::new()
         .apollo_bevy_robotics_base(true)
         .apollo_bevy_spawn_chain_default(&c, 0, ISE3q::identity())
-        .apollo_bevy_chain_display(&c)
-        .apollo_bevy_draw_frame(&ik_goal, 0.1)
-        .apollo_bevy_chain_motion_playback(0, linear_spline);
+        .apollo_bevy_chain_display(&c);
+
+    for ee_target in &ee_targets {
+        app = app.apollo_bevy_draw_frame(&ee_target, 0.1);
+    }
+
+    app = app.apollo_bevy_chain_motion_playback(0, spline);
 
     app.run();
-
-
-
 }
