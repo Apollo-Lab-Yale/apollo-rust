@@ -134,6 +134,9 @@ impl DerivativeMethodWASP {
     pub fn new_default(n: usize, m: usize) -> Self {
         Self::new(n, m, true, 0.3, 0.3)
     }
+    pub fn num_f_calls(&self) -> usize {
+        return self.num_f_calls.read().unwrap().clone()
+    }
 }
 impl DerivativeMethodNalgebraTrait for DerivativeMethodWASP {
     fn derivative(&self, f: &Arc<dyn FunctionNalgebraTrait>, x: &V) -> (V, M) {
