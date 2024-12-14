@@ -83,6 +83,10 @@ pub trait ApolloDMatrixTrait {
     /// Retrieves all rows of the matrix as vectors.
     fn get_all_rows(&self) -> Vec<V>;
 
+    fn get_column(&self, i: usize) -> V;
+
+    fn get_row(&self, i: usize) -> V;
+
     /// Computes the Singular Value Decomposition (SVD) of the matrix.
     fn singular_value_decomposition(&self, svd_type: SVDType) -> SVDResult;
 
@@ -161,6 +165,14 @@ impl ApolloDMatrixTrait for M {
     fn get_all_rows(&self) -> Vec<V> {
         let transpose = self.transpose();
         transpose.get_all_columns()
+    }
+
+    fn get_column(&self, i: usize) -> V {
+        return V::new(self.column(i).as_slice());
+    }
+
+    fn get_row(&self, i: usize) -> V {
+        return V::new(self.row(i).transpose().as_slice());
     }
 
     fn singular_value_decomposition(&self, svd_type: SVDType) -> SVDResult {
