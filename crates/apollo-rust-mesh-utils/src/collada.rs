@@ -133,7 +133,9 @@ fn get_trimesh_from_collada_node(node: &Node, curr_transforms: &Vec<Transform>, 
                         Primitive::Lines(_) => {  }
                         Primitive::LineStrips(_) => { unimplemented!("I just saw a primitive of type LineStrips when parsing a collada file.  Maybe it's time to figure this out.") }
                         Primitive::Polygons(_) => { unimplemented!("I just saw a primitive of type Polygons when parsing a collada file.  Maybe it's time to figure this out.") }
-                        Primitive::PolyList(_) => { unimplemented!("I just saw a primitive of type PolyList when parsing a collada file.  Maybe it's time to figure this out.") }
+                        Primitive::PolyList(_) => {
+                            // unimplemented!("I just saw a primitive of type PolyList when parsing a collada file.  Maybe it's time to figure this out.")
+                        }
                         Primitive::TriFans(_) => { unimplemented!("I just saw a primitive of type TriFans when parsing a collada file.  Maybe it's time to figure this out.") }
                         Primitive::TriStrips(_) => { unimplemented!("I just saw a primitive of type TriStrips when parsing a collada file.  Maybe it's time to figure this out.") }
                     }

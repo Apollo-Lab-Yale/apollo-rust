@@ -264,7 +264,7 @@ impl TriMesh {
 
         let params = VHACDParameters {
             max_convex_hulls,
-            resolution: 128,
+            resolution: 64,
             fill_mode: FillMode::FloodFill { detect_cavities: true },
             convex_hull_approximation: false,
             ..Default::default()
