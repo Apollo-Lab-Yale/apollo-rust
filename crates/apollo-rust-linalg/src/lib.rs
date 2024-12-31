@@ -5,6 +5,7 @@ extern crate core;
 
 use std::fmt::Debug;
 use nalgebra::{DMatrix, DVector};
+use nalgebra_lapack::{LU, SVD};
 use rand::Rng;
 
 /// Type alias for a dynamic vector of `f64`.
@@ -98,6 +99,10 @@ pub trait ApolloDMatrixTrait {
 
     /// Computes the full QR factorization of the matrix using the Gram-Schmidt process.
     fn full_qr_factorization(&self) -> QRResult;
+
+    fn inverse_blas(&self) -> Option<M>;
+
+    fn singular_value_decomposition_blas(&self, svd_type: SVDType) -> SVDResult;
 
     fn hstack(&self, other: &DMatrix<f64>) -> Option<DMatrix<f64>>;
 
@@ -296,6 +301,74 @@ impl ApolloDMatrixTrait for M {
         let q = M::from_column_vectors(&q_cols);
 
         QRResult { q, r }
+    }
+
+    fn inverse_blas(&self) -> Option<M> {
+        return LU::new(self.clone()).inverse();
+    }
+
+    fn singular_value_decomposition_blas(&self, svd_type: SVDType) -> SVDResult {
+        let svd = SVD::new(self.clone()).expect("error");
+        let u = svd.u;
+        let vt = svd.vt;
+        let rank = self.rank(0.0001);
+
+        match svd_type {
+            SVDType::Full => {
+                let m = self.nrows();
+                let n = self.ncols();
+
+                let mut u_cols = u.get_all_columns();
+                let v = vt.transpose();
+                let mut v_cols = v.get_all_columns();
+
+                for _ in 0..m - rank {
+                    u_cols.push(V::new_random_with_range(m, -1.0, 1.0));
+                }
+                u_cols = u_cols.gram_schmidt_process();
+
+                for _ in 0..n - rank {
+                    v_cols.push(V::new_random_with_range(n, -1.0, 1.0));
+                }
+                v_cols = v_cols.gram_schmidt_process();
+
+                let full_u = M::from_column_vectors(&u_cols);
+                let full_v = M::from_column_vectors(&v_cols);
+                let full_vt = full_v.transpose();
+
+                let mut sigma = Self::zeros(self.nrows(), self.ncols());
+                let mut singular_values = svd.singular_values.data.as_vec().clone();
+                for (i, s) in singular_values.iter().enumerate() { sigma[(i,i)] = *s; }
+
+                for _ in 0..(m.max(n) - singular_values.len()) { singular_values.push(0.0); }
+
+                SVDResult {
+                    u: full_u,
+                    sigma,
+                    vt: full_vt,
+                    singular_values,
+                    rank,
+                    svd_type,
+                }
+            }
+            SVDType::Compact => {
+                let mut sigma = Self::zeros(rank, rank);
+                let singular_values = svd.singular_values.data.as_vec().clone();
+                for (i, s) in singular_values.iter().enumerate() {
+                    if singular_values[i] == 0.0 { continue; }
+                    sigma[(i,i)] = *s;
+                }
+
+                SVDResult {
+                    u,
+                    sigma,
+                    vt,
+                    singular_values,
+                    rank,
+                    svd_type,
+                }
+            }
+        }
     }
 
     fn hstack(&self, other: &DMatrix<f64>) -> Option<DMatrix<f64>> {

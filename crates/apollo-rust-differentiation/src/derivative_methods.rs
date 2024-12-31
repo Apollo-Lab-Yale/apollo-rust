@@ -310,8 +310,8 @@ impl WASPCache2 {
             let delta_x_i = V::new(delta_x.column(i).as_slice());
             let mut w_i = M::zeros(n, n);
             for j in 0..n {
-                let exponent = math_mod(i as i32 - j as i32, n as i32) / (n as i32 - 1);
-                w_i[(j, j)] = alpha * (1.0 - alpha).powf(exponent as f64);
+                let exponent = math_mod(i as i32 - j as i32, n as i32) as f64 / (n as i32 - 1) as f64;
+                w_i[(j, j)] = alpha * (1.0 - alpha).powf(exponent);
             }
             let w_i_2 = &w_i * &w_i;
 

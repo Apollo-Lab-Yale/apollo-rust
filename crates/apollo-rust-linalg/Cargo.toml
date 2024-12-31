@@ -6,8 +6,15 @@ edition = "2021"
 [dependencies]
 nalgebra = { version = "0.33.0", features = ["rand"] }
 nalgebra-sparse = "0.10.0"
+nalgebra-lapack = { version = "0.25.0", features = ["openblas"], default-features = false }
+# blas-src = { version = "0.10.0", features = ["openblas"], default-features = false }
+# openblas-src = { version = "0.10", features = ["cblas"], default-features = false }
 rand = { version="0.9.0-alpha.1" }
 ad_trait = { git = "https://github.com/djrakita/ad_trait", optional = true }
+ndarray = "0.15"
+ndarray-rand = "0.14"
+ndarray-linalg = { version = "0.16", features = ["openblas"] }
+rayon = "1.10.0"
 
 [features]
 default = [ ]
