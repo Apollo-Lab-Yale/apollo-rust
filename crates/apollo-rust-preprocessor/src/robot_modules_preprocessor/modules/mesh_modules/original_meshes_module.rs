@@ -36,11 +36,24 @@ impl OriginalMeshesModuleBuilders for ApolloOriginalMeshesModule {
                             let relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes").append(&filename);
                             let target = Self::full_path_to_module_dir(s).append("meshes").append(&filename);
                             // if !target.exists() {
-                            let ff = fp.extract_last_n_segments(3);
-                            println!("searching directory for file that ends with {:?}", ff);
-                            let find = PathBuf::new_from_desktop_dir().walk_directory_and_find_first(ff);
-                            println!("found!  Copying file.");
-                            find.copy_file_to_destination_file_path(&target);
+                            let mut curr = 5;
+                            'l: loop {
+                                let ff = fp.extract_last_n_segments(curr);
+                                println!("searching directory for file that ends with {:?}", ff);
+                                let find = PathBuf::new_from_desktop_dir().walk_directory_and_find_first_result(ff);
+                                match find {
+                                    Ok(find) => {
+                                        println!("found!  Copying file.");
+                                        find.copy_file_to_destination_file_path(&target);
+                                        break 'l;
+                                    }
+                                    Err(_) => {
+                                        if curr == 2 { panic!("{}", format!("mesh file {:?} could not be found", fp)) }
+                                        curr -= 1;
+                                        continue 'l;
+                                    }
+                                }
+                            }
                             // }
                             out.push(Some(relative_path));
                         }
