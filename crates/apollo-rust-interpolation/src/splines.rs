@@ -396,7 +396,7 @@ impl BSpline {
         let mut out_sum = DVector::zeros(self.control_points[0].len());
         let _t= if t == self.knot_vector[self.knot_vector.len()-1] {t-1e-12} else {t};
         for i in 0..=n {
-            let basis = self.cox_de_boor_recurrence(i, self.k, t);
+            let basis = self.cox_de_boor_recurrence(i, self.k, _t);
             out_sum += self.control_points[i].clone() * basis;
         }
         out_sum
@@ -459,7 +459,7 @@ impl BSpline {
                 let ks = if k+j >=p {k+j-p} else {0};
                 let ke = if k + j + 1 - r < self.knot_vector.len() { k + j + 1 - r } else { self.knot_vector.len() - 1 };
                 let denom = self.knot_vector[ke] - self.knot_vector[ks];
-                let alpha = if denom != 0.0 { (t - self.knot_vector[ks]) / denom } else { 0.0 };
+                let alpha = if denom != 0.0 { (_t - self.knot_vector[ks]) / denom } else { 0.0 };
                 let beta = if denom != 0.0 { 1.0 - alpha } else { 0.0 };
                 // d[j]=alpha*d[j] + beta*d[j-1]
                 d[j].scale_mut(alpha);
