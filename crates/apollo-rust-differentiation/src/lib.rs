@@ -18,6 +18,7 @@ pub trait FunctionNalgebraTrait  {
     fn input_dim(&self) -> usize;
 
     fn output_dim(&self) -> usize;
+
 }
 impl<T: FunctionNalgebraTrait> FunctionNalgebraTrait for Arc<T> {
     #[inline(always)]
@@ -34,6 +35,7 @@ impl<T: FunctionNalgebraTrait> FunctionNalgebraTrait for Arc<T> {
     fn output_dim(&self) -> usize {
         self.deref().output_dim()
     }
+
 }
 impl<T: FunctionNalgebraTrait> FunctionNalgebraTrait for Mutex<T> {
     #[inline(always)]
@@ -53,6 +55,8 @@ impl<T: FunctionNalgebraTrait> FunctionNalgebraTrait for Mutex<T> {
         let tmp = self.lock().unwrap();
         tmp.output_dim()
     }
+
+
 }
 impl<T: FunctionNalgebraTrait> FunctionNalgebraTrait for RwLock<T> {
     #[inline(always)]
@@ -72,6 +76,8 @@ impl<T: FunctionNalgebraTrait> FunctionNalgebraTrait for RwLock<T> {
         let tmp = self.read().unwrap();
         tmp.output_dim()
     }
+
+
 }
 
 
@@ -147,6 +153,7 @@ impl FunctionEngine {
     pub fn output_dim(&self) -> usize {
         self.function.output_dim()
     }
+
 }
 
 
