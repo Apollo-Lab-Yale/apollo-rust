@@ -1,14 +1,11 @@
 #![feature(duration_millis_float)]
 
-use std::sync::Mutex;
 use std::time::Instant;
-use nalgebra::abs;
-use apollo_rust_interpolation::{InterpolatorTrait, InterpolatorTraitLite};
 use apollo_rust_interpolation::splines::{BSpline, get_interpolation_range};
 use apollo_rust_linalg::V;
 
 fn main() {
-    let n=10;
+    let n=20;
     let p=4;
     let k=p+1;
     let cdim=10;

@@ -1,7 +1,4 @@
-use std::cmp::max;
 use std::collections::VecDeque;
-use std::sync::Mutex;
-use std::time::Instant;
 use nalgebra::DVector;
 use crate::InterpolatorTraitLite;
 
@@ -446,11 +443,11 @@ impl BSpline {
         let mut d: VecDeque<_>= self.control_points[cs..=ce].iter().cloned().collect();
         // special case 1: t in the range where interpolate_first_control_point is false
         if k<p {
-            for i in d.len()..p + 1 { d.push_front(DVector::zeros(self.control_points[0].len())); }
+            for _i in d.len()..p + 1 { d.push_front(DVector::zeros(self.control_points[0].len())); }
         }
         // special case 2: t in the range where interpolate_last_control_point is false
         else if k>=self.control_points.len(){
-            for i in d.len()..p + 1 { d.push_back(DVector::zeros(self.control_points[0].len())); }
+            for _i in d.len()..p + 1 { d.push_back(DVector::zeros(self.control_points[0].len())); }
         }
         // recursion
         for r in 1..=p {
