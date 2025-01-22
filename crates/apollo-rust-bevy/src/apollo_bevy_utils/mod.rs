@@ -9,3 +9,4 @@ pub mod meshes;
 pub mod colors;
 pub mod signatures;
 pub mod visibility;
+pub mod transform_gizmo;

@@ -2,6 +2,7 @@ use bevy::input::ButtonInput;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::{Camera3dBundle, Commands, Component, EventReader, KeyCode, Mat3, MouseButton, Projection, Quat, Query, Res, Transform, Vec2, Vec3, Window, With};
 use bevy::window::PrimaryWindow;
+use transform_gizmo_bevy::{GizmoCamera, GizmoTarget};
 use crate::apollo_bevy_utils::egui::CursorIsOverEgui;
 use crate::apollo_bevy_utils::transform::TransformUtils;
 
@@ -34,7 +35,8 @@ impl CameraActions {
             .insert(PanOrbitThreeStyleCamera {
                 radius,
                 ..Default::default()
-            });
+            })
+            .insert(GizmoCamera);
     }
 }
 
@@ -132,9 +134,20 @@ impl CameraSystems {
         input_mouse: Res<ButtonInput<MouseButton>>,
         window_query: Query<&Window, With<PrimaryWindow>>,
         cursor_is_over_egui: Res<CursorIsOverEgui>,
+        g: Query<&GizmoTarget>,
         mut query: Query<(&mut PanOrbitThreeStyleCamera, &mut Transform, &Projection)>) {
 
         if cursor_is_over_egui.0 { return; }
+
+        for gt in g.iter() {
+            let res = gt.latest_result();
+            match res {
+                None => {}
+                Some(_res) => {
+                    return;
+                }
+            }
+        }
 
         let Ok(window) = window_query.get_single() else { return };
         let size = Vec2::new(window.width() as f32, window.height() as f32);

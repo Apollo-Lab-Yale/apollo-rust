@@ -20,6 +20,21 @@ impl TransformUtils {
         }
     }
 
+    pub fn util_convert_y_up_bevy_transform_to_pose(t: &Transform) -> ISE3q {
+        let x = t.translation.x as f64;
+        let y = t.translation.y as f64;
+        let z = t.translation.z as f64;
+        let qw = t.rotation.w as f64;
+        let qx = t.rotation.x as f64;
+        let qy = t.rotation.y as f64;
+        let qz = t.rotation.z as f64;
+
+        let pose = ISE3q::new(I3::from_slices_quaternion(&[x, y, z], &[qw, qx, qy, qz]));
+        let pose_new = ISE3q::new(I3::from_slices_euler_angles(&[0.0; 3], &[std::f64::consts::FRAC_PI_2, 0.0, 0.0])).group_operator(&pose);
+
+        return pose_new;
+    }
+
     #[inline(always)]
     pub fn util_convert_z_up_vec3_to_y_up_bevy_vec3(vec: Vec3) -> Vec3 {
         return Vec3::new(vec.x, vec.z, -vec.y);

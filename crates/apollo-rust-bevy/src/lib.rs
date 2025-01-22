@@ -9,6 +9,7 @@ use bevy_egui::{EguiContexts, EguiPlugin};
 use bevy_egui::egui::{ComboBox, SidePanel};
 use bevy_mod_outline::{AsyncSceneInheritOutlinePlugin, AutoGenerateOutlineNormalsPlugin, OutlinePlugin};
 use bevy_obj::ObjPlugin;
+use transform_gizmo_bevy::{EnumSet, GizmoMode, GizmoOptions, GizmoOrientation, GizmoVisuals, TransformGizmoPlugin};
 use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_interpolation::{InterpolatorTraitLite};
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
@@ -32,6 +33,7 @@ use crate::apollo_bevy_utils::egui::{CursorIsOverEgui, reset_cursor_is_over_egui
 use crate::apollo_bevy_utils::meshes::MeshType;
 use crate::apollo_bevy_utils::signatures::{ChainMeshComponent, Signature};
 use crate::apollo_bevy_utils::transform::TransformUtils;
+use crate::apollo_bevy_utils::transform_gizmo::{TransformGizmoEngine, TransformGizmoSystems};
 use crate::apollo_bevy_utils::viewport_visuals::ViewportVisualsActions;
 use crate::apollo_bevy_utils::visibility::{BaseVisibility, VisibilityChangeEngine, VisibilityChangeRequest, VisibilityChangeRequestType, VisibilityChangeSystems};
 
@@ -90,14 +92,29 @@ impl ApolloBevyTrait for App {
                 );
         }
 
+        let mut gizmo_modes = EnumSet::new();
+        gizmo_modes = gizmo_modes | GizmoMode::all_translate();
+        gizmo_modes = gizmo_modes | GizmoMode::all_rotate();
+
         out
             .insert_resource(ClearColor(Color::srgb(0.9, 0.9, 0.92)))
             .insert_resource(Msaa::default())
             .add_plugins(EguiPlugin)
             .add_plugins(ObjPlugin)
             .add_plugins((OutlinePlugin, AutoGenerateOutlineNormalsPlugin, AsyncSceneInheritOutlinePlugin))
+            .add_plugins(TransformGizmoPlugin)
+            .insert_resource(GizmoOptions {
+                visuals: GizmoVisuals {
+                    gizmo_size: 60.0,
+                    ..Default::default()
+                },
+                gizmo_modes,
+                group_targets: false,
+                ..Default::default()
+            })
             .insert_resource(CursorIsOverEgui(false))
             .insert_resource(VisibilityChangeEngine::new())
+            .insert_resource(TransformGizmoEngine::new())
             .add_systems(Last, VisibilityChangeSystems::system_reset_base_visibilities.before(VisibilityChangeSystems::system_set_base_visibility_request_changes).before(VisibilityChangeSystems::system_set_momentary_visibility_request_changes))
             .add_systems(Last, VisibilityChangeSystems::system_set_base_visibility_request_changes)
             .add_systems(Last, VisibilityChangeSystems::system_set_momentary_visibility_request_changes)
@@ -107,7 +124,22 @@ impl ApolloBevyTrait for App {
             .add_systems(Last, ColorChangeSystems::system_set_base_color_request_changes)
             .add_systems(Last, ColorChangeSystems::system_set_momentary_color_request_changes)
             .add_systems(Last, ColorChangeSystems::system_clear_color_request_changes.after(ColorChangeSystems::system_set_base_color_request_changes).after(ColorChangeSystems::system_set_momentary_color_request_changes))
-            .add_systems(Last, reset_cursor_is_over_egui);
+            .add_systems(Last, reset_cursor_is_over_egui)
+            .add_systems(Last, TransformGizmoSystems::system_transform_gizmos_set_transforms_for_get)
+            .add_systems(Update, TransformGizmoSystems::system_transform_gizmos_set_transforms)
+            .add_systems(PreUpdate, TransformGizmoSystems::system_transform_gizmos_insert)
+            .add_systems(Update, |keys: Res<ButtonInput<KeyCode>>, mut options: ResMut<GizmoOptions>| {
+                if keys.just_pressed(KeyCode::Tab) {
+                    match &options.gizmo_orientation {
+                        GizmoOrientation::Global => {
+                            options.gizmo_orientation = GizmoOrientation::Local
+                        }
+                        GizmoOrientation::Local => {
+                            options.gizmo_orientation = GizmoOrientation::Global
+                        }
+                    }
+                }
+            });
 
         out
     }

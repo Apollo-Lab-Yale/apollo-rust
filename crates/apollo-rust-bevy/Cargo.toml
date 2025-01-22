@@ -20,3 +20,4 @@ bevy_mod_outline = { version = "0.8.1" }
 nalgebra = { version = "0.33.0", features = ["rand", "serde-serialize"] }
 parry3d-f64 = { version = "0.16.1", features = ["serde-serialize"] }
 arboard = { version = "3.4.0" }
+transform-gizmo-bevy = { version = "0.4.0" }
