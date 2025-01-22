@@ -55,4 +55,5 @@ impl FunctionNalgebraTrait for FunctionNalgebraWeightedSum {
     fn output_dim(&self) -> usize {
         self.num_outputs.expect("error")
     }
+
 }
