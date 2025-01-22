@@ -127,7 +127,8 @@ impl ApolloBevyTrait for App {
             .add_systems(Last, reset_cursor_is_over_egui)
             .add_systems(Last, TransformGizmoSystems::system_transform_gizmos_set_transforms_for_get)
             .add_systems(Update, TransformGizmoSystems::system_transform_gizmos_set_transforms)
-            .add_systems(PreUpdate, TransformGizmoSystems::system_transform_gizmos_insert)
+            .add_systems(PreUpdate, TransformGizmoSystems::system_transform_gizmos_inserts)
+            .add_systems(First, TransformGizmoSystems::system_transform_gizmos_deletes)
             .add_systems(Update, |keys: Res<ButtonInput<KeyCode>>, mut options: ResMut<GizmoOptions>| {
                 if keys.just_pressed(KeyCode::Tab) {
                     match &options.gizmo_orientation {

@@ -12,6 +12,10 @@ fn main() {
         if input.just_pressed(KeyCode::Space) {
             a.insert_new_transform_gizmo(None);
         }
+
+        if input.just_pressed(KeyCode::Enter) {
+            a.remove_transform_gizmo(0);
+        }
     });
 
     /*

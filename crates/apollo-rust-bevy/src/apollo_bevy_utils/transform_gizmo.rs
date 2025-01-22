@@ -1,4 +1,4 @@
-use bevy::prelude::{Assets, Color, Commands, Component, Cuboid, default, Mesh, PbrBundle, Query, Res, ResMut, Resource, StandardMaterial, Transform, Vec3};
+use bevy::prelude::{Assets, Color, Commands, Component, Cuboid, default, Entity, Mesh, PbrBundle, Query, ResMut, Resource, StandardMaterial, Transform, Vec3};
 use transform_gizmo_bevy::GizmoTarget;
 use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, I3};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
@@ -30,7 +30,7 @@ impl TransformGizmoSystems {
         tge.new_set_transform_idxs.clear();
     }
 
-    pub fn system_transform_gizmos_insert(mut tge: ResMut<TransformGizmoEngine>, mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
+    pub fn system_transform_gizmos_inserts(mut tge: ResMut<TransformGizmoEngine>, mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
         for insert_idx in tge.new_inserts.iter() {
             commands.spawn(PbrBundle {
                 mesh: meshes.add(Mesh::from(Cuboid { half_size: Vec3::new(0.02, 0.02, 0.02) })),
@@ -43,6 +43,21 @@ impl TransformGizmoSystems {
         }
 
         tge.new_inserts.clear();
+    }
+
+    pub fn system_transform_gizmos_deletes(mut tge: ResMut<TransformGizmoEngine>, mut commands: Commands, query: Query<(Entity, &TransformGizmoMarker)>) {
+        for delete_idx in tge.new_deletes.iter() {
+            for (e, tgm) in query.iter() {
+                let e: Entity = e;
+                let tgm: &TransformGizmoMarker = tgm;
+
+                if tgm.0 == *delete_idx {
+                    commands.entity(e.clone()).despawn();
+                }
+            }
+        }
+
+        tge.new_deletes.clear();
     }
 }
 
