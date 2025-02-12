@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 apollo-rust-linalg-adtrait = { path= "../apollo-rust-linalg-adtrait" }
-apollo-rust-lie = { path= "../apollo-rust-lie" }
+apollo-rust-lie-adtrait = { path= "../apollo-rust-lie-adtrait" }
 nalgebra = { version = "0.33.0", features = ["rand", "serde-serialize"] }
 rand = { version="0.9.0-alpha.1" }
 serde = { version="1.0.203", features = ["derive"] }

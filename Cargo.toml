@@ -23,7 +23,7 @@ members = [
     "crates/apollo-rust-interpolation",
     "crates/apollo-rust-optimization",
     "crates/apollo-rust-continuous-planning",
-    "crates/apollo-rust-linalg-adtrait", "crates/apollo-rust-spatial-adtrait"]
+    "crates/apollo-rust-linalg-adtrait", "crates/apollo-rust-spatial-adtrait", "crates/apollo-rust-lie-adtrait"]
 
 [dependencies]
 

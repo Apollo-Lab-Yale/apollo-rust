@@ -5,4 +5,5 @@ pub mod complex_numbers;
 pub mod quaternions;
 pub mod translations;
 pub mod isometry3;
+mod lie;
 
