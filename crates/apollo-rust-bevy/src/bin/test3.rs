@@ -1,12 +1,13 @@
 use bevy::app::{App};
-use bevy::prelude::*;
-use apollo_rust_bevy::apollo_bevy_utils::transform_gizmo::TransformGizmoEngine;
 use apollo_rust_bevy::ApolloBevyTrait;
+use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 
 fn main() {
     let mut app = App::new()
-        .apollo_bevy_robotics_base(false);
+        .apollo_bevy_robotics_base(false)
+        .apollo_bevy_spawn_transform_gizmos(vec![None, None, Some(ISE3q::identity()), None]);
 
+    /*
     app.add_systems(Update, |mut a: ResMut<TransformGizmoEngine>, input: Res<ButtonInput<KeyCode>>| {
         println!("{:?}", a.gizmo_transforms);
         if input.just_pressed(KeyCode::Space) {
@@ -16,7 +17,12 @@ fn main() {
         if input.just_pressed(KeyCode::Enter) {
             a.remove_transform_gizmo(0);
         }
+
+        if input.just_pressed(KeyCode::KeyZ) {
+            a.set_transform(0, ISE3q::identity());
+        }
     });
+    */
 
     /*
     app.add_systems(Startup, | mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>| {

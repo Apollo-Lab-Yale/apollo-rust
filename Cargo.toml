@@ -22,7 +22,8 @@ members = [
     "crates/apollo-rust-differentiation",
     "crates/apollo-rust-interpolation",
     "crates/apollo-rust-optimization",
-    "crates/apollo-rust-continuous-planning"]
+    "crates/apollo-rust-continuous-planning",
+    "crates/apollo-rust-linalg-adtrait", "crates/apollo-rust-spatial-adtrait"]
 
 [dependencies]
 

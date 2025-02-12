@@ -1,15 +1,8 @@
-
 pub mod vectors;
-pub mod complex_numbers;
 pub mod matrices;
 pub mod rotation_matrices;
+pub mod complex_numbers;
 pub mod quaternions;
-pub mod isometry3;
 pub mod translations;
-pub mod lie;
-
-// #[cfg(feature = "ad")]
-// pub mod ad;
-
-
+pub mod isometry3;
 

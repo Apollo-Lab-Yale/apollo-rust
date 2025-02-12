@@ -1,0 +1,10 @@
+[package]
+name = "apollo-rust-linalg-adtrait"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]
+ad_trait = { git = "https://github.com/djrakita/ad_trait" }
+nalgebra = { version = "0.33.0", features = ["rand"] }
+nalgebra-lapack = { version = "0.25.0", features = ["openblas"], default-features = false }
+apollo-rust-linalg = { path = "../apollo-rust-linalg" }

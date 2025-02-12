@@ -44,6 +44,7 @@ pub trait ApolloBevyTrait {
     fn apollo_bevy_pan_orbit_three_style_camera(self) -> Self;
     fn apollo_bevy_starter_lights(self) -> Self;
     fn apollo_bevy_robotics_scene_visuals_start(self) -> Self;
+    fn apollo_bevy_spawn_transform_gizmos(self, initial_transforms: Vec<Option<ISE3q>>) -> Self;
     fn apollo_bevy_spawn_chain(self, chain: &ChainNalgebra, chain_instance_idx: usize, global_offset: ISE3q, mesh_specs: Vec<(ChainMeshesRepresentation, MeshType, BaseVisibility)>, path_to_bevy_assets: &PathBuf) -> Self;
     fn apollo_bevy_spawn_chain_default(self, chain: &ChainNalgebra, chain_instance_idx: usize, global_offset: ISE3q) -> Self;
     fn apollo_bevy_spawn_chain_raw(self,
@@ -205,6 +206,18 @@ impl ApolloBevyTrait for App {
             .add_systems(Startup, |mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>| {
                 ViewportVisualsActions::action_draw_robotics_grid(&mut commands, &mut meshes, &mut materials);
             });
+
+        out
+    }
+
+    fn apollo_bevy_spawn_transform_gizmos(self, initial_transforms: Vec<Option<ISE3q>>) -> Self {
+        let mut out = App::from(self);
+
+        out.add_systems(Startup, move |mut transform_gizmo_engine: ResMut<TransformGizmoEngine>| {
+            initial_transforms.iter().for_each(|x| {
+                transform_gizmo_engine.insert_new_transform_gizmo(x.clone());
+            });
+        });
 
         out
     }

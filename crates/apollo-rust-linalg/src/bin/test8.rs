@@ -9,18 +9,10 @@ pub struct Test {
 }
 
 fn main() {
-    let test = Arena::new();
-
     let t = Test {
         a: 2,
         b: 1.0,
     };
-
-    let start = Instant::now();
-    for _ in 0..1000 {
-        test.alloc(t.clone());
-    }
-    println!("{:?}", start.elapsed());
 
     let start = Instant::now();
     for _ in 0..1000 {
@@ -40,6 +32,22 @@ fn main() {
     let start = Instant::now();
     for _ in 0..1000 {
         slab.insert(t.clone());
+    }
+    println!("{:?}", start.elapsed());
+
+    let mut v = Vec::new();
+    for _ in 0..1000 { v.push(t.clone()) }
+
+    let start = Instant::now();
+    for i in 0..1000 {
+        v[i] = t.clone();
+    }
+    println!("{:?}", start.elapsed());
+
+    let test = Arena::new();
+    let start = Instant::now();
+    for _ in 0..1000 {
+        test.alloc(t.clone());
     }
     println!("{:?}", start.elapsed());
 }

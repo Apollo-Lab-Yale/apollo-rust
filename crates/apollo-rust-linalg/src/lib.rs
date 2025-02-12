@@ -1,5 +1,5 @@
-#[cfg(feature = "ad")]
-pub mod linalg_ad;
+// #[cfg(feature = "ad")]
+// pub mod linalg_ad;
 
 extern crate core;
 

@@ -2,6 +2,7 @@ use ad_trait::AD;
 use nalgebra::{Rotation2, Rotation3, Unit, Vector1};
 use rand::Rng;
 use apollo_rust_linalg::linalg_ad::MAD;
+use crate::ad::complex_numbers::UCAD;
 use crate::complex_numbers::{UCAD};
 use crate::matrices::{ApolloMatrix2ADTrait, ApolloMatrix3ADTrait, M2AD, M3AD};
 use crate::quaternions::{ApolloUnitQuaternionADTrait, UQAD};
