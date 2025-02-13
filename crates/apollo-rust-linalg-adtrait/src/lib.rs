@@ -15,6 +15,8 @@ pub trait ApolloDVectorTrait<A: AD> {
     /// * `min` - The minimum value in the range.
     /// * `max` - The maximum value in the range.
     fn new_random_with_range(n: usize, min: f64, max: f64) -> Self;
+
+    fn to_other_ad_type<A2: AD>(&self) -> V<A2>;
 }
 impl<A: AD> ApolloDVectorTrait<A> for DVector<A> {
     fn new(slice: &[A]) -> Self {
@@ -29,6 +31,11 @@ impl<A: AD> ApolloDVectorTrait<A> for DVector<A> {
     fn new_random_with_range(n: usize, min: f64, max: f64) -> Self {
         let v = <Matrix<f64, Dyn, Const<1>, VecStorage<f64, Dyn, Const<1>>> as apollo_rust_linalg::ApolloDVectorTrait>::new_random_with_range(n, min, max);
         return Self::new_from_f64s(v.as_slice())
+    }
+
+    fn to_other_ad_type<A2: AD>(&self) -> V<A2> {
+        let s = self.as_slice().iter().map(|x| x.to_other_ad_type::<A2>()).collect::<Vec<A2>>();
+        return V::new(&s);
     }
 }
 
@@ -51,6 +58,7 @@ pub trait ApolloDMatrixTrait<A: AD> {
         svd.to_fundamental_subspaces()
     }
     fn full_qr_factorization(&self) -> QRResult<A>;
+    fn to_other_ad_type<A2: AD>(&self) -> M<A2>;
 }
 impl<A: AD> ApolloDMatrixTrait<A> for M<A> {
     fn new(slice: &[A], nrows: usize, ncols: usize) -> Self {
@@ -232,6 +240,12 @@ impl<A: AD> ApolloDMatrixTrait<A> for M<A> {
         let q = <DMatrix<A>>::from_column_vectors(&q_cols);
 
         QRResult { q, r }
+    }
+
+    fn to_other_ad_type<A2: AD>(&self) -> M<A2> {
+        let (nrows, ncols) = self.shape();
+        let s = self.as_slice().iter().map(|x| x.to_other_ad_type::<A2>()).collect::<Vec<A2>>();
+        return M::new(&s, nrows, ncols);
     }
 }
 
