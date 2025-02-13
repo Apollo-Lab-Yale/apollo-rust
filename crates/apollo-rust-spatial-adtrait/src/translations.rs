@@ -21,6 +21,10 @@ pub trait ApolloTranslation2AD<A: AD> {
 
     /// Creates a new random 2D translation with values in the given range.
     fn new_random_with_range(min: f64, max: f64) -> Self;
+
+    fn to_other_ad_type<A2: AD>(&self) -> T2<A2>;
+
+    fn to_constant_ad(&self) -> Self;
 }
 
 impl<A: AD> ApolloTranslation2AD<A> for T2<A> {
@@ -40,6 +44,16 @@ impl<A: AD> ApolloTranslation2AD<A> for T2<A> {
         let v2 = V2::new_random_with_range(min, max);
         Self::from_vector2(&v2)
     }
+
+    fn to_other_ad_type<A2: AD>(&self) -> T2<A2> {
+        let s = self.vector.as_slice().iter().map(|x| x.to_other_ad_type::<A2>()).collect::<Vec<A2>>();
+        return T2::<A2>::from_slice(&s);
+    }
+
+    fn to_constant_ad(&self) -> Self {
+        let s = self.vector.as_slice().iter().map(|x| x.to_constant_ad()).collect::<Vec<A>>();
+        return Self::from_slice(&s);
+    }
 }
 
 /// Trait for operations on 3D translations (`T3AD<A>`).
@@ -55,6 +69,10 @@ pub trait ApolloTranslation3AD<A: AD> {
 
     /// Creates a new random 3D translation with values in the given range.
     fn new_random_with_range(min: f64, max: f64) -> Self;
+
+    fn to_other_ad_type<A2: AD>(&self) -> T3<A2>;
+
+    fn to_constant_ad(&self) -> Self;
 }
 
 impl<A: AD> ApolloTranslation3AD<A> for T3<A> {
@@ -73,5 +91,15 @@ impl<A: AD> ApolloTranslation3AD<A> for T3<A> {
     fn new_random_with_range(min: f64, max: f64) -> Self {
         let v3 = V3::new_random_with_range(min, max);
         Self::from_vector3(&v3)
+    }
+
+    fn to_other_ad_type<A2: AD>(&self) -> T3<A2> {
+        let s = self.vector.as_slice().iter().map(|x| x.to_other_ad_type::<A2>()).collect::<Vec<A2>>();
+        return T3::<A2>::from_slice(&s);
+    }
+
+    fn to_constant_ad(&self) -> Self {
+        let s = self.vector.as_slice().iter().map(|x| x.to_constant_ad()).collect::<Vec<A>>();
+        return Self::from_slice(&s);
     }
 }

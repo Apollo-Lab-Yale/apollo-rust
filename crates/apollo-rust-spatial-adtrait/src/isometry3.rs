@@ -23,8 +23,9 @@ pub trait ApolloIsometry3Trait<A: AD> {
     fn to_isometry_matrix_3(&self) -> I3M<A>;
     fn is_identity(&self) -> bool;
     fn add_tiny_bit_of_noise(&self) -> Self;
+    fn to_other_ad_type<A2: AD>(&self) -> I3<A2>;
+    fn to_constant_ad(&self) -> Self;
 }
-
 impl<A: AD> ApolloIsometry3Trait<A> for I3<A> {
     fn new_random_with_range(min: f64, max: f64) -> Self {
         let t = T3::new_random_with_range(min, max);
@@ -81,6 +82,14 @@ impl<A: AD> ApolloIsometry3Trait<A> for I3<A> {
         let r = Self::new_random_with_range(-0.00005, 0.00005);
         *self * r
     }
+
+    fn to_other_ad_type<A2: AD>(&self) -> I3<A2> {
+        I3::from_slices_quaternion(self.translation.to_other_ad_type::<A2>().vector.as_slice(), self.rotation.to_other_ad_type::<A2>().coords.as_slice())
+    }
+
+    fn to_constant_ad(&self) -> Self {
+        I3::from_slices_quaternion(self.translation.to_constant_ad().vector.as_slice(), self.rotation.to_constant_ad().coords.as_slice())
+    }
 }
 
 /// Trait for operations on 3D isometry matrices (`I3MAD<A>`).
@@ -94,8 +103,9 @@ pub trait ApolloIsometryMatrix3Trait<A: AD> {
     fn from_slice_quaternion(slice: &[A]) -> Self;
     fn to_isometry_3(&self) -> I3<A>;
     fn is_identity(&self) -> bool;
+    fn to_other_ad_type<A2: AD>(&self) -> I3M<A2>;
+    fn to_constant_ad(&self) -> Self;
 }
-
 impl<A: AD> ApolloIsometryMatrix3Trait<A> for I3M<A> {
     fn new_random_with_range(min: f64, max: f64) -> Self {
         let t = T3::new_random_with_range(min, max);
@@ -146,5 +156,13 @@ impl<A: AD> ApolloIsometryMatrix3Trait<A> for I3M<A> {
 
     fn is_identity(&self) -> bool {
         self.translation.vector.is_identity(A::constant(0.0000001)) && self.rotation == R3::identity()
+    }
+
+    fn to_other_ad_type<A2: AD>(&self) -> I3M<A2> {
+        I3M::from_slices_quaternion(self.translation.to_other_ad_type::<A2>().vector.as_slice(), self.rotation.to_unit_quaternion().to_other_ad_type::<A2>().coords.as_slice())
+    }
+
+    fn to_constant_ad(&self) -> Self {
+        I3M::from_slices_quaternion(self.translation.to_constant_ad().vector.as_slice(), self.rotation.to_unit_quaternion().to_constant_ad().coords.as_slice())
     }
 }

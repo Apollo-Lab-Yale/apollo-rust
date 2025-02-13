@@ -17,6 +17,8 @@ pub trait ApolloDVectorTrait<A: AD> {
     fn new_random_with_range(n: usize, min: f64, max: f64) -> Self;
 
     fn to_other_ad_type<A2: AD>(&self) -> V<A2>;
+
+    fn to_constant_ad(&self) -> V<A>;
 }
 impl<A: AD> ApolloDVectorTrait<A> for DVector<A> {
     fn new(slice: &[A]) -> Self {
@@ -35,6 +37,11 @@ impl<A: AD> ApolloDVectorTrait<A> for DVector<A> {
 
     fn to_other_ad_type<A2: AD>(&self) -> V<A2> {
         let s = self.as_slice().iter().map(|x| x.to_other_ad_type::<A2>()).collect::<Vec<A2>>();
+        return V::new(&s);
+    }
+
+    fn to_constant_ad(&self) -> V<A> {
+        let s = self.as_slice().iter().map(|x| x.to_constant_ad()).collect::<Vec<A>>();
         return V::new(&s);
     }
 }
@@ -59,6 +66,7 @@ pub trait ApolloDMatrixTrait<A: AD> {
     }
     fn full_qr_factorization(&self) -> QRResult<A>;
     fn to_other_ad_type<A2: AD>(&self) -> M<A2>;
+    fn to_constant_ad(&self) -> M<A>;
 }
 impl<A: AD> ApolloDMatrixTrait<A> for M<A> {
     fn new(slice: &[A], nrows: usize, ncols: usize) -> Self {
@@ -245,6 +253,12 @@ impl<A: AD> ApolloDMatrixTrait<A> for M<A> {
     fn to_other_ad_type<A2: AD>(&self) -> M<A2> {
         let (nrows, ncols) = self.shape();
         let s = self.as_slice().iter().map(|x| x.to_other_ad_type::<A2>()).collect::<Vec<A2>>();
+        return M::new(&s, nrows, ncols);
+    }
+
+    fn to_constant_ad(&self) -> M<A> {
+        let (nrows, ncols) = self.shape();
+        let s = self.as_slice().iter().map(|x| x.to_constant_ad()).collect::<Vec<A>>();
         return M::new(&s, nrows, ncols);
     }
 }

@@ -24,6 +24,10 @@ macro_rules! impl_apollo_ad_matrix_trait {
 
             /// Creates a new random instance of `$type_name` with values in the given range.
             fn new_random_with_range(min: f64, max: f64) -> Self;
+
+            fn to_other_ad_type<A2: AD>(&self) -> $type_name<A2>;
+
+            fn to_constant_ad(&self) -> Self;
         }
 
         impl<A: AD> $trait_name<A> for $type_name<A> {
@@ -39,6 +43,16 @@ macro_rules! impl_apollo_ad_matrix_trait {
             fn new_random_with_range(min: f64, max: f64) -> Self {
                 let random_matrix = M::new_random_with_range($dim, $dim, min, max);
                 Self::from_dmatrix(&random_matrix)
+            }
+
+            fn to_other_ad_type<A2: AD>(&self) -> $type_name<A2> {
+                let s = self.as_slice().iter().map(|x| x.to_other_ad_type::<A2>()).collect::<Vec<A2>>();
+                return $type_name::<A2>::from_column_slice(&s);
+            }
+
+            fn to_constant_ad(&self) -> Self {
+                let s = self.as_slice().iter().map(|x| x.to_constant_ad()).collect::<Vec<A>>();
+                return Self::from_column_slice(&s);
             }
         }
     };

@@ -19,6 +19,8 @@ pub trait ApolloRotation2Trait<A: AD> {
     fn to_dmatrix(&self) -> M<A>;
     fn new_random() -> Self;
     fn to_unit_complex(&self) -> UC<A>;
+    fn to_other_ad_type<A2: AD>(&self) -> R2<A2>;
+    fn to_constant_ad(&self) -> Self;
 }
 
 impl<A: AD> ApolloRotation2Trait<A> for R2<A> {
@@ -38,6 +40,14 @@ impl<A: AD> ApolloRotation2Trait<A> for R2<A> {
     fn to_unit_complex(&self) -> UC<A> {
         UC::from_rotation_matrix(self)
     }
+
+    fn to_other_ad_type<A2: AD>(&self) -> R2<A2> {
+        R2::from_matrix(&self.matrix().to_other_ad_type::<A2>())
+    }
+
+    fn to_constant_ad(&self) -> Self {
+        R2::from_matrix(&self.matrix().to_constant_ad())
+    }
 }
 
 /// Trait for operations on 3D rotations (`R3AD<A>`).
@@ -50,6 +60,8 @@ pub trait ApolloRotation3Trait<A: AD> {
     fn from_slice_euler_angles(slice: &[A]) -> Self;
     fn from_slice_quaternion(slice: &[A]) -> Self;
     fn frame_vectors(&self) -> [V3<A>; 3];
+    fn to_other_ad_type<A2: AD>(&self) -> R3<A2>;
+    fn to_constant_ad(&self) -> Self;
 }
 
 impl<A: AD> ApolloRotation3Trait<A> for R3<A> {
@@ -103,5 +115,13 @@ impl<A: AD> ApolloRotation3Trait<A> for R3<A> {
         let c3 = V3::from_column_slice(self.matrix().column(2).as_slice());
 
         [c1, c2, c3]
+    }
+
+    fn to_other_ad_type<A2: AD>(&self) -> R3<A2> {
+        R3::from_matrix(&self.matrix().to_other_ad_type::<A2>())
+    }
+
+    fn to_constant_ad(&self) -> Self {
+        R3::from_matrix(&self.matrix().to_constant_ad())
     }
 }

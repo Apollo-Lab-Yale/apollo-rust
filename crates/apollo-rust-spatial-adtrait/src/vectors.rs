@@ -1,5 +1,5 @@
 use ad_trait::AD;
-use nalgebra::{Translation3, Vector1, Vector2, Vector3, Vector6};
+use nalgebra::{Translation3, Vector1, Vector2, Vector3, Vector4, Vector6};
 use rand::Rng;
 use apollo_rust_linalg_adtrait::{V, M, ApolloDMatrixTrait, ApolloDVectorTrait};
 
@@ -11,6 +11,9 @@ pub type V2<A> = Vector2<A>;
 
 /// Alias for `Vector3<A>`, representing a 3D vector with a generic AD type.
 pub type V3<A> = Vector3<A>;
+
+/// Alias for `Vector4<A>`, representing a 4D vector with a generic AD type.
+pub type V4<A> = Vector4<A>;
 
 /// Alias for `Vector6<A>`, representing a 6D vector with a generic AD type.
 pub type V6<A> = Vector6<A>;
@@ -31,6 +34,10 @@ macro_rules! impl_apollo_ad_vector_trait {
 
             /// Creates a new random instance of `$type_name` with values in the given range.
             fn new_random_with_range(min: f64, max: f64) -> Self;
+
+            fn to_other_ad_type<A2: AD>(&self) -> $type_name<A2>;
+
+            fn to_constant_ad(&self) -> Self;
         }
 
         impl<A: AD> $trait_name<A> for $type_name<A> {
@@ -56,12 +63,23 @@ macro_rules! impl_apollo_ad_vector_trait {
 
                 v
             }
+
+            fn to_other_ad_type<A2: AD>(&self) -> $type_name<A2> {
+                let s = self.as_slice().iter().map(|x| x.to_other_ad_type::<A2>()).collect::<Vec<A2>>();
+                return $type_name::<A2>::from_column_slice(&s);
+            }
+
+            fn to_constant_ad(&self) -> Self {
+                let s = self.as_slice().iter().map(|x| x.to_constant_ad()).collect::<Vec<A>>();
+                return Self::from_column_slice(&s);
+            }
         }
     };
 }
 
 impl_apollo_ad_vector_trait!(ApolloVector2ADTrait, V2, 2);
 impl_apollo_ad_vector_trait!(ApolloVector3ADTrait, V3, 3);
+impl_apollo_ad_vector_trait!(ApolloVector4ADTrait, V4, 6);
 impl_apollo_ad_vector_trait!(ApolloVector6ADTrait, V6, 6);
 
 /// Trait for converting a 3D vector (`V3<A>`) to a 3D translation (`Translation3<A>`).
