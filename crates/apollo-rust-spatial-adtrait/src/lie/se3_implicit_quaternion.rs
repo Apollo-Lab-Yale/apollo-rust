@@ -6,9 +6,9 @@ use crate::lie::h1::{ApolloLieAlgPackH1Trait, ApolloQuaternionH1LieTrait, Apollo
 use crate::lie::so3::ApolloLieAlgPackSO3Trait;
 use crate::lie::TranslationAndRotation3DLieGroupElement;
 use crate::matrices::M3;
-use crate::quaternions::Q;
+use crate::quaternions::{ApolloQuaternionTrait, Q};
 use crate::translations::ApolloTranslation3AD;
-use crate::vectors::{ApolloVector3Trait2, V3, V6};
+use crate::vectors::{ApolloVector3ADTrait, ApolloVector3Trait2, V3, V6};
 
 /// Alias for `LieGroupISE3q`, representing a Lie group in SE(3) with quaternion rotation.
 pub type ISE3q<A> = LieGroupISE3q<A>;
@@ -67,6 +67,14 @@ impl<A: AD> LieGroupISE3q<A> {
     pub fn add_tiny_bit_of_noise(&self) -> Self {
         Self::new(self.0.add_tiny_bit_of_noise())
     }
+
+    pub fn to_other_ad_type<A2: AD>(&self) -> LieGroupISE3q<A2> {
+        LieGroupISE3q(self.0.to_other_ad_type::<A2>())
+    }
+
+    pub fn to_constant_ad(&self) -> Self {
+        Self::new(self.0.to_constant_ad())
+    }
 }
 
 /// Struct representing a Lie algebra in se(3) with quaternion rotation.
@@ -96,6 +104,20 @@ impl<A: AD> LieAlgISE3q<A> {
     #[inline(always)]
     pub fn v(&self) -> &V3<A> {
         &self.v
+    }
+
+    pub fn to_other_ad_type<A2: AD>(&self) -> LieAlgISE3q<A2> {
+        LieAlgISE3q {
+            q: self.q.to_other_ad_type::<A2>(),
+            v: self.v.to_other_ad_type::<A2>(),
+        }
+    }
+
+    pub fn to_constant_ad(&self) -> Self {
+        Self {
+            q: self.q.to_constant_ad(),
+            v: self.v.to_constant_ad(),
+        }
     }
 }
 impl<A: AD> LieGroupElement<A> for LieGroupISE3q<A> {

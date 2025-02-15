@@ -3,14 +3,13 @@ use ad_trait::AD;
 use serde::{Deserialize, Serialize};
 use apollo_rust_lie_adtrait::{LieAlgebraElement, LieGroupElement};
 use crate::lie::Rotation3DLieGroupElement;
-use crate::matrices::{M3};
-use crate::rotation_matrices::{R3};
+use crate::matrices::{ApolloMatrix3ADTrait, M3};
+use crate::rotation_matrices::{ApolloRotation3Trait, R3};
 use crate::vectors::V3;
 
 /// Struct representing a Lie group element in SO(3) rotation.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupSO3<A: AD>(#[serde(deserialize_with = "R3::<A>::deserialize")] pub R3<A>);
-
 impl<A: AD> LieGroupSO3<A> {
     /// Creates a new `LieGroupSO3` instance.
     ///
@@ -26,6 +25,14 @@ impl<A: AD> LieGroupSO3<A> {
     #[inline(always)]
     pub fn from_exponential_coordinates(exponential_coordinates: &V3<A>) -> Self {
         exponential_coordinates.to_lie_alg_so3().exp()
+    }
+
+    pub fn to_other_ad_type<A2: AD>(&self) -> LieGroupSO3<A2> {
+        LieGroupSO3::new(self.0.to_other_ad_type::<A2>())
+    }
+
+    pub fn to_constant_ad(&self) -> Self {
+        Self::new(self.0.to_constant_ad())
     }
 }
 
@@ -49,8 +56,15 @@ impl<A: AD> LieAlgSO3<A> {
 
         Self(field0)
     }
-}
 
+    pub fn to_other_ad_type<A2: AD>(&self) -> LieAlgSO3<A2> {
+        LieAlgSO3::new(self.0.to_other_ad_type::<A2>())
+    }
+
+    pub fn to_constant_ad(&self) -> Self {
+        Self::new(self.0.to_constant_ad())
+    }
+}
 impl<A: AD> LieGroupElement<A> for LieGroupSO3<A> {
     type LieAlgebraElementType = LieAlgSO3<A>;
 
@@ -103,7 +117,6 @@ impl<A: AD> LieGroupElement<A> for LieGroupSO3<A> {
 
 /// Implements the `Rotation3DLieGroupElement` trait for `LieGroupSO3`.
 impl<A: AD> Rotation3DLieGroupElement<A> for LieGroupSO3<A> {}
-
 impl<A: AD> LieAlgebraElement<A> for LieAlgSO3<A> {
     type LieGroupElementType = LieGroupSO3<A>;
     type EuclideanSpaceElementType = V3<A>;
@@ -163,7 +176,6 @@ pub trait ApolloMatrix3SO3LieTrait<A: AD> {
     /// Converts the matrix `M3` to a `LieAlgSO3` element.
     fn to_lie_alg_so3(&self) -> LieAlgSO3<A>;
 }
-
 impl<A: AD> ApolloMatrix3SO3LieTrait<A> for M3<A> {
     fn to_lie_alg_so3(&self) -> LieAlgSO3<A> {
         LieAlgSO3::new(*self)
@@ -175,7 +187,6 @@ pub trait ApolloRotation3SO3LieTrait<A: AD> {
     /// Converts the rotation matrix `R3` to a `LieGroupSO3` element.
     fn to_lie_group_so3(&self) -> LieGroupSO3<A>;
 }
-
 impl<A: AD> ApolloRotation3SO3LieTrait<A> for R3<A> {
     #[inline(always)]
     fn to_lie_group_so3(&self) -> LieGroupSO3<A> {
@@ -188,7 +199,6 @@ pub trait ApolloLieAlgPackSO3Trait<A: AD> {
     /// Converts the vector to a `LieAlgSO3` element.
     fn to_lie_alg_so3(&self) -> LieAlgSO3<A>;
 }
-
 impl<A: AD> ApolloLieAlgPackSO3Trait<A> for V3<A> {
     fn to_lie_alg_so3(&self) -> LieAlgSO3<A> {
         let a = self[0];

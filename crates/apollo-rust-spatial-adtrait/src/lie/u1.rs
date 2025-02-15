@@ -2,13 +2,12 @@ use ad_trait::AD;
 use nalgebra::Complex;
 use serde::{Deserialize, Serialize};
 use apollo_rust_lie_adtrait::{LieAlgebraElement, LieGroupElement};
-use crate::complex_numbers::{C, UC};
+use crate::complex_numbers::{ApolloComplexTrait, ApolloUnitComplexTrait, C, UC};
 use crate::lie::Rotation2DLieGroupElement;
 
 /// Struct representing a Lie group element in U(1) rotation using unit complex numbers.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupU1<A: AD>(#[serde(deserialize_with = "UC::<A>::deserialize")] pub UC<A>);
-
 impl<A: AD> LieGroupU1<A> {
     /// Creates a new `LieGroupU1` instance.
     ///
@@ -16,12 +15,19 @@ impl<A: AD> LieGroupU1<A> {
     pub fn new(field0: UC<A>) -> Self {
         Self(field0)
     }
+
+    pub fn to_other_ad_type<A2: AD>(&self) -> LieGroupU1<A2> {
+        LieGroupU1::new(self.0.to_other_ad_type::<A2>())
+    }
+
+    pub fn to_constant_ad(&self) -> Self {
+        Self::new(self.0.to_constant_ad())
+    }
 }
 
 /// Struct representing a Lie algebra element in u(1) using complex numbers.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieAlgU1<A: AD>(#[serde(deserialize_with = "C::<A>::deserialize")] pub C<A>);
-
 impl<A: AD> LieAlgU1<A> {
     /// Creates a new `LieAlgU1` instance.
     ///
@@ -31,8 +37,15 @@ impl<A: AD> LieAlgU1<A> {
 
         Self(field0)
     }
-}
 
+    pub fn to_other_ad_type<A2: AD>(&self) -> LieAlgU1<A2> {
+        LieAlgU1::new(self.0.to_other_ad_type::<A2>())
+    }
+
+    pub fn to_constant_ad(&self) -> Self {
+        Self::new(self.0.to_constant_ad())
+    }
+}
 impl<A: AD> LieGroupElement<A> for LieGroupU1<A> {
     type LieAlgebraElementType = LieAlgU1<A>;
 
@@ -67,7 +80,6 @@ impl<A: AD> LieGroupElement<A> for LieGroupU1<A> {
 
 /// Implements the `Rotation2DLieGroupElement` trait for `LieGroupU1`.
 impl<A: AD> Rotation2DLieGroupElement<A> for LieGroupU1<A> {}
-
 impl<A: AD> LieAlgebraElement<A> for LieAlgU1<A> {
     type LieGroupElementType = LieGroupU1<A>;
     type EuclideanSpaceElementType = A;
@@ -108,7 +120,6 @@ pub trait ApolloComplexU1LieTrait<A: AD> {
     /// Converts the complex number `C` to a `LieAlgU1` element.
     fn to_lie_alg_u1(&self) -> LieAlgU1<A>;
 }
-
 impl<A: AD> ApolloComplexU1LieTrait<A> for C<A> {
     #[inline(always)]
     fn to_lie_alg_u1(&self) -> LieAlgU1<A> {
@@ -121,7 +132,6 @@ pub trait ApolloUnitComplexU1LieTrait<A: AD> {
     /// Converts the unit complex number `UC` to a `LieGroupU1` element.
     fn to_lie_group_u1(&self) -> LieGroupU1<A>;
 }
-
 impl<A: AD> ApolloUnitComplexU1LieTrait<A> for UC<A> {
     #[inline(always)]
     fn to_lie_group_u1(&self) -> LieGroupU1<A> {
@@ -134,7 +144,6 @@ pub trait ApolloLieAlgPackU1Trait<A: AD> {
     /// Converts the scalar to a `LieAlgU1` element.
     fn to_lie_alg_u1(&self) -> LieAlgU1<A>;
 }
-
 impl<A: AD> ApolloLieAlgPackU1Trait<A> for A {
     fn to_lie_alg_u1(&self) -> LieAlgU1<A> {
         LieAlgU1::new(Complex::new(A::constant(0.0), *self))

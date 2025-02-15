@@ -1,11 +1,11 @@
 use ad_trait::AD;
 use serde::{Deserialize, Serialize};
 use apollo_rust_lie_adtrait::{LieAlgebraElement, LieGroupElement};
-use crate::isometry3::I3M;
+use crate::isometry3::{ApolloIsometryMatrix3Trait, I3M};
 use crate::lie::so3::{ApolloLieAlgPackSO3Trait, ApolloMatrix3SO3LieTrait, ApolloRotation3SO3LieTrait};
 use crate::lie::TranslationAndRotation3DLieGroupElement;
-use crate::matrices::M3;
-use crate::vectors::{ApolloVector3Trait2, V3, V6};
+use crate::matrices::{ApolloMatrix3ADTrait, M3};
+use crate::vectors::{ApolloVector3ADTrait, ApolloVector3Trait2, V3, V6};
 
 /// Alias for `LieGroupISE3`, representing a 3D Lie group element in SE(3).
 pub type ISE3<A> = LieGroupISE3<A>;
@@ -31,6 +31,14 @@ impl<A: AD> LieGroupISE3<A> {
     #[inline(always)]
     pub fn from_exponential_coordinates(exponential_coordinates: &V6<A>) -> Self {
         return exponential_coordinates.to_lie_alg_ise3().exp()
+    }
+
+    pub fn to_other_ad_type<A2: AD>(&self) -> LieGroupISE3<A2> {
+        LieGroupISE3(self.0.to_other_ad_type::<A2>())
+    }
+
+    pub fn to_constant_ad(&self) -> Self {
+        Self::new(self.0.to_constant_ad())
     }
 }
 
@@ -62,8 +70,21 @@ impl<A: AD> LieAlgISE3<A> {
     pub fn v(&self) -> &V3<A> {
         &self.v
     }
-}
 
+    pub fn to_other_ad_type<A2: AD>(&self) -> LieAlgISE3<A2> {
+        LieAlgISE3 {
+            m: self.m.to_other_ad_type::<A2>(),
+            v: self.v.to_other_ad_type::<A2>(),
+        }
+    }
+
+    pub fn to_constant_ad(&self) -> Self {
+        Self {
+            m: self.m.to_constant_ad(),
+            v: self.v.to_constant_ad(),
+        }
+    }
+}
 impl<A: AD> LieGroupElement<A> for ISE3<A> {
     type LieAlgebraElementType = LieAlgISE3<A>;
 

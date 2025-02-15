@@ -2,13 +2,12 @@ use ad_trait::AD;
 use serde::{Deserialize, Serialize};
 use apollo_rust_lie_adtrait::{LieAlgebraElement, LieGroupElement};
 use crate::lie::Rotation3DLieGroupElement;
-use crate::quaternions::{Q, UQ};
+use crate::quaternions::{ApolloQuaternionTrait, ApolloUnitQuaternionADTrait, Q, UQ};
 use crate::vectors::V3;
 
 /// A struct representing a Lie group element `H1`, implemented using `UnitQuaternion<f64>`.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupH1<A: AD>(#[serde(deserialize_with = "UQ::<A>::deserialize")] pub UQ<A>);
-
 impl<A: AD> LieGroupH1<A> {
     /// Creates a new `LieGroupH1` instance from a `UQ` (unit quaternion).
     ///
@@ -25,12 +24,19 @@ impl<A: AD> LieGroupH1<A> {
     pub fn from_exponential_coordinates(exponential_coordinates: &V3<A>) -> Self {
         return exponential_coordinates.to_lie_alg_h1().exp();
     }
+
+    pub fn to_other_ad_type<A2: AD>(&self) -> LieGroupH1<A2> {
+        LieGroupH1::new(self.0.to_other_ad_type::<A2>())
+    }
+
+    pub fn to_constant_ad(&self) -> Self {
+        Self::new(self.0.to_constant_ad())
+    }
 }
 
 /// A struct representing a Lie algebra element `H1`, implemented using `Quaternion<f64>`.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieAlgH1<A: AD>(#[serde(deserialize_with = "Q::<A>::deserialize")] pub Q<A>);
-
 impl<A: AD> LieAlgH1<A> {
     /// Creates a new `LieAlgH1` instance from a `Q` (quaternion).
     ///
@@ -38,6 +44,14 @@ impl<A: AD> LieAlgH1<A> {
     #[inline(always)]
     pub fn new(field0: Q<A>) -> Self {
         Self(field0)
+    }
+
+    pub fn to_other_ad_type<A2: AD>(&self) -> LieAlgH1<A2> {
+        LieAlgH1::new(self.0.to_other_ad_type::<A2>())
+    }
+
+    pub fn to_constant_ad(&self) -> Self {
+        Self::new(self.0.to_constant_ad())
     }
 }
 

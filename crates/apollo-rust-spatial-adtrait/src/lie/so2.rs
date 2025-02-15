@@ -2,8 +2,8 @@ use ad_trait::AD;
 use serde::{Deserialize, Serialize};
 use apollo_rust_lie_adtrait::{LieAlgebraElement, LieGroupElement};
 use crate::lie::Rotation2DLieGroupElement;
-use crate::matrices::{M2};
-use crate::rotation_matrices::{R2};
+use crate::matrices::{ApolloMatrix2ADTrait, M2};
+use crate::rotation_matrices::{ApolloRotation2Trait, R2};
 
 /// Struct representing a Lie group element in SO(2) rotation.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -14,6 +14,14 @@ impl<A: AD> LieGroupSO2<A> {
     /// - `field0`: The 2D rotation matrix `R2` representing the Lie group element.
     pub fn new(field0: R2<A>) -> Self {
         Self(field0)
+    }
+
+    pub fn to_other_ad_type<A2: AD>(&self) -> LieGroupSO2<A2> {
+        LieGroupSO2::new(self.0.to_other_ad_type::<A2>())
+    }
+
+    pub fn to_constant_ad(&self) -> Self {
+        Self::new(self.0.to_constant_ad())
     }
 }
 
@@ -30,8 +38,15 @@ impl<A: AD> LieAlgSO2<A> {
 
         Self(field0)
     }
-}
 
+    pub fn to_other_ad_type<A2: AD>(&self) -> LieAlgSO2<A2> {
+        LieAlgSO2::new(self.0.to_other_ad_type::<A2>())
+    }
+
+    pub fn to_constant_ad(&self) -> Self {
+        Self::new(self.0.to_constant_ad())
+    }
+}
 impl<A: AD> LieGroupElement<A> for LieGroupSO2<A> {
     type LieAlgebraElementType = LieAlgSO2<A>;
 
@@ -111,7 +126,6 @@ pub trait ApolloMatrix2SO2LieTrait<A: AD> {
     /// Converts the matrix `M2` to a `LieAlgSO2` element.
     fn to_lie_alg_so2(&self) -> LieAlgSO2<A>;
 }
-
 impl<A: AD> ApolloMatrix2SO2LieTrait<A> for M2<A> {
     fn to_lie_alg_so2(&self) -> LieAlgSO2<A> {
         LieAlgSO2::new(*self)
@@ -123,7 +137,6 @@ pub trait ApolloRotation2SO2LieTrait<A: AD> {
     /// Converts the rotation matrix `R2` to a `LieGroupSO2` element.
     fn to_lie_group_so2(&self) -> LieGroupSO2<A>;
 }
-
 impl<A: AD> ApolloRotation2SO2LieTrait<A> for R2<A> {
     #[inline(always)]
     fn to_lie_group_so2(&self) -> LieGroupSO2<A> {
@@ -136,7 +149,6 @@ pub trait ApolloLieAlgPackSO2Trait<A: AD> {
     /// Converts the scalar to a `LieAlgSO2` element.
     fn to_lie_alg_so2(&self) -> LieAlgSO2<A>;
 }
-
 impl<A: AD> ApolloLieAlgPackSO2Trait<A> for A {
     fn to_lie_alg_so2(&self) -> LieAlgSO2<A> {
         LieAlgSO2::new(M2::new(A::zero(), -*self, *self, A::zero()))
