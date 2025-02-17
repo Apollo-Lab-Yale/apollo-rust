@@ -15,7 +15,6 @@ pub type Ise3 = LieAlgISE3;
 /// Struct representing a 3D Lie group element in SE(3) based on `I3M`.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LieGroupISE3(pub I3M);
-
 impl LieGroupISE3 {
     /// Creates a new `LieGroupISE3` instance.
     ///

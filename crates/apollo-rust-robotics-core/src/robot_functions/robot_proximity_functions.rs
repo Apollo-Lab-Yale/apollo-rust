@@ -1,10 +1,10 @@
-use apollo_rust_proximity::double_group_queries::{DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput, pairwise_group_query_contact, pairwise_group_query_distance, pairwise_group_query_intersection};
+use apollo_rust_proximity_parry::double_group_queries::{DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput, pairwise_group_query_contact, pairwise_group_query_distance, pairwise_group_query_intersection};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use nalgebra::DMatrix;
 use parry3d_f64::query::Contact;
-use apollo_rust_proximity::proxima::proxima_core::{ProximaBudget, ProximaOutput, ProximaTrait};
-use apollo_rust_proximity::{ProximityLossFunction};
-use apollo_rust_proximity::bvh::{Bvh, BvhShape};
+use apollo_rust_proximity_parry::proxima::proxima_core::{ProximaBudget, ProximaOutput, ProximaTrait};
+use apollo_rust_proximity_parry::{ProximityLossFunction};
+use apollo_rust_proximity_parry::bvh::{Bvh, BvhShape};
 use crate::modules_runtime::link_shapes_module::{ApolloLinkShapesModule, LinkShapeMode, LinkShapeRep};
 
 pub struct RobotProximityFunctions;

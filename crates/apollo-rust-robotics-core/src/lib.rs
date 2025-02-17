@@ -1,10 +1,10 @@
 use std::sync::Arc;
 use parry3d_f64::query::Contact;
 use apollo_rust_linalg::V;
-use apollo_rust_proximity::double_group_queries::{ConvertToAverageDistancesTrait, DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput};
-use apollo_rust_proximity::proxima::proxima1::{Proxima1, Proxima1Cache};
-use apollo_rust_proximity::proxima::proxima_core::{ProximaBudget, ProximaOutput, ProximaTrait};
-use apollo_rust_proximity::ProximityLossFunction;
+use apollo_rust_proximity_parry::double_group_queries::{ConvertToAverageDistancesTrait, DoubleGroupProximityQueryMode, DoubleGroupProximityQueryOutput};
+use apollo_rust_proximity_parry::proxima::proxima1::{Proxima1, Proxima1Cache};
+use apollo_rust_proximity_parry::proxima::proxima_core::{ProximaBudget, ProximaOutput, ProximaTrait};
+use apollo_rust_proximity_parry::ProximityLossFunction;
 use apollo_rust_modules::{ResourcesSubDirectory};
 use apollo_rust_modules::robot_modules::bounds_module::ApolloBoundsModule;
 use apollo_rust_modules::robot_modules::chain_module::{ApolloChainModule};
@@ -16,7 +16,7 @@ use apollo_rust_modules::robot_modules::mesh_modules::convex_decomposition_meshe
 use apollo_rust_modules::robot_modules::mesh_modules::convex_hull_meshes_module::ApolloConvexHullMeshesModule;
 use apollo_rust_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
 use apollo_rust_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
-use apollo_rust_proximity::bvh::{Bvh, BvhShape};
+use apollo_rust_proximity_parry::bvh::{Bvh, BvhShape};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 use crate::modules::link_shapes_modules::link_shapes_max_distance_from_origin_module::LinkShapesMaxDistanceFromOriginTrait;
 use crate::modules_runtime::link_shapes_distance_statistics_nalgebra_module::ApolloLinkShapesDistanceStatisticsNalgebraModule;

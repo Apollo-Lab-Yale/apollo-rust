@@ -52,7 +52,7 @@ impl<A: AD> LieGroupISE3q<A> {
     /// - `point`: The point to be transformed.
     #[inline(always)]
     pub fn map_point(&self, point: &V3<A>) -> V3<A> {
-        self.0 * point
+        self.0.rotation * point + self.0.translation.vector
     }
 
     /// Returns the pseudo-logarithm of the Lie group `ISE3q`.
