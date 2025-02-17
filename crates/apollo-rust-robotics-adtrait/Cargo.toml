@@ -1,0 +1,13 @@
+[package]
+name = "apollo-rust-robotics-adtrait"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+apollo-rust-modules = { path = "../apollo-rust-modules" }
+apollo-rust-robotics-core-adtrait = { path = "../apollo-rust-robotics-core-adtrait" }
+apollo-rust-preprocessor = { path = "../apollo-rust-preprocessor" }
+apollo-rust-file = { path = "../apollo-rust-file" }
+apollo-rust-spatial-adtrait = { path = "../apollo-rust-spatial-adtrait" }
+apollo-rust-lie-adtrait = { path = "../apollo-rust-lie-adtrait" }
+apollo-rust-linalg-adtrait = { path = "../apollo-rust-linalg-adtrait" }

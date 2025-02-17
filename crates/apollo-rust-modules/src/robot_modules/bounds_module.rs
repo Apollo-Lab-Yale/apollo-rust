@@ -8,7 +8,6 @@ pub struct ApolloBoundsModule {
     pub dof_lower_bounds: Vec<f64>,
     pub dof_upper_bounds: Vec<f64>
 }
-
 impl ApolloBoundsModule {
     pub fn sample_random_state(&self) -> V {
         let mut rng = rand::thread_rng();
