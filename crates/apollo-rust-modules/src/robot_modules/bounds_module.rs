@@ -10,7 +10,7 @@ pub struct ApolloBoundsModule {
 }
 impl ApolloBoundsModule {
     pub fn sample_random_state(&self) -> V {
-        let mut rng = rand::thread_rng();
-        V::new(&self.bounds.iter().map(|&(lower, upper)| rng.gen_range(lower..upper)).collect::<Vec<f64>>())
+        let mut rng = rand::rng();
+        V::new(&self.bounds.iter().map(|&(lower, upper)| rng.random_range(lower..upper)).collect::<Vec<f64>>())
     }
 }

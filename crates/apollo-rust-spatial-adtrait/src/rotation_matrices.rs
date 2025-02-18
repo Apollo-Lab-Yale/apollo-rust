@@ -33,8 +33,8 @@ impl<A: AD> ApolloRotation2Trait<A> for R2<A> {
     }
 
     fn new_random() -> Self {
-        let mut rng = rand::thread_rng();
-        Self::from_scaled_axis(Vector1::new(A::constant(rng.gen_range(-6.28..6.28))))
+        let mut rng = rand::rng();
+        Self::from_scaled_axis(Vector1::new(A::constant(rng.random_range(-6.28..6.28))))
     }
 
     fn to_unit_complex(&self) -> UC<A> {
@@ -74,11 +74,11 @@ impl<A: AD> ApolloRotation3Trait<A> for R3<A> {
     }
 
     fn new_random() -> Self {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         Self::from_euler_angles(
-            A::constant(rng.gen_range(-6.28..6.28)),
-            A::constant(rng.gen_range(-6.28..6.28)),
-            A::constant(rng.gen_range(-6.28..6.28)),
+            A::constant(rng.random_range(-6.28..6.28)),
+            A::constant(rng.random_range(-6.28..6.28)),
+            A::constant(rng.random_range(-6.28..6.28)),
         )
     }
 

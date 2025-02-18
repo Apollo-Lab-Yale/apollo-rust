@@ -30,11 +30,11 @@ impl ApolloDVectorTrait for V {
     }
 
     fn new_random_with_range(n: usize, min: f64, max: f64) -> Self {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut v = DVector::zeros(n);
 
         for i in 0..n {
-            v[i] = rng.gen_range(min..=max);
+            v[i] = rng.random_range(min..=max);
         }
 
         v
@@ -118,12 +118,12 @@ impl ApolloDMatrixTrait for M {
     }
 
     fn new_random_with_range(nrows: usize, ncols: usize, min: f64, max: f64) -> Self {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut m = DMatrix::zeros(nrows, ncols);
 
         for i in 0..nrows {
             for j in 0..ncols {
-                m[(i, j)] = rng.gen_range(min..=max);
+                m[(i, j)] = rng.random_range(min..=max);
             }
         }
 

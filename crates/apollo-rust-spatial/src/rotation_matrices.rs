@@ -40,8 +40,8 @@ impl ApolloRotation2Trait for R2 {
     }
 
     fn new_random() -> Self {
-        let mut rng = rand::thread_rng();
-        Self::from_scaled_axis(Vector1::new(rng.gen_range(-6.28..6.28)))
+        let mut rng = rand::rng();
+        Self::from_scaled_axis(Vector1::new(rng.random_range(-6.28..6.28)))
     }
 
     #[inline(always)]
@@ -96,11 +96,11 @@ impl ApolloRotation3Trait for R3 {
     }
 
     fn new_random() -> Self {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         Self::from_euler_angles(
-            rng.gen_range(-6.28..6.28),
-            rng.gen_range(-6.28..6.28),
-            rng.gen_range(-6.28..6.28)
+            rng.random_range(-6.28..6.28),
+            rng.random_range(-6.28..6.28),
+            rng.random_range(-6.28..6.28)
         )
     }
 
