@@ -12,16 +12,16 @@ impl ShapeTrait for TriMesh {
  fn support(&self, dir: &V3, shape_pose: &LieGroupISE3q) -> V3 {
     let local_dir = shape_pose.0.rotation.inverse() * dir;
     let mut max_point = V3::from_column_slice(&self.points[0]);
-    let mut max_proj = max_point.dot(&dir);
+    let mut max_proj = max_point.dot(&local_dir);
     for point in self.points.iter().skip(1) {
        let cur_point = V3::from_column_slice(point);
-       let proj =cur_point.dot(&dir);
+       let proj =cur_point.dot(&local_dir);
        if proj > max_proj {
           max_proj = proj;
           max_point = cur_point;
    }
   }
-  max_point
+  shape_pose.0.rotation*max_point+shape_pose.0.translation.vector
  }
 }
 
