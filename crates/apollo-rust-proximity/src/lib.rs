@@ -8,17 +8,75 @@ pub trait ShapeTrait {
  fn support(&self, dir: &V3, shape_pose: &LieGroupISE3q) -> V3;
 }
 
-impl ShapeTrait for TriMesh {
+
+pub struct ConvexPolyhedron(pub TriMesh);
+
+impl ConvexPolyhedron {
+  pub fn new(input_mesh: &TriMesh)->Self{
+     Self(input_mesh.to_convex_hull())
+ }
+}
+
+pub struct Sphere{
+ // suppose the center is always the origin
+ pub radius: f64,
+}
+
+impl Sphere {
+ pub fn new(radius:f64)->Self{
+  Self{radius}
+ }
+}
+
+pub struct Cuboid{
+ pub half_extents: V3
+}
+
+impl Cuboid{
+ pub fn new(x:f64,y:f64,z:f64)->Self{
+  Self{half_extents: V3::new(x,y,z)}
+ }
+}
+
+impl ShapeTrait for ConvexPolyhedron {
  fn support(&self, dir: &V3, shape_pose: &LieGroupISE3q) -> V3 {
     let local_dir = shape_pose.0.rotation.inverse() * dir;
-    let mut max_point = V3::from_column_slice(&self.points[0]);
+    let mut max_point = V3::from_column_slice(&self.0.points[0]);
     let mut max_proj = max_point.dot(&local_dir);
-    for point in self.points.iter().skip(1) {
+    for point in self.0.points.iter().skip(1) {
        let cur_point = V3::from_column_slice(point);
        let proj =cur_point.dot(&local_dir);
        if proj > max_proj {
           max_proj = proj;
           max_point = cur_point;
+   }
+  }
+  shape_pose.0.rotation*max_point+shape_pose.0.translation.vector
+ }
+}
+
+impl ShapeTrait for Sphere {
+ fn support(&self, dir: &V3, shape_pose: &LieGroupISE3q) -> V3 {
+     shape_pose.0.translation.vector+self.radius*dir
+ }
+}
+
+impl ShapeTrait for Cuboid {
+ fn support(&self, dir: &V3, shape_pose: &LieGroupISE3q) -> V3 {
+  let local_dir = shape_pose.0.rotation.inverse() * dir;
+  let mut max_point = V3::new(0.0,0.0,0.0);
+  let mut max_proj = -self.half_extents.max();
+  for i in 0..8{
+       let mut point=self.half_extents.clone();
+       let mut _i=i.clone();
+       for j in 0..3{
+          if _i%2 {point[j]=point[j].neg()}
+          _i.div(2);
+       }
+    let proj =point.dot(&local_dir);
+   if proj > max_proj {
+    max_proj = proj;
+    max_point = point;
    }
   }
   shape_pose.0.rotation*max_point+shape_pose.0.translation.vector
@@ -219,7 +277,7 @@ impl ThreeSimplex {
  }
 }
 
-pub fn gjk_distance<T: ShapeTrait>(shape1: &T, pose1: &LieGroupISE3q, shape2: &T, pose2:&LieGroupISE3q) -> f64 {
+pub fn gjk_distance<S1: ShapeTrait, S2: ShapeTrait>(shape1: &S1, pose1: &LieGroupISE3q, shape2: &S2, pose2:&LieGroupISE3q) -> f64 {
   let mut simplex = ThreeSimplex::new();
   let mut dir = V3::new(1.0, 0.0, 0.0);
   let mut support = shape1.support(&dir, pose1).sub(shape2.support(&dir, pose2));
