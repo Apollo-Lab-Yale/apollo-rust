@@ -128,7 +128,7 @@ fn process_line(simplex: &mut Vec<V3>, dir: &mut V3) -> bool{
 
  false // Cannot contain origin with just a line
 }
-fn process_triangle(simplex: &mut Vec<V3>, dir: &mut V3) -> bool{
+fn process_triangle(simplex: &mut Vec<V3>, dir: &mut V3) -> bool {
  let a = simplex[2];
  let b = simplex[1];
  let c = simplex[0];
@@ -139,49 +139,57 @@ fn process_triangle(simplex: &mut Vec<V3>, dir: &mut V3) -> bool{
 
  let abc = ab.cross(&ac);
 
- // Check if origin is above or below the triangle
+ // Check if origin is "outside" relative to AC
  if abc.cross(&ac).dot(&ao) > 0.0 {
-    if ac.dot(&ao) >0.0 {
-       // Origin outside, in direction of ac edge
-      *simplex = vec![c, a];
-      *dir = ac.cross(&ao).cross(&ac).normalize();
-  } else {
-         if ab.dot(&ao) > 0.0 {
-         // Origin outside, in direction of ab edge
-          *simplex = vec![b, a];
-          *dir =ab.cross(&ao).cross(&ab).normalize();
-   }     else {
-           *simplex = vec![a]; // Keep only a
-           *dir = ao.normalize();
-   }
+  if ac.dot(&ao) > 0.0 {
+   // Origin outside, in direction of AC edge
+   *simplex = vec![c, a];
+   *dir = ac.cross(&ao).cross(&ac).normalize();
+   return false;
   }
- }
- else {
-  if ab.cross(&abc).dot(&ao) > 0.0 {
-   if ab.dot(&ao) > 0.0 {
-    // Origin outside, in direction of ab edge
-    *simplex = vec![b, a];
-    *dir = ab.cross(&ao).cross(&ab).normalize();
-   } else {
-    // Origin above, in direction of a
-    *simplex = vec![a]; // Keep only a
-    *dir = ao.normalize();
-   }
-  } else {
-   // Check if origin is above or below triangle
-   if abc.dot(&ao) > 0.0 {
-    // Origin above triangle
-    *dir = abc.normalize();
-   } else {
-    // Origin below triangle, reverse winding
-    *simplex = vec![c, b, a]; // Rearrange to change winding
-    *dir = abc.neg().normalize();
-   }
+
+  // If not outside AC, check AB
+  if ab.dot(&ao) > 0.0 {
+   // Origin outside, in direction of AB edge
+   *simplex = vec![b, a];
+   *dir = ab.cross(&ao).cross(&ab).normalize();
+   return false;
   }
+
+  // Otherwise, just keep A
+  *simplex = vec![a];
+  *dir = ao.normalize();
+  return false;
  }
 
- false // Triangle cannot contain origin
+ // Check if origin is "outside" relative to AB
+ if ab.cross(&abc).dot(&ao) > 0.0 {
+  if ab.dot(&ao) > 0.0 {
+   // Origin outside, in direction of AB edge
+   *simplex = vec![b, a];
+   *dir = ab.cross(&ao).cross(&ab).normalize();
+   return false;
+  }
+
+  // Otherwise, keep A
+  *simplex = vec![a];
+  *dir = ao.normalize();
+  return false;
+ }
+
+ // If none of the edges excludes the origin, check if it's above or below the face
+ if abc.dot(&ao) > 0.0 {
+  // Origin above triangle
+  *dir = abc.normalize();
+ } else {
+  // Origin below triangle; flip winding
+  *simplex = vec![c, b, a];
+  *dir = abc.neg().normalize();
+ }
+
+ false // Triangle doesn't conclusively contain origin yet
 }
+
 
 fn process_tetrahedron(simplex: &mut Vec<V3>, dir: &mut V3)->bool{
    let a = simplex[3]; // Newest point
