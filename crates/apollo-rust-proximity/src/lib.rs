@@ -1,8 +1,12 @@
 use std::ops::{Add, Div, Neg, Sub};
+use nalgebra::sup;
+use parry3d_f64::query::gjk::eps_tol;
 use apollo_rust_lie::EuclideanSpaceElement;
 use apollo_rust_mesh_utils::trimesh::TriMesh;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::LieGroupISE3q;
 use apollo_rust_spatial::vectors::V3;
+
+const _PROXIMITY_TOL: f64 =1e-3;
 
 pub trait ShapeTrait {
  fn support(&self, dir: &V3, shape_pose: &LieGroupISE3q) -> V3;
@@ -57,7 +61,7 @@ impl ShapeTrait for ConvexPolyhedron {
 
 impl ShapeTrait for Sphere {
  fn support(&self, dir: &V3, shape_pose: &LieGroupISE3q) -> V3 {
-     shape_pose.0.translation.vector+self.radius*dir
+     shape_pose.0.translation.vector+self.radius*dir.normalize()
  }
 }
 
@@ -65,7 +69,7 @@ impl ShapeTrait for Cuboid {
  fn support(&self, dir: &V3, shape_pose: &LieGroupISE3q) -> V3 {
   let local_dir = shape_pose.0.rotation.inverse() * dir;
   let mut max_point = V3::new(0.0,0.0,0.0);
-  let mut max_proj = -self.half_extents.max();
+  let mut max_proj = f64::NEG_INFINITY;
   for i in 0..8{
        let mut point=self.half_extents.clone();
        let mut _i=i.clone();
@@ -118,29 +122,40 @@ impl ThreeSimplex {
   else if t>=1.0{
    b.norm()
   } else{
-   let closest = b.sub(a).scale(t).add(a);
+   let closest = ab.scale(t).add(a);
    closest.norm()
   }
  }
 
- fn closest_point_on_triangle(a:&V3,b:&V3, c:&V3) -> f64{
-  // if closest point is on an edge
-  let ab_dist = ThreeSimplex::closest_point_on_line(a, b);
-  let bc_dist = ThreeSimplex::closest_point_on_line(b, c);
-  let ca_dist = ThreeSimplex::closest_point_on_line(c, a);
-  let edge_dist = ab_dist.min(bc_dist).min(ca_dist);
-
-  // if closest point is on the face of the triangle
+ fn closest_point_on_triangle(a: &V3, b: &V3, c: &V3) -> f64 {
   let ab = b.sub(a);
   let ac = c.sub(a);
-  let normal = ab.cross(&ac).normalize();
 
-  let distance_to_plane = a.dot(&normal);
-  let face_dist = distance_to_plane.abs();
+  // Compute the barycentric coordinates of the projection of the origin.
+  let ao = a.neg();
+  let d1 = ab.dot(&ao);
+  let d2 = ac.dot(&ao);
+  let d00 = ab.dot(&ab);
+  let d01 = ab.dot(&ac);
+  let d11 = ac.dot(&ac);
+  let denom = d00 * d11 - d01 * d01;
+  let u = (d11 * d1 - d01 * d2) / denom;
+  let v = (d00 * d2 - d01 * d1) / denom;
 
-  // Return the minimum of edge and face distances
-  edge_dist.min(face_dist)
+  if u >= 0.0 && v >= 0.0 && (u + v) <= 1.0 {
+   // Projection is inside the triangle.
+   // Distance is the perpendicular distance from the origin to the plane.
+   let normal = ab.cross(&ac).normalize();
+   return (a.dot(&normal)).abs();
+  }
+
+  // Otherwise, return the minimum distance to the triangle’s edges.
+  let edge_ab = ThreeSimplex::closest_point_on_line(a, b);
+  let edge_bc = ThreeSimplex::closest_point_on_line(b, c);
+  let edge_ca = ThreeSimplex::closest_point_on_line(c, a);
+  edge_ab.min(edge_bc).min(edge_ca)
  }
+
 
  fn closest_point_on_tetrahedron(&self) -> f64{
   // Check if closest point is on a face
@@ -233,59 +248,68 @@ impl ThreeSimplex {
  }
 
 
- fn process_tetrahedron(&mut self, dir: &mut V3)->bool{
+ fn process_tetrahedron(&mut self, dir: &mut V3) -> bool {
   let a = self.0[3]; // Newest point
   let b = self.0[2];
   let c = self.0[1];
-  let d =self.0[0];
+  let d = self.0[0];
 
   let ab = b.sub(&a);
   let ac = c.sub(&a);
   let ad = d.sub(&a);
   let ao = a.neg();
 
-  // Normal to faces
+  // Normals to faces
   let abc = ab.cross(&ac);
   let acd = ac.cross(&ad);
   let adb = ad.cross(&ab);
 
-  // Check each face
+  // Check each face in a fixed order.
   if abc.dot(&ao) > 0.0 {
-   // Origin outside face abc
-   // Remove d and keep only a, b, c
+   // Origin outside face ABC: remove D.
    self.0 = vec![c, b, a];
    *dir = abc.normalize();
    return false;
   }
-
   if acd.dot(&ao) > 0.0 {
+   // Origin outside face ACD: remove B.
    self.0 = vec![d, c, a];
    *dir = acd.normalize();
    return false;
   }
-
   if adb.dot(&ao) > 0.0 {
-   // Origin outside face adb
-   // Remove c and keep only a, d, b
+   // Origin outside face ADB: remove C.
    self.0 = vec![b, d, a];
    *dir = adb.normalize();
    return false;
   }
 
-  // Origin is inside tetrahedron
+  // Otherwise, conclude that the origin is inside.
   true
  }
+
+
 }
 
 pub fn gjk_distance<S1: ShapeTrait, S2: ShapeTrait>(shape1: &S1, pose1: &LieGroupISE3q, shape2: &S2, pose2:&LieGroupISE3q) -> f64 {
-  let mut simplex = ThreeSimplex::new();
-  let mut dir = V3::new(1.0, 0.0, 0.0);
-  let mut support = shape1.support(&dir, pose1).sub(shape2.support(&dir, pose2));
+ let mut simplex = ThreeSimplex::new();
+
+ let initial_dir = pose1.0.translation.vector.sub(&pose2.0.translation.vector);
+ let mut dir = if initial_dir.norm_squared() > 1e-6 {
+  initial_dir.normalize()
+ } else {
+  V3::new(1.0, 0.0, 0.0)
+ };
+  let mut support = shape1.support(&dir, pose1).sub(shape2.support(&dir.neg(), pose2));
   simplex.add(support);
-  dir = dir.neg();
+  dir = support.normalize().neg();
+  let mut prev_distance = f64::INFINITY;
   loop{
-    support = shape1.support(&dir, pose1).sub(shape2.support(&dir, pose2));
-   if support.dot(&dir) < 0.0 {return simplex.closest_point_to_origin();}
+    support = shape1.support(&dir, pose1).sub(shape2.support(&dir.neg(), pose2));
+    let proj = support.dot(&dir);
+   if proj < 0.0 {
+      return 1.0;
+   }
    simplex.add(support);
    let intersect = simplex.process_simplex(&mut dir);
    if intersect {return 0.0;}
