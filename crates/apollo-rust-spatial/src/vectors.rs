@@ -56,11 +56,11 @@ macro_rules! impl_apollo_vector_trait {
             }
 
             fn new_random_with_range(min: f64, max: f64) -> Self {
-                let mut rng = rand::rng();
+                let mut rng = rand::thread_rng();
                 let mut v = $type_name::zeros();
 
                 for i in 0..$dim {
-                    v[i] = rng.random_range(min..=max);
+                    v[i] = rng.gen_range(min..=max);
                 }
 
                 v

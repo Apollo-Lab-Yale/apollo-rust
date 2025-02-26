@@ -1,7 +1,7 @@
 [package]
 name = "apollo-rust-proximity"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 apollo-rust-spatial = { path = "../apollo-rust-spatial" }
@@ -12,3 +12,4 @@ apollo-rust-modules = {path = "../apollo-rust-modules"}
 apollo-rust-mesh-utils = {path = "../apollo-rust-mesh-utils"}
 nalgebra = { version = "0.33.0", features = ["rand", "serde-serialize"] }
 serde = { version = "1.0.214", features = ["derive"] }
+# rand = "0.3.23"

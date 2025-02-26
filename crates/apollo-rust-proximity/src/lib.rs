@@ -70,8 +70,8 @@ impl ShapeTrait for Cuboid {
        let mut point=self.half_extents.clone();
        let mut _i=i.clone();
        for j in 0..3{
-          if _i%2 {point[j]=point[j].neg()}
-          _i.div(2);
+          if (_i%2)==1 {point[j]=point[j].neg()}
+          _i=_i.div(2);
        }
     let proj =point.dot(&local_dir);
    if proj > max_proj {
