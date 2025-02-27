@@ -127,14 +127,8 @@ pub fn find_and_reduce(&mut self) -> (V3, f64) {
    1 => {  (self.0[0], self.0[0].norm()) },
    2 => {let f = closest_to_origin_on_line(&self.0[0], &self.0[1]); self.0=f.simplex; (f.v, f.d)},
    3 =>{let f = closest_to_origin_on_triangle(&self.0[0], &self.0[1], &self.0[2]); self.0=f.simplex; (f.v, f.d)},
-   _ =>{let f = closest_to_origin_on_tetrahedron(&self.0[0],&self.0[1], &self.0[2], &self.0[3]); self.0=f.simplex; (f.v, f.d)},
+   _ =>{ if tetrahedron_contains_origin(&self.0[0],&self.0[1], &self.0[2], &self.0[3]) {(V3::zeros(),0.0)} else {let f = closest_to_origin_on_tetrahedron(&self.0[0],&self.0[1], &self.0[2], &self.0[3]); self.0=f.simplex; (f.v, f.d)}},
   }
- }
-
- pub fn contains_origin(&self)->bool{
-    // judge whether the origin is contained in a tet
-    if self.len() < 4 {return  false;}
-    tetrahedron_contains_origin(&self.0[0],&self.0[1], &self.0[2], &self.0[3])
  }
 }
 
@@ -191,10 +185,8 @@ fn signed_volume(a: &V3, b: &V3, c: &V3, d: &V3) -> f64 {
 }
 
 fn tetrahedron_contains_origin(a: &V3, b: &V3, c: &V3, d: &V3) -> bool {
- let tol = 1e-10;
-
  let vol = signed_volume(a, b, c, d);
- if vol.abs() < tol {
+ if vol.abs() < _PROXIMITY_TOL {
   return false;
  }
 
@@ -205,9 +197,9 @@ fn tetrahedron_contains_origin(a: &V3, b: &V3, c: &V3, d: &V3) -> bool {
  let v4 = signed_volume(a, b, c, &V3::zeros());
 
  if vol > 0.0 {
-  v1 > -tol && v2 > -tol && v3 > -tol && v4 > -tol
+  v1 > -_PROXIMITY_TOL && v2 > -_PROXIMITY_TOL && v3 > -_PROXIMITY_TOL && v4 > -_PROXIMITY_TOL
  } else {
-  v1 < tol && v2 < tol && v3 < tol && v4 < tol
+  v1 < _PROXIMITY_TOL && v2 < _PROXIMITY_TOL && v3 < _PROXIMITY_TOL && v4 < _PROXIMITY_TOL
  }
 }
 
@@ -221,8 +213,8 @@ pub fn gjk_distance<S1: ShapeTrait, S2: ShapeTrait>(shape1: &S1, pose1: &LieGrou
  let mut dist=support.norm();
  let mut iter=0;
  while iter < _PROXIMITY_MAX_ITERS {
-      if dist < _PROXIMITY_TOL || simplex.contains_origin() {return 0.0;}
       (dir, dist) = simplex.find_and_reduce();
+      if dist < _PROXIMITY_TOL {return 0.0;}
       dir = dir.neg().normalize();
       support = shape1.support(&dir, pose1).sub(shape2.support(&dir.neg(), pose2));
       let proj = support.dot(&dir);
