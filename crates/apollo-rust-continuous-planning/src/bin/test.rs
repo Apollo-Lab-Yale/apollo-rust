@@ -2,7 +2,7 @@ use apollo_rust_continuous_planning::feasibility_checkers::FeasibilityCheckerTra
 use apollo_rust_continuous_planning::feasibility_checkers::robot_feasibility_checkers::{RobotBVHFeasibilityChecker, RobotNaiveFeasibilityChecker};
 use apollo_rust_linalg::{ApolloDVectorTrait, V};
 use apollo_rust_modules::ResourcesRootDirectory;
-use apollo_rust_proximity::bvh::BvhShapeAABB;
+use apollo_rust_proximity_parry::bvh::BvhShapeAABB;
 use apollo_rust_robotics::ToChainNalgebra;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_module::{LinkShapeMode, LinkShapeRep};
 
