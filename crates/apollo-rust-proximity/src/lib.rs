@@ -268,8 +268,8 @@ fn add_unique_edge(a: usize, b: usize, edges: &mut Vec<[usize;2]>){
 }
 
 fn expand_polytope(polytope: &mut TriMesh, v: &V3){
-    let mut new_faces: Vec<[usize;3]>;
-    let mut new_edges: Vec<[usize;2]>;
+    let mut new_faces: Vec<[usize;3]>=Vec::new();
+    let mut new_edges: Vec<[usize;2]>=Vec::new();
     let mut i = 0;
     while i<polytope.indices.len() {
         let face = polytope.indices[i];
@@ -277,14 +277,13 @@ fn expand_polytope(polytope: &mut TriMesh, v: &V3){
         let b = V3::from(polytope.points[face[1]]);
         let c = V3::from(polytope.points[face[2]]);
         let mut norm = (b-a).cross(&(c-a)).normalize();
-        let mut dist = norm.dot(&a);
+        let dist = norm.dot(&a);
         // make sure the normal points out
         if dist < 0.0 {
-            dist *= -1.0;
             norm *= -1.0;
         }
         // the face can be seen from v
-        if norm.dot(&(v-a)) < 0.0 {
+        if norm.dot(&(v-a)) > 0.0 {
             polytope.indices.remove(i);
             add_unique_edge(face[0], face[1], &mut new_edges);
             add_unique_edge(face[1], face[2], &mut new_edges);
@@ -294,15 +293,16 @@ fn expand_polytope(polytope: &mut TriMesh, v: &V3){
             i+=1;
         }
     }
-    for edge in new_edges{
+    for edge in new_edges.iter(){
         new_faces.push([edge[0], edge[1], polytope.points.len()]);
     }
     polytope.points.push([v.x, v.y, v.z]);
     polytope.indices.extend(&new_faces);
 }
 
-pub fn epa<S1: ShapeTrait, S2:ShapeTrait>(simplex: ThreeSimplex, shape1: &S1, pose1: &LieGroupISE3q, shape2: &S2, pose2:&LieGroupISE3q) -> (V3, f64) {
+fn epa<S1: ShapeTrait, S2:ShapeTrait>(simplex: ThreeSimplex, shape1: &S1, pose1: &LieGroupISE3q, shape2: &S2, pose2:&LieGroupISE3q) -> (V3, f64) {
     assert_eq!(simplex.len(),4);
+    println!("EPA...");
     let mut polytope=TriMesh::new_empty();
     polytope.extend_from_points_and_indices(&simplex.0.iter().map(|v| [v.x, v.y, v.z]).collect(), &vec![[0,1,2],[0,3,1],[0,2,3],[1,3,2]]);
     let mut min_norm = V3::zeros();
@@ -311,11 +311,11 @@ pub fn epa<S1: ShapeTrait, S2:ShapeTrait>(simplex: ThreeSimplex, shape1: &S1, po
     while to_expand {
         (min_norm, min_dist) = closest_face_to_origin_on_polytope(&polytope);
         let support = shape1.support(&min_norm, pose1).sub(shape2.support(&min_norm.neg(), pose2));
-        if support.norm() > min_dist+_PROXIMITY_TOL {
+        if support.dot(&min_norm) > min_dist+_PROXIMITY_TOL {
             expand_polytope(&mut polytope, &support);
         }
         else {to_expand=false;}
     }
-    (min_norm, min_dist)
+    (min_norm, -1.0*min_dist)
 }
 

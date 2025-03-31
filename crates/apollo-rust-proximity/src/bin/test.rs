@@ -3,6 +3,7 @@ use parry3d_f64;
 use nalgebra::{Isometry3, UnitQuaternion, Translation3};
 use parry3d_f64::shape::{Cuboid as ParryCuboid, Ball as ParryBall};
 use parry3d_f64::query::distance as parry_distance;
+use parry3d_f64::query::contact as parry_contact;
 use apollo_rust_proximity::{gjk_distance, Cuboid, Sphere};
 use apollo_rust_spatial::vectors::V3;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::LieGroupISE3q;
@@ -33,13 +34,13 @@ fn main() {
         let p1 = random_pose();
         let p2 = random_pose();
 
-        let dist = gjk_distance(&s1, &p1, &s2, &p2);
+        let (dir, dist) = gjk_distance(&s1, &p1, &s2, &p2);
         let collided = if dist>0.0 {false} else {true};
 
         let s1_parry = ParryCuboid::new(s1.half_extents.into());
         let s2_parry = ParryCuboid::new(s2.half_extents.into());
 
-        let dist0 = parry_distance(&p1.0, &s1_parry, &p2.0, &s2_parry).unwrap();
+        let mut dist0 = parry_distance(&p1.0, &s1_parry, &p2.0, &s2_parry).unwrap();
         let collided0 = if dist0>0.0 {false} else {true};
         if collided0&&!check_distance {println!("In iter {}, collides", i)}
         // check
@@ -50,6 +51,10 @@ fn main() {
             );
         }
         if check_distance {
+            if collided0{
+                let contact = parry_contact(&p1.0, &s1_parry, &p2.0, &s2_parry, 0.0).unwrap();
+                dist0 = contact.unwrap().dist;
+            }
             let diff = (dist - dist0).abs();
             if diff > tolerance {
                 eprintln!(
