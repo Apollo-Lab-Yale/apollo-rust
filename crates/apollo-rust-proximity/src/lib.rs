@@ -91,9 +91,9 @@ impl ShapeTrait for Cuboid {
 
 #[derive(Clone)]
 struct GJKFeature{
- pub v: V3,
- pub simplex: Vec<V3>,
- pub d: f64,
+ pub v: V3, // closet point to origin on the simplex
+ pub simplex: Vec<V3>, // the simplex
+ pub d: f64, // distance from the simplex to origin
 }
 
 
@@ -204,7 +204,7 @@ fn tetrahedron_contains_origin(a: &V3, b: &V3, c: &V3, d: &V3) -> bool {
 }
 
 
-pub fn gjk_distance<S1: ShapeTrait, S2: ShapeTrait>(shape1: &S1, pose1: &LieGroupISE3q, shape2: &S2, pose2:&LieGroupISE3q) -> f64 {
+pub fn gjk_distance<S1: ShapeTrait, S2: ShapeTrait>(shape1: &S1, pose1: &LieGroupISE3q, shape2: &S2, pose2:&LieGroupISE3q) -> (V3, f64) {
  let mut simplex = ThreeSimplex::new();
  let mut dir = pose1.0.translation.vector.sub(&pose2.0.translation.vector);
  if dir.norm_squared() > 1e-6 {dir=dir.normalize()} else {dir=V3::new(1.0, 0.0, 0.0)};
@@ -214,17 +214,108 @@ pub fn gjk_distance<S1: ShapeTrait, S2: ShapeTrait>(shape1: &S1, pose1: &LieGrou
  let mut iter=0;
  while iter < _PROXIMITY_MAX_ITERS {
       (dir, dist) = simplex.find_and_reduce();
-      if dist < _PROXIMITY_TOL {return 0.0;}
-      dir = dir.neg().normalize();
-      support = shape1.support(&dir, pose1).sub(shape2.support(&dir.neg(), pose2));
+      // intersected
+      if dist < _PROXIMITY_TOL {return epa(simplex, shape1, pose1, shape2, pose2);}
+      dir = dir.normalize();
+      support = shape1.support(&dir.neg(), pose1).sub(shape2.support(&dir, pose2));
       let proj = support.dot(&dir);
       //the simplex closet to the origin was found
-      if proj+dist < _PROXIMITY_TOL {
-         return dist;
+      if dist < proj+_PROXIMITY_TOL {
+         return (dir, dist);
     }
      // proceed to origin
      simplex.add(support);
      iter+=1;
   }
- dist
+    (dir, dist)
 }
+
+fn closest_face_to_origin_on_polytope(polytope:&TriMesh)->(V3, f64){
+    let mut min_norm = V3::zeros();
+    let mut min_dist = f64::INFINITY;
+    for face in polytope.indices.iter(){
+        let a = V3::from(polytope.points[face[0]]);
+        let b = V3::from(polytope.points[face[1]]);
+        let c = V3::from(polytope.points[face[2]]);
+        let mut norm = (b-a).cross(&(c-a)).normalize();
+        let mut dist = norm.dot(&a);
+        // make sure the normal points out
+        if dist < 0.0 {
+           dist *= -1.0;
+           norm *= -1.0;
+        }
+        if dist < min_dist {
+            min_dist = dist;
+            min_norm = norm;
+        }
+    }
+    (min_norm, min_dist)
+}
+
+fn add_unique_edge(a: usize, b: usize, edges: &mut Vec<[usize;2]>){
+    let mut unique = true;
+    if let Some(index) = edges.iter().position(|&x| x == [a,b]) {
+        edges.remove(index);
+        unique=false;
+    }
+    if let Some(index) = edges.iter().position(|&x| x == [b,a]) {
+        edges.remove(index);
+        unique=false;
+    }
+    if unique {
+        edges.push([a,b]);
+    }
+}
+
+fn expand_polytope(polytope: &mut TriMesh, v: &V3){
+    let mut new_faces: Vec<[usize;3]>;
+    let mut new_edges: Vec<[usize;2]>;
+    let mut i = 0;
+    while i<polytope.indices.len() {
+        let face = polytope.indices[i];
+        let a = V3::from(polytope.points[face[0]]);
+        let b = V3::from(polytope.points[face[1]]);
+        let c = V3::from(polytope.points[face[2]]);
+        let mut norm = (b-a).cross(&(c-a)).normalize();
+        let mut dist = norm.dot(&a);
+        // make sure the normal points out
+        if dist < 0.0 {
+            dist *= -1.0;
+            norm *= -1.0;
+        }
+        // the face can be seen from v
+        if norm.dot(&(v-a)) < 0.0 {
+            polytope.indices.remove(i);
+            add_unique_edge(face[0], face[1], &mut new_edges);
+            add_unique_edge(face[1], face[2], &mut new_edges);
+            add_unique_edge(face[2], face[0], &mut new_edges);
+        }
+        else{
+            i+=1;
+        }
+    }
+    for edge in new_edges{
+        new_faces.push([edge[0], edge[1], polytope.points.len()]);
+    }
+    polytope.points.push([v.x, v.y, v.z]);
+    polytope.indices.extend(&new_faces);
+}
+
+pub fn epa<S1: ShapeTrait, S2:ShapeTrait>(simplex: ThreeSimplex, shape1: &S1, pose1: &LieGroupISE3q, shape2: &S2, pose2:&LieGroupISE3q) -> (V3, f64) {
+    assert_eq!(simplex.len(),4);
+    let mut polytope=TriMesh::new_empty();
+    polytope.extend_from_points_and_indices(&simplex.0.iter().map(|v| [v.x, v.y, v.z]).collect(), &vec![[0,1,2],[0,3,1],[0,2,3],[1,3,2]]);
+    let mut min_norm = V3::zeros();
+    let mut min_dist = f64::INFINITY;
+    let mut to_expand = true;
+    while to_expand {
+        (min_norm, min_dist) = closest_face_to_origin_on_polytope(&polytope);
+        let support = shape1.support(&min_norm, pose1).sub(shape2.support(&min_norm.neg(), pose2));
+        if support.norm() > min_dist+_PROXIMITY_TOL {
+            expand_polytope(&mut polytope, &support);
+        }
+        else {to_expand=false;}
+    }
+    (min_norm, min_dist)
+}
+
