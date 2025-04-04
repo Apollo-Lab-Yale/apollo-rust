@@ -103,16 +103,16 @@ fn main() {
         // check
         if collided!=collided0 {
             panic!(
-                "Iteration {}: Collision check mismatch: my_collided = {} vs parry_collided = {}",
-                i, collided, collided0
+                "Iteration {}: Collision check mismatch: my_collided = {} vs parry_collided = {}, cuboid1.half_extends={}, cuboid2.half_extends={}",
+                i, collided, collided0, s1.half_extents, s2.half_extents
             );
         }
         if check_distance {
             let diff = (dist - dist0).abs();
             if diff > tolerance {
                 panic!(
-                    "Iteration {}: Distance mismatch: my = {} vs parry = {} (diff = {})",
-                    i, dist, dist0, diff
+                    "Iteration {}: Distance mismatch: my = {} vs parry = {} (diff = {}), cuboid1.half_extends={}, cuboid2.half_extends={}",
+                    i, dist, dist0, diff,s1.half_extents, s2.half_extents
                 );
             }
         }
