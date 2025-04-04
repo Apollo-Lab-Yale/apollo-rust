@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, BTreeMap};
 use std::ops::{Add, Div, Neg, Sub};
 use nalgebra::{sup, MatrixSum, Vector3};
 use parry3d_f64::query::epa::EPA;
@@ -231,7 +231,7 @@ pub fn gjk_contact<S1: ShapeTrait, S2: ShapeTrait>(shape1: &S1, pose1: &LieGroup
  while iter < _PROXIMITY_MAX_ITERS {
       (dir, dist) = simplex.find_and_reduce();
       // intersected
-      if dist < _PROXIMITY_TOL {return epa(simplex, shape1, pose1, shape2, pose2);}
+      if dist < _PROXIMITY_TOL && simplex.len()==4 {return epa(simplex, shape1, pose1, shape2, pose2);}
       dir = dir.normalize();
       support = shape1.support(&dir.neg(), pose1).sub(shape2.support(&dir, pose2));
       let proj = support.dot(&dir);
@@ -258,6 +258,7 @@ impl EPAFace{
         Self{indices, n, d }
     }
 }
+
 
 // Equality (used for removal) compares only the indices.
 impl PartialEq for EPAFace {
@@ -315,6 +316,7 @@ impl EPAPolytope{
         let a = self.points[indices[0]];
         let b = self.points[indices[1]];
         let c = self.points[indices[2]];
+        //println!("a={},b={},c={}",indices[0], indices[1], indices[2]);
         let mut norm = (b-a).cross(&(c-a)).normalize();
         let mut dist = norm.dot(&a);
         // make sure the normal points out
@@ -340,7 +342,9 @@ impl EPAPolytope{
         for face in &self.faces {
             let a = self.points[face.indices[0]];
             // the face can be seen from v
-            if face.n.dot(&(v-a)) > 0.0 {
+            // the tol in this judgement is extremely important to exclude
+            // faces that have v on their planes
+            if face.n.dot(&(v-a)) > _PROXIMITY_TOL {
                 EPAPolytope::add_unique_edge(face.indices[0], face.indices[1], &mut new_edges);
                 EPAPolytope::add_unique_edge(face.indices[1], face.indices[2], &mut new_edges);
                 EPAPolytope::add_unique_edge(face.indices[2], face.indices[0], &mut new_edges);
@@ -392,6 +396,7 @@ fn epa<S1: ShapeTrait, S2:ShapeTrait>(simplex: ThreeSimplex, shape1: &S1, pose1:
         (min_norm, min_dist) = polytope.closest_face_to_origin();
         let support = shape1.support(&min_norm, pose1).sub(shape2.support(&min_norm.neg(), pose2));
         if support.dot(&min_norm) > min_dist+_PROXIMITY_TOL {
+            //println!("min_dist={}",min_dist);
             polytope.expand(support);
         }
         else {to_expand=false;}

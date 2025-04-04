@@ -62,7 +62,7 @@ fn cuboid_to_polyhedron(cuboid: &Cuboid) -> ParryConvexPolyhedron {
 }
 
 fn main() {
-    let iterations = 10000;
+    let iterations = 100000;
     let tolerance = 1e-4;
     let check_distance = true;
 
@@ -71,14 +71,12 @@ fn main() {
     let mut parry_non_contact_time = Duration::new(0, 0);
     let mut parry_contact_time = Duration::new(0, 0);
     let mut contacts = 0;
-
     for i in 0..iterations {
         println!("Iter {}",i);
         let s1 = random_cuboid();
         let s2 = random_cuboid();
-        let p1 = random_pose();
-        let p2 = random_pose();
-
+        let p1 = LieGroupISE3q::identity();//random_pose();
+        let p2 = LieGroupISE3q::identity();//random_pose();
         let start = Instant::now();
         let (dir, dist) = gjk_contact(&s1, &p1, &s2, &p2);
         let elapsed = start.elapsed();
@@ -99,20 +97,19 @@ fn main() {
             dist0 = contact.unwrap().dist;
             parry_contact_time += elapsed;}
         else {parry_non_contact_time += elapsed;}
-
         // check
         if collided!=collided0 {
             panic!(
-                "Iteration {}: Collision check mismatch: my_collided = {} vs parry_collided = {}, cuboid1.half_extends={}, cuboid2.half_extends={}",
-                i, collided, collided0, s1.half_extents, s2.half_extents
+                "Iteration {}: Collision check mismatch: my_collided = {} vs parry_collided = {}, cuboid1.half_extends={}, cuboid2.half_extends={}, p1={:?}, p2={:?}",
+                i, collided, collided0, s1.half_extents, s2.half_extents, p1, p2
             );
         }
         if check_distance {
-            let diff = (dist - dist0).abs();
+            let diff = (dist - dist0).abs();//if !collided {(dist - dist0).abs()} else {dist - dist0};
             if diff > tolerance {
                 panic!(
-                    "Iteration {}: Distance mismatch: my = {} vs parry = {} (diff = {}), cuboid1.half_extends={}, cuboid2.half_extends={}",
-                    i, dist, dist0, diff,s1.half_extents, s2.half_extents
+                    "Iteration {}: Distance mismatch: my = {} vs parry = {} (diff = {}), cuboid1.half_extends={}, cuboid2.half_extends={}, p1={:?}, p2={:?}",
+                    i, dist, dist0, diff,s1.half_extents, s2.half_extents, p1, p2
                 );
             }
         }
