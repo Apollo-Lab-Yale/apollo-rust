@@ -1,5 +1,8 @@
+use std::cmp::Ordering;
+use std::collections::BTreeSet;
 use std::ops::{Add, Div, Neg, Sub};
-use nalgebra::{sup, MatrixSum};
+use nalgebra::{sup, MatrixSum, Vector3};
+use parry3d_f64::query::epa::EPA;
 use parry3d_f64::query::gjk::eps_tol;
 use apollo_rust_lie::EuclideanSpaceElement;
 use apollo_rust_mesh_utils::trimesh::TriMesh;
@@ -204,7 +207,7 @@ fn tetrahedron_contains_origin(a: &V3, b: &V3, c: &V3, d: &V3) -> bool {
 }
 
 
-pub fn gjk_distance<S1: ShapeTrait, S2: ShapeTrait>(shape1: &S1, pose1: &LieGroupISE3q, shape2: &S2, pose2:&LieGroupISE3q) -> (V3, f64) {
+pub fn gjk_contact<S1: ShapeTrait, S2: ShapeTrait>(shape1: &S1, pose1: &LieGroupISE3q, shape2: &S2, pose2:&LieGroupISE3q) -> (V3, f64) {
  let mut simplex = ThreeSimplex::new();
  let mut dir = pose1.0.translation.vector.sub(&pose2.0.translation.vector);
  if dir.norm_squared() > 1e-6 {dir=dir.normalize()} else {dir=V3::new(1.0, 0.0, 0.0)};
@@ -230,89 +233,153 @@ pub fn gjk_distance<S1: ShapeTrait, S2: ShapeTrait>(shape1: &S1, pose1: &LieGrou
     (dir, dist)
 }
 
-fn closest_face_to_origin_on_polytope(polytope:&TriMesh)->(V3, f64){
-    let mut min_norm = V3::zeros();
-    let mut min_dist = f64::INFINITY;
-    for face in polytope.indices.iter(){
-        let a = V3::from(polytope.points[face[0]]);
-        let b = V3::from(polytope.points[face[1]]);
-        let c = V3::from(polytope.points[face[2]]);
+#[derive(Clone)]
+struct EPAFace{
+    pub indices: [usize;3],
+    pub n: V3, // normal
+    pub d: f64, // distance to origin
+}
+
+impl EPAFace{
+    pub fn new(indices: [usize;3], n: V3, d: f64) -> Self{
+        Self{indices, n, d }
+    }
+}
+
+// Equality (used for removal) compares only the indices.
+impl PartialEq for EPAFace {
+    fn eq(&self, other: &Self) -> bool {
+        self.indices == other.indices
+    }
+}
+
+impl Eq for EPAFace {}
+
+// Ordering for insertion and traversal compares by d,
+// and if the distances are equal, breaks ties using indices.
+// Also, if the indices are equal, it forces Ordering::Equal.
+impl PartialOrd for EPAFace {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.indices == other.indices {
+            Some(Ordering::Equal)
+        } else {
+            self.d.partial_cmp(&other.d).map(|ord| {
+                if ord == Ordering::Equal {
+                    self.indices.cmp(&other.indices)
+                } else {
+                    ord
+                }
+            })
+        }
+    }
+}
+
+impl Ord for EPAFace {
+        fn cmp(&self, other: &Self) -> Ordering {
+            if self.indices == other.indices {
+                Ordering::Equal
+            } else {
+                match self.d.partial_cmp(&other.d) {
+                    Some(Ordering::Equal) => self.indices.cmp(&other.indices),
+                    Some(ord) => ord,
+                    None => {panic!("Cannot compare EPAFace: encountered NaN in distance (d), d1={}, d2={}", self.d, other.d)},
+                }
+            }
+        }
+}
+
+struct EPAPolytope{
+    pub points: Vec<V3>,
+    pub faces: BTreeSet<EPAFace>
+}
+
+impl EPAPolytope{
+    pub fn new(points: Vec<V3>)->Self{
+        Self{points, faces: BTreeSet::new()}
+    }
+
+    pub fn add_face(&mut self, indices: [usize;3]){
+        let a = self.points[indices[0]];
+        let b = self.points[indices[1]];
+        let c = self.points[indices[2]];
         let mut norm = (b-a).cross(&(c-a)).normalize();
         let mut dist = norm.dot(&a);
         // make sure the normal points out
         if dist < 0.0 {
-           dist *= -1.0;
-           norm *= -1.0;
-        }
-        if dist < min_dist {
-            min_dist = dist;
-            min_norm = norm;
-        }
-    }
-    (min_norm, min_dist)
-}
-
-fn add_unique_edge(a: usize, b: usize, edges: &mut Vec<[usize;2]>){
-    let mut unique = true;
-    if let Some(index) = edges.iter().position(|&x| x == [a,b]) {
-        edges.remove(index);
-        unique=false;
-    }
-    if let Some(index) = edges.iter().position(|&x| x == [b,a]) {
-        edges.remove(index);
-        unique=false;
-    }
-    if unique {
-        edges.push([a,b]);
-    }
-}
-
-fn expand_polytope(polytope: &mut TriMesh, v: &V3){
-    let mut new_faces: Vec<[usize;3]>=Vec::new();
-    let mut new_edges: Vec<[usize;2]>=Vec::new();
-    let mut i = 0;
-    while i<polytope.indices.len() {
-        let face = polytope.indices[i];
-        let a = V3::from(polytope.points[face[0]]);
-        let b = V3::from(polytope.points[face[1]]);
-        let c = V3::from(polytope.points[face[2]]);
-        let mut norm = (b-a).cross(&(c-a)).normalize();
-        let dist = norm.dot(&a);
-        // make sure the normal points out
-        if dist < 0.0 {
             norm *= -1.0;
+            dist *= -1.0;
         }
-        // the face can be seen from v
-        if norm.dot(&(v-a)) > 0.0 {
-            polytope.indices.remove(i);
-            add_unique_edge(face[0], face[1], &mut new_edges);
-            add_unique_edge(face[1], face[2], &mut new_edges);
-            add_unique_edge(face[2], face[0], &mut new_edges);
+        self.faces.insert(EPAFace::new(indices, norm, dist));
+    }
+
+    pub fn add_vertex(&mut self, vertex:V3){
+        self.points.push(vertex);
+    }
+
+    pub fn closest_face_to_origin(&self) -> (V3, f64){
+        let face = self.faces.iter().next().unwrap();
+        (face.n, face.d)
+    }
+
+    pub fn expand(&mut self, v:V3){
+        let mut new_edges: Vec<[usize;2]>=Vec::new();
+        let mut to_remove: Vec<EPAFace> = Vec::new();
+        for face in &self.faces {
+            let a = self.points[face.indices[0]];
+            // the face can be seen from v
+            if face.n.dot(&(v-a)) > 0.0 {
+                EPAPolytope::add_unique_edge(face.indices[0], face.indices[1], &mut new_edges);
+                EPAPolytope::add_unique_edge(face.indices[1], face.indices[2], &mut new_edges);
+                EPAPolytope::add_unique_edge(face.indices[2], face.indices[0], &mut new_edges);
+                to_remove.push(face.clone());
+            }
         }
-        else{
-            i+=1;
+        // remove faces
+        for face in to_remove {
+            self.faces.remove(&face);
+        }
+        // add the new vertex and new faces
+        self.add_vertex(v);
+        for edge in new_edges.iter(){
+            self.add_face([edge[0], edge[1], self.points.len()-1]);
         }
     }
-    for edge in new_edges.iter(){
-        new_faces.push([edge[0], edge[1], polytope.points.len()]);
+
+    fn add_unique_edge(a: usize, b: usize, edges: &mut Vec<[usize;2]>){
+        let mut unique = true;
+        if let Some(index) = edges.iter().position(|&x| x == [a,b]) {
+            edges.remove(index);
+            unique=false;
+        }
+        if let Some(index) = edges.iter().position(|&x| x == [b,a]) {
+            edges.remove(index);
+            unique=false;
+        }
+        if unique {
+            edges.push([a,b]);
+        }
     }
-    polytope.points.push([v.x, v.y, v.z]);
-    polytope.indices.extend(&new_faces);
+
 }
 
 fn epa<S1: ShapeTrait, S2:ShapeTrait>(simplex: ThreeSimplex, shape1: &S1, pose1: &LieGroupISE3q, shape2: &S2, pose2:&LieGroupISE3q) -> (V3, f64) {
     assert_eq!(simplex.len(),4);
-    println!("EPA...");
-    let mut polytope=TriMesh::new_empty();
-    polytope.extend_from_points_and_indices(&simplex.0.iter().map(|v| [v.x, v.y, v.z]).collect(), &vec![[0,1,2],[0,3,1],[0,2,3],[1,3,2]]);
+    //println!("EPA...");
+    // initialize polytope
+    let mut polytope=EPAPolytope::new(simplex.0);
+    polytope.add_face([0,1,2]);
+    polytope.add_face([0,3,1]);
+    polytope.add_face([0,2,3]);
+    polytope.add_face([1,3,2]);
     let mut min_norm = V3::zeros();
     let mut min_dist = f64::INFINITY;
     let mut to_expand = true;
+    // main loop
     while to_expand {
-        (min_norm, min_dist) = closest_face_to_origin_on_polytope(&polytope);
+        (min_norm, min_dist) = polytope.closest_face_to_origin();
         let support = shape1.support(&min_norm, pose1).sub(shape2.support(&min_norm.neg(), pose2));
         if support.dot(&min_norm) > min_dist+_PROXIMITY_TOL {
-            expand_polytope(&mut polytope, &support);
+            polytope.expand(support);
         }
         else {to_expand=false;}
     }
