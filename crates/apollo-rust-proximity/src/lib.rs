@@ -4,7 +4,7 @@ use std::ops::{Add, Div, Neg, Sub};
 use nalgebra::{sup, MatrixSum, Vector3};
 use parry3d_f64::query::epa::EPA;
 use parry3d_f64::query::gjk::eps_tol;
-use apollo_rust_lie::EuclideanSpaceElement;
+use apollo_rust_lie::{EuclideanSpaceElement, LieGroupElement};
 use apollo_rust_mesh_utils::trimesh::TriMesh;
 use apollo_rust_spatial::lie::se3_implicit_quaternion::LieGroupISE3q;
 use apollo_rust_spatial::vectors::{ApolloVector3Trait, V3};
@@ -342,9 +342,9 @@ impl EPAPolytope{
         for face in &self.faces {
             let a = self.points[face.indices[0]];
             // the face can be seen from v
-            // the tol in this judgement is extremely important to exclude
-            // faces that have v on their planes
-            if face.n.dot(&(v-a)) > _PROXIMITY_TOL {
+            // the tol in this judgement is extremely important to include
+            // faces that have v on their planes so that all redundant edges can be removed
+            if face.n.dot(&(v-a)) > -_PROXIMITY_TOL*_PROXIMITY_TOL {
                 EPAPolytope::add_unique_edge(face.indices[0], face.indices[1], &mut new_edges);
                 EPAPolytope::add_unique_edge(face.indices[1], face.indices[2], &mut new_edges);
                 EPAPolytope::add_unique_edge(face.indices[2], face.indices[0], &mut new_edges);
@@ -363,18 +363,15 @@ impl EPAPolytope{
     }
 
     fn add_unique_edge(a: usize, b: usize, edges: &mut Vec<[usize;2]>){
-        let mut unique = true;
         if let Some(index) = edges.iter().position(|&x| x == [a,b]) {
             edges.remove(index);
-            unique=false;
+            return;
         }
         if let Some(index) = edges.iter().position(|&x| x == [b,a]) {
             edges.remove(index);
-            unique=false;
+            return;
         }
-        if unique {
-            edges.push([a,b]);
-        }
+        edges.push([a,b]);
     }
 
 }
@@ -393,7 +390,24 @@ fn epa<S1: ShapeTrait, S2:ShapeTrait>(simplex: ThreeSimplex, shape1: &S1, pose1:
     // main loop
     while to_expand {
         (min_normal, min_dist) = polytope.closest_face_to_origin();
-        let support = shape1.support(&min_normal, pose1).sub(shape2.support(&min_normal.neg(), pose2));
+        /*
+        let face = polytope.faces.iter().next().unwrap();
+        let a = pose1.inverse().0.rotation*polytope.points[face.indices[0]]+pose1.inverse().0.translation.vector;
+        let b = pose1.inverse().0.rotation*polytope.points[face.indices[1]]+pose1.inverse().0.translation.vector;
+        let c =  pose1.inverse().0.rotation*polytope.points[face.indices[2]]+pose1.inverse().0.translation.vector;
+        let n1 = (b-a).cross(&(c-a)).normalize();
+        println!("a={:?},b={:?}, c={:?}, n={:?},n1={:?}",a,
+                 b,c,
+                 pose1.inverse().0.rotation*min_normal,n1);
+         */
+        let p1 = shape1.support(&min_normal, pose1);
+        let p2 = shape2.support(&min_normal.neg(), pose2);
+        let support = p1-p2;
+        /*
+        println!("min_normal {:?}, p1={:?}, p2={:?}", min_normal.transpose(),
+                 pose1.inverse().0.rotation*p1+pose1.inverse().0.translation.vector,
+                 pose2.inverse().0.rotation*p2+pose2.inverse().0.translation.vector);
+         */
         if support.dot(&min_normal) > min_dist+_PROXIMITY_TOL {
             polytope.expand(support);
         }

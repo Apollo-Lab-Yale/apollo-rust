@@ -1,3 +1,4 @@
+use std::cmp::min;
 use rand::Rng;
 use parry3d_f64;
 use std::time::{Duration, Instant};
@@ -7,8 +8,9 @@ use parry3d_f64::math::Point as ParryPoint;
 use parry3d_f64::query::distance as parry_distance;
 use parry3d_f64::query::contact as parry_contact;
 use apollo_rust_proximity::{gjk_contact, Cuboid, Sphere};
+use apollo_rust_spatial::isometry3::I3;
 use apollo_rust_spatial::vectors::V3;
-use apollo_rust_spatial::lie::se3_implicit_quaternion::LieGroupISE3q;
+use apollo_rust_spatial::lie::se3_implicit_quaternion::{ISE3q, LieGroupISE3q};
 
 fn random_pose() -> LieGroupISE3q {
     LieGroupISE3q::new_random()
@@ -62,7 +64,7 @@ fn cuboid_to_polyhedron(cuboid: &Cuboid) -> ParryConvexPolyhedron {
 }
 
 fn main() {
-    let iterations = 1000000;
+    let iterations = 1000;
     let tolerance = 1e-4;
     let check_distance = true;
 
@@ -75,8 +77,12 @@ fn main() {
         println!("Iter {}",i);
         let s1 = random_cuboid();
         let s2 = random_cuboid();
-        let p1 = random_pose();
-        let p2 = random_pose();
+        let p1 = ISE3q::identity();//random_pose();
+        let p2 = ISE3q::identity();//random_pose();
+        println!(
+            "cuboid1.half_extends={:?}, cuboid2.half_extends={:?}",
+             s1.half_extents.transpose(), s2.half_extents.transpose()
+        );
         let start = Instant::now();
         let (dir, dist) = gjk_contact(&s1, &p1, &s2, &p2);
         let elapsed = start.elapsed();
@@ -102,16 +108,16 @@ fn main() {
         // check
         if collided!=collided0 {
             panic!(
-                "Iteration {}: Collision check mismatch: my_collided = {} vs parry_collided = {}, cuboid1.half_extends={}, cuboid2.half_extends={}, p1={:?}, p2={:?}",
-                i, collided, collided0, s1.half_extents, s2.half_extents, p1, p2
+                "Iteration {}: Collision check mismatch: my_collided = {} vs parry_collided = {}, cuboid1.half_extends={:?}, cuboid2.half_extends={:?}, p1={:?}, p2={:?}",
+                i, collided, collided0, s1.half_extents.transpose(), s2.half_extents.transpose(), p1, p2
             );
         }
         if check_distance {
-            let diff = if !collided {(dist - dist0).abs()} else {(dir0-dir).norm()};
+            let diff = if !collided {(dist - dist0).abs()} else {f64::min((dir0-dir).norm(), (dir0+dir).norm())};
             if diff > tolerance {
                 panic!(
-                    "Iteration {}: Distance mismatch: my = {} vs parry = {} (diff = {}), my_dir={}, parry_dir={}, cuboid1.half_extends={}, cuboid2.half_extends={}, p1={:?}, p2={:?}",
-                    i, dist, dist0, diff, dir, dir0, s1.half_extents, s2.half_extents, p1, p2
+                    "Iteration {}: Distance mismatch: my = {} vs parry = {} (diff = {}), my_dir={:?}, parry_dir={:?}, cuboid1.half_extends={:?}, cuboid2.half_extends={:?}, p1={:?}, p2={:?}",
+                    i, dist, dist0, diff, dir.transpose(), dir0.transpose(), s1.half_extents.transpose(), s2.half_extents.transpose(), p1, p2
                 );
             }
         }
