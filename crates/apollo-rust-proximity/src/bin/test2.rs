@@ -1,11 +1,11 @@
 use std::time::{Duration, Instant};
-use nalgebra::{Quaternion, Translation3, UnitQuaternion, Vector4};
+use nalgebra::{Quaternion, Translation3, Unit, UnitQuaternion, Vector, Vector4};
 use apollo_rust_proximity::{gjk_contact, Cuboid, Sphere};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::LieGroupISE3q;
 use apollo_rust_spatial::vectors::V3;
 use parry3d_f64::shape::{Cuboid as ParryCuboid, Ball as ParryBall, ConvexPolyhedron as ParryConvexPolyhedron};
-use parry3d_f64::math::Point as ParryPoint;
-use parry3d_f64::query::distance as parry_distance;
+use parry3d_f64::math::{Point as ParryPoint, Real};
+use parry3d_f64::query::{contact, distance as parry_distance};
 use parry3d_f64::query::contact as parry_contact;
 
 fn cuboid_to_polyhedron(cuboid: &Cuboid) -> ParryConvexPolyhedron {
@@ -47,16 +47,18 @@ fn cuboid_to_polyhedron(cuboid: &Cuboid) -> ParryConvexPolyhedron {
 
 fn main() {
     let tolerance = 1e-4;
-    let s1 = Cuboid::new( 1.0606908305142144 ,
-                          0.650219314198895 ,
-                          1.8177101125010569);
-    let s2 =  Cuboid::new(  0.5122661185580153 ,
-                            1.1620654900501135 ,
-                            1.8490306812866195 );
-    let mut p1 = LieGroupISE3q::identity();
-    //p1.0.rotation = UnitQuaternion::new_normalize(Quaternion::new(0.1386963726538735,-0.7010145655139903, 0.1396139374142936, 0.6854559385033928));
-    //p1.0.translation=Translation3::new(2.749148927243306, -0.634933474296135, 2.5467344103108234);
-    let mut p2 = LieGroupISE3q::identity();
+    let s1 = Cuboid::new(1.075098098538974 ,
+                          1.096634535128007 ,
+                          1.500321486525829);
+    let s2 =  Cuboid::new( 0.5215194241920614
+                           ,0.6700215901060109
+                           ,  1.837100818514518);
+    let mut p1 = LieGroupISE3q::default();
+    p1.0.rotation = UnitQuaternion::new_normalize(Quaternion::new(0.12521312636263338, 0.05320068964272308, -0.9479505940465489, -0.2878906578109627,));
+    p1.0.translation= nalgebra::Translation3::new(-0.20384870881084893, 1.4837239790061565, -1.9428668424691602);
+    let mut p2 = LieGroupISE3q::default();
+    p2.0.rotation = UnitQuaternion::new_normalize(Quaternion::new(0.3202799675421666, 0.5046631055433424, -0.32184338669003126, -0.7342702000887882,));
+    p2.0.translation= nalgebra::Translation3::new(-1.985337327415627, 0.20894124790838386, 0.20201679374059456);
         let (dir, dist) = gjk_contact(&s1, &p1, &s2, &p2);
         let collided = if dist>0.0 {false} else {true};
         //let s1_parry = ParryCuboid::new(s1.half_extents.into());
@@ -65,13 +67,18 @@ fn main() {
         let s2_parry= cuboid_to_polyhedron(&s2);
         let mut dist0 = parry_distance(&p1.0, &s1_parry, &p2.0, &s2_parry).unwrap();
         let collided0 = if dist0>0.0 {false} else {true};
-        if collided0 {
-            let contact = parry_contact(&p1.0, &s1_parry, &p2.0, &s2_parry, 0.0).unwrap();
-            dist0 = contact.unwrap().dist;}
-            let diff = (dist - dist0).abs();//if !collided {(dist - dist0).abs()} else {dist - dist0};
-                println!(
-                    "my = {} vs parry = {} (diff = {}), cuboid1.half_extends={}, cuboid2.half_extends={}, p1={:?}, p2={:?}",
-                    dist, dist0, diff,s1.half_extents, s2.half_extents,p1,p2
-                );
+    let mut dir0=V3::zeros();
+    let mut point1 = V3::zeros();
+    let mut point2=V3::zeros();
+    if collided0 {
+        let contact = parry_contact(&p1.0, &s1_parry, &p2.0, &s2_parry, 0.0).unwrap();
+        dist0 = contact.unwrap().dist;dir0=V3::from_array_storage(contact.unwrap().normal1.data);
+    point1=V3::from_array_storage(contact.unwrap().point1.coords.data);
+        point2=V3::from_array_storage(contact.unwrap().point2.coords.data);}
+    let diff = (dist - dist0).abs();//if !collided {(dist - dist0).abs()} else {dist - dist0};
+    println!(
+        "my = {} vs parry = {} ,another={},(diff = {}), my_dir={}, parry_dir={},cuboid1.half_extends={}, cuboid2.half_extends={}, p1={:?}, p2={:?}",
+        dist, dist0,(point2-point1).norm(),diff, dir, dir0,s1.half_extents, s2.half_extents,p1,p2
+    );
 
 }

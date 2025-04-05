@@ -62,7 +62,7 @@ fn cuboid_to_polyhedron(cuboid: &Cuboid) -> ParryConvexPolyhedron {
 }
 
 fn main() {
-    let iterations = 100000;
+    let iterations = 1000000;
     let tolerance = 1e-4;
     let check_distance = true;
 
@@ -75,8 +75,8 @@ fn main() {
         println!("Iter {}",i);
         let s1 = random_cuboid();
         let s2 = random_cuboid();
-        let p1 = LieGroupISE3q::identity();//random_pose();
-        let p2 = LieGroupISE3q::identity();//random_pose();
+        let p1 = random_pose();
+        let p2 = random_pose();
         let start = Instant::now();
         let (dir, dist) = gjk_contact(&s1, &p1, &s2, &p2);
         let elapsed = start.elapsed();
@@ -90,11 +90,13 @@ fn main() {
         let mut dist0 = parry_distance(&p1.0, &s1_parry, &p2.0, &s2_parry).unwrap();
         let elapsed = start.elapsed();
         let collided0 = if dist0>0.0 {false} else {true};
+        let mut dir0=V3::zeros();
         if collided0 {
             let start = Instant::now();
             let contact = parry_contact(&p1.0, &s1_parry, &p2.0, &s2_parry, 0.0).unwrap();
             let elapsed = start.elapsed();
             dist0 = contact.unwrap().dist;
+            dir0=V3::from_array_storage(contact.unwrap().normal1.data);
             parry_contact_time += elapsed;}
         else {parry_non_contact_time += elapsed;}
         // check
@@ -105,11 +107,11 @@ fn main() {
             );
         }
         if check_distance {
-            let diff = (dist - dist0).abs();//if !collided {(dist - dist0).abs()} else {dist - dist0};
+            let diff = if !collided {(dist - dist0).abs()} else {(dir0-dir).norm()};
             if diff > tolerance {
                 panic!(
-                    "Iteration {}: Distance mismatch: my = {} vs parry = {} (diff = {}), cuboid1.half_extends={}, cuboid2.half_extends={}, p1={:?}, p2={:?}",
-                    i, dist, dist0, diff,s1.half_extents, s2.half_extents, p1, p2
+                    "Iteration {}: Distance mismatch: my = {} vs parry = {} (diff = {}), my_dir={}, parry_dir={}, cuboid1.half_extends={}, cuboid2.half_extends={}, p1={:?}, p2={:?}",
+                    i, dist, dist0, diff, dir, dir0, s1.half_extents, s2.half_extents, p1, p2
                 );
             }
         }

@@ -317,14 +317,14 @@ impl EPAPolytope{
         let b = self.points[indices[1]];
         let c = self.points[indices[2]];
         //println!("a={},b={},c={}",indices[0], indices[1], indices[2]);
-        let mut norm = (b-a).cross(&(c-a)).normalize();
-        let mut dist = norm.dot(&a);
+        let mut normal = (b-a).cross(&(c-a)).normalize();
+        let mut dist = normal.dot(&a);
         // make sure the normal points out
         if dist < 0.0 {
-            norm *= -1.0;
+            normal *= -1.0;
             dist *= -1.0;
         }
-        self.faces.insert(EPAFace::new(indices, norm, dist));
+        self.faces.insert(EPAFace::new(indices, normal, dist));
     }
 
     pub fn add_vertex(&mut self, vertex:V3){
@@ -381,26 +381,24 @@ impl EPAPolytope{
 
 fn epa<S1: ShapeTrait, S2:ShapeTrait>(simplex: ThreeSimplex, shape1: &S1, pose1: &LieGroupISE3q, shape2: &S2, pose2:&LieGroupISE3q) -> (V3, f64) {
     assert_eq!(simplex.len(),4);
-    //println!("EPA...");
     // initialize polytope
     let mut polytope=EPAPolytope::new(Vec::from(simplex.arr));
     polytope.add_face([0,1,2]);
     polytope.add_face([0,3,1]);
     polytope.add_face([0,2,3]);
     polytope.add_face([1,3,2]);
-    let mut min_norm = V3::zeros();
+    let mut min_normal = V3::zeros();
     let mut min_dist = f64::INFINITY;
     let mut to_expand = true;
     // main loop
     while to_expand {
-        (min_norm, min_dist) = polytope.closest_face_to_origin();
-        let support = shape1.support(&min_norm, pose1).sub(shape2.support(&min_norm.neg(), pose2));
-        if support.dot(&min_norm) > min_dist+_PROXIMITY_TOL {
-            //println!("min_dist={}",min_dist);
+        (min_normal, min_dist) = polytope.closest_face_to_origin();
+        let support = shape1.support(&min_normal, pose1).sub(shape2.support(&min_normal.neg(), pose2));
+        if support.dot(&min_normal) > min_dist+_PROXIMITY_TOL {
             polytope.expand(support);
         }
         else {to_expand=false;}
     }
-    (min_norm, -1.0*min_dist)
+    (min_normal, -1.0*min_dist)
 }
 
