@@ -15,6 +15,7 @@ impl DifferentiableFunctionEngineNalgebraTrait for DummyDifferentiableFunction {
     }
 }
 
+/*
 /// Soon to be deprecated
 #[derive(Clone)]
 pub struct WrapperDifferentiableFunction {
@@ -34,7 +35,9 @@ impl DifferentiableFunctionEngineNalgebraTrait for WrapperDifferentiableFunction
         unimplemented!("derivative call not supported in WrapperDifferentiableFunction")
     }
 }
+*/
 
+/*
 /// Soon to be deprecated
 #[derive(Clone)]
 pub struct FDDifferentiableFunctionEngine {
@@ -71,6 +74,7 @@ impl DifferentiableFunctionEngineNalgebraTrait for FDDifferentiableFunctionEngin
         out
     }
 }
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

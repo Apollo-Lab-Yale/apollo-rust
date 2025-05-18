@@ -9,4 +9,5 @@ apollo-rust-lie-adtrait = { path= "../apollo-rust-lie-adtrait" }
 nalgebra = { version = "0.33.0", features = ["rand", "serde-serialize"] }
 rand = { version="0.9.0-alpha.1" }
 serde = { version="1.0.203", features = ["derive"] }
-ad_trait = { git = "https://github.com/djrakita/ad_trait" }
+# ad_trait = { git = "https://github.com/djrakita/ad_trait" }
+ad_trait = { version = "0.1.5" }

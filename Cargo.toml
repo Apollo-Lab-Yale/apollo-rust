@@ -27,7 +27,9 @@ members = [
     "crates/apollo-rust-spatial-adtrait",
     "crates/apollo-rust-lie-adtrait",
     "crates/apollo-rust-robotics-core-adtrait",
-    "crates/apollo-rust-proximity", "crates/apollo-rust-robotics-adtrait"]
+    "crates/apollo-rust-proximity",
+    "crates/apollo-rust-robotics-adtrait",
+    "crates/apollo-rust-optimization-adtrait"]
 
 [dependencies]
 
