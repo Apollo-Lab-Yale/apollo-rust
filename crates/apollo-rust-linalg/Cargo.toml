@@ -9,9 +9,9 @@ nalgebra-sparse = "0.10.0"
 nalgebra-lapack = { version = "0.25.0", features = ["openblas"], default-features = false }
 rand = { version="0.9.0-alpha.1" }
 # ad_trait = { git = "https://github.com/djrakita/ad_trait", optional = true }
-ndarray = "0.15"
-ndarray-rand = "0.14"
-ndarray-linalg = { version = "0.16", features = ["openblas"] }
+ndarray = "0.16.1"
+ndarray-rand = "0.15"
+ndarray-linalg = { version = "0.17", features = ["openblas"] }
 rayon = "1.10.0"
 typed-arena = "2.0.2"
 slab = "0.4.9"

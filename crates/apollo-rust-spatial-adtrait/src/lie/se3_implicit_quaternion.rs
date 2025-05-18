@@ -239,7 +239,6 @@ impl<A: AD> ApolloLieAlgPackIse3qTrait<A> for V6<A> {
         let u = V3::new(self[0], self[1], self[2]);
         let q = u.to_lie_alg_h1();
         let v = V3::new(self[3], self[4], self[5]);
-
         LieAlgISE3q::new(q.0, v)
     }
 }
