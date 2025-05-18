@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 use apollo_rust_linalg::V;
-use apollo_rust_proximity::bvh::{Bvh, BvhShape};
-use apollo_rust_proximity::ToIntersectionResult;
+use apollo_rust_proximity_parry::bvh::{Bvh, BvhShape};
+use apollo_rust_proximity_parry::ToIntersectionResult;
 use apollo_rust_robotics_core::ChainNalgebra;
 use apollo_rust_robotics_core::modules_runtime::link_shapes_module::{LinkShapeMode, LinkShapeRep};
 use crate::feasibility_checkers::FeasibilityCheckerTrait;

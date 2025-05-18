@@ -1,12 +1,16 @@
 [package]
 name = "apollo-rust-proximity"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 apollo-rust-spatial = { path = "../apollo-rust-spatial" }
 apollo-rust-lie = { path = "../apollo-rust-lie" }
 apollo-rust-linalg = { path = "../apollo-rust-linalg" }
 apollo-rust-algs = { path = "../apollo-rust-algs" }
+apollo-rust-modules = {path = "../apollo-rust-modules"}
+apollo-rust-mesh-utils = {path = "../apollo-rust-mesh-utils"}
 nalgebra = { version = "0.33.0", features = ["rand", "serde-serialize"] }
 serde = { version = "1.0.214", features = ["derive"] }
+parry3d-f64 = { version = "0.16.1", features = ["serde-serialize"] }#{path = "../../../../Desktop/parry3d",features = ["serde-serialize"]}#{ version = "0.16.1", features = ["serde-serialize"] }
+rand = "0.8.5"

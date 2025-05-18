@@ -19,7 +19,6 @@ pub fn power_set<T: Clone>(vec: Vec<T>) -> Vec<Vec<T>> {
         }
         result.push(subset);
     }
-
     result
 }
 
