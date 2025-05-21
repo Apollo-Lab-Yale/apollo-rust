@@ -6,15 +6,22 @@ edition = "2021"
 [dependencies]
 apollo-rust-bevy = { path = "../apollo-rust-bevy" }
 apollo-rust-robotics = { path = "../apollo-rust-robotics" }
+apollo-rust-robotics-adtrait = { path = "../apollo-rust-robotics-adtrait" }
 apollo-rust-file = { path = "../apollo-rust-file" }
 apollo-rust-linalg = { path = "../apollo-rust-linalg" }
+apollo-rust-linalg-adtrait = { path = "../apollo-rust-linalg-adtrait" }
 apollo-rust-spatial = { path = "../apollo-rust-spatial" }
+apollo-rust-spatial-adtrait = { path = "../apollo-rust-spatial-adtrait" }
 apollo-rust-lie = { path = "../apollo-rust-lie" }
+apollo-rust-lie-adtrait = { path = "../apollo-rust-lie-adtrait" }
 apollo-rust-modules = { path = "../apollo-rust-modules" }
 apollo-rust-robotics-core = { path = "../apollo-rust-robotics-core" }
+apollo-rust-robotics-core-adtrait = { path = "../apollo-rust-robotics-core-adtrait" }
 apollo-rust-interpolation = { path = "../apollo-rust-interpolation" }
 apollo-rust-differentiation = { path = "../apollo-rust-differentiation" }
 apollo-rust-optimization = { path = "../apollo-rust-optimization" }
+apollo-rust-optimization-adtrait = { path = "../apollo-rust-optimization-adtrait" }
+ad_trait = { version = "0.1.5" }
 bevy = { version = "0.14.0", features = ["dynamic_linking"] }
 bevy_egui = { version = "0.28.0" }
 

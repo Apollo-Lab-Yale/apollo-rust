@@ -7,12 +7,12 @@ use apollo_rust_modules::robot_modules::urdf_module::ApolloURDFJointType;
 use apollo_rust_spatial_adtrait::isometry3::{ApolloIsometry3Trait, I3};
 use apollo_rust_spatial_adtrait::lie::se3_implicit_quaternion::{ApolloLieAlgPackIse3qTrait, ISE3q};
 use apollo_rust_spatial_adtrait::vectors::{V3, V6};
-use crate::modules_runtime::urdf_nalgebra_module::{ApolloURDFAxisNalgebra, ApolloURDFNalgebraModule};
+use crate::modules_runtime::urdf_nalgebra_module::{ApolloURDFAxisNalgebraADTrait, ApolloURDFNalgebraModuleADTrait};
 
 pub struct RobotKinematicsFunctions;
 impl RobotKinematicsFunctions {
     #[inline]
-    pub fn fk<A: AD>(state: &V<A>, urdf_module: &ApolloURDFNalgebraModule<A>, chain_module: &ApolloChainModule, dof_module: &ApolloDOFModule) -> Vec<ISE3q<A>> {
+    pub fn fk<A: AD>(state: &V<A>, urdf_module: &ApolloURDFNalgebraModuleADTrait<A>, chain_module: &ApolloChainModule, dof_module: &ApolloDOFModule) -> Vec<ISE3q<A>> {
         assert_eq!(state.len(), dof_module.num_dofs);
 
         let links = &urdf_module.links;
@@ -69,7 +69,7 @@ impl RobotKinematicsFunctions {
     ///
     /// # Returns
     /// A `V` representing the state that would result in the given link poses.
-    pub fn reverse_of_fk<A: AD>(link_frames: &Vec<ISE3q<A>>, urdf_module: &ApolloURDFNalgebraModule<A>, chain_module: &ApolloChainModule, dof_module: &ApolloDOFModule) -> V<A> {
+    pub fn reverse_of_fk<A: AD>(link_frames: &Vec<ISE3q<A>>, urdf_module: &ApolloURDFNalgebraModuleADTrait<A>, chain_module: &ApolloChainModule, dof_module: &ApolloDOFModule) -> V<A> {
         let mut out = V::new(&vec![0.0; dof_module.num_dofs]).to_other_ad_type::<A>();
 
         chain_module.joints_in_chain.iter().for_each(|joint_in_chain| {
@@ -136,7 +136,7 @@ impl RobotKinematicsFunctions {
     /// # Returns
     /// An `ISE3q` representing the joint's variable transform.
     #[inline(always)]
-    fn get_joint_variable_transform_urdf_axis<A: AD>(joint_type: &ApolloURDFJointType, joint_axis: &ApolloURDFAxisNalgebra<A>, joint_dofs: &[A]) -> ISE3q<A> {
+    fn get_joint_variable_transform_urdf_axis<A: AD>(joint_type: &ApolloURDFJointType, joint_axis: &ApolloURDFAxisNalgebraADTrait<A>, joint_dofs: &[A]) -> ISE3q<A> {
         Self::get_joint_variable_transform(joint_type, &joint_axis.axis, joint_dofs)
     }
 

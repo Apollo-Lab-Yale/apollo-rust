@@ -23,6 +23,7 @@ impl LineSearchTrait for BacktrackingLineSearch {
         while alpha > self.alpha_min {
             let x = x_k + alpha*dir;
             let f = function.call(&x)[0];
+            println!(" > {}", f);
             if f-f_k < self.c*alpha*g_k.dot(dir) {break;}
             alpha *= self.rho;
         }

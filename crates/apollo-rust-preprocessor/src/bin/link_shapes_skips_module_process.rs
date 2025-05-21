@@ -16,7 +16,7 @@ use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_file::traits::ToJsonString;
 use apollo_rust_linalg::{dmatrix_from_2dvec, dmatrix_to_2dvec};
 use apollo_rust_preprocessor::PreprocessorModule;
-use apollo_rust_proximity::double_group_queries::{ConvertToAverageDistancesTrait, DoubleGroupProximityQueryMode};
+use apollo_rust_proximity_parry::double_group_queries::{ConvertToAverageDistancesTrait, DoubleGroupProximityQueryMode};
 use apollo_rust_modules::ResourcesRootDirectory;
 use apollo_rust_modules::robot_modules::bounds_module::ApolloBoundsModule;
 use apollo_rust_modules::robot_modules::chain_module::ApolloChainModule;

@@ -13,8 +13,8 @@ use apollo_rust_modules::robot_modules::mesh_modules::plain_meshes_module::Apoll
 use apollo_rust_modules::robot_modules::urdf_module::ApolloURDFModule;
 use apollo_rust_preprocessor::PreprocessorModule;
 use apollo_rust_robotics_core_adtrait::ChainNalgebraADTrait;
-use apollo_rust_robotics_core_adtrait::modules_runtime::bounds_adtrait_module::ApolloBoundsADTraitModule;
-use apollo_rust_robotics_core_adtrait::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModule;
+use apollo_rust_robotics_core_adtrait::modules_runtime::bounds_adtrait_module::ApolloBoundsModuleADTrait;
+use apollo_rust_robotics_core_adtrait::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModuleADTrait;
 
 pub trait ChainBuildersTrait {
     /// Creates a new instance from the root directory and robot name.
@@ -39,7 +39,7 @@ impl<A: AD> ChainBuildersTrait for ChainNalgebraADTrait<A> {
     }
 
     fn new_from_sub_directory(s: &ResourcesSubDirectory) -> Self {
-        let urdf_module = ApolloURDFNalgebraModule::<A>::from_urdf_module(&ApolloURDFModule::load_or_build(&s, false).expect("error"));
+        let urdf_module = ApolloURDFNalgebraModuleADTrait::<A>::from_urdf_module(&ApolloURDFModule::load_or_build(&s, false).expect("error"));
         let chain_module = ApolloChainModule::load_or_build(&s, false).expect("error");
         let dof_module = ApolloDOFModule::load_or_build(&s, false).expect("error");
         let connections_module = ApolloConnectionsModule::load_or_build(&s, false).expect("error");
@@ -49,7 +49,7 @@ impl<A: AD> ChainBuildersTrait for ChainNalgebraADTrait<A> {
         let convex_decomposition_meshes_module = ApolloConvexDecompositionMeshesModule::load_or_build(&s, false).expect("error");
         ApolloFirstLookVisModule::load_or_build(&s, false).expect("error");
         let bounds_module = ApolloBoundsModule::load_or_build(&s, false).expect("error");
-        let bounds_module_ad = ApolloBoundsADTraitModule::from_apollo_bounds_module(&bounds_module);
+        let bounds_module_ad = ApolloBoundsModuleADTrait::from_apollo_bounds_module(&bounds_module);
 
         Self {
             resources_sub_directory: s.clone(),

@@ -10,8 +10,8 @@ use apollo_rust_modules::robot_modules::mesh_modules::convex_hull_meshes_module:
 use apollo_rust_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
 use apollo_rust_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 use apollo_rust_spatial_adtrait::lie::se3_implicit_quaternion::ISE3q;
-use crate::modules_runtime::bounds_adtrait_module::ApolloBoundsADTraitModule;
-use crate::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModule;
+use crate::modules_runtime::bounds_adtrait_module::ApolloBoundsModuleADTrait;
+use crate::modules_runtime::urdf_nalgebra_module::ApolloURDFNalgebraModuleADTrait;
 use crate::robot_functions::robot_kinematics_functions::RobotKinematicsFunctions;
 
 pub mod modules_runtime;
@@ -21,7 +21,7 @@ pub mod modules;
 #[derive(Clone)]
 pub struct ChainNalgebraADTrait<A: AD> {
     pub resources_sub_directory: ResourcesSubDirectory,
-    pub urdf_module: ApolloURDFNalgebraModule<A>,
+    pub urdf_module: ApolloURDFNalgebraModuleADTrait<A>,
     pub chain_module: ApolloChainModule,
     pub dof_module: ApolloDOFModule,
     pub connections_module: ApolloConnectionsModule,
@@ -29,7 +29,7 @@ pub struct ChainNalgebraADTrait<A: AD> {
     pub plain_meshes_module: ApolloPlainMeshesModule,
     pub convex_hull_meshes_module: ApolloConvexHullMeshesModule,
     pub convex_decomposition_meshes_module: ApolloConvexDecompositionMeshesModule,
-    pub bounds_module: ApolloBoundsADTraitModule<A>
+    pub bounds_module: ApolloBoundsModuleADTrait<A>
 }
 impl<A: AD> ChainNalgebraADTrait<A> {
     pub fn to_arc_chain(self) -> Arc<ChainNalgebraADTrait<A>> {
