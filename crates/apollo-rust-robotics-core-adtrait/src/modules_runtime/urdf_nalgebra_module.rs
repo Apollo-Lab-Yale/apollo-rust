@@ -360,9 +360,20 @@ impl<A: AD> ApolloURDFPoseNalgebraADTrait<A> {
     pub fn from_apollo_urdf_pose(apollo_urdf_pose: &ApolloURDFPose) -> Self {
         let xyz = apollo_urdf_pose.xyz;
         let rpy = apollo_urdf_pose.rpy;
+        let xyz_ad: [A; 3] = [
+            A::constant(xyz[0]),
+            A::constant(xyz[1]),
+            A::constant(xyz[2])
+        ];
+        let rpy_ad: [A; 3] = [
+            A::constant(rpy[0]),
+            A::constant(rpy[1]),
+            A::constant(rpy[2])
+        ];
+
         Self {
-            ise3q: LieGroupISE3qADTrait::new(I3ADTrait::from_slices_euler_angles(&xyz, &rpy).to_other_ad_type::<A>()),
-            ise3: LieGroupISE3ADTrait::new(I3MADTrait::from_slices_euler_angles(&xyz, &rpy).to_other_ad_type::<A>()),
+            ise3q: LieGroupISE3qADTrait::new(I3ADTrait::from_slices_euler_angles(&xyz_ad, &rpy_ad)),
+            ise3: LieGroupISE3ADTrait::new(I3MADTrait::from_slices_euler_angles(&xyz_ad, &rpy_ad)),
         }
     }
     pub fn to_apollo_urdf_pose(&self) -> ApolloURDFPoseNalgebra {
