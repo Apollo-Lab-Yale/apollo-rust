@@ -8,6 +8,8 @@ pub mod isometry3;
 pub mod translations;
 pub mod lie;
 
+pub use nalgebra;
+
 // #[cfg(feature = "ad")]
 // pub mod ad;
 
