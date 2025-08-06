@@ -5,13 +5,16 @@ use apollo_rust_mesh_utils::gltf::load_gltf_file;
 use apollo_rust_mesh_utils::obj::load_obj_file;
 use crate::utils::progress_bar::ProgressBarWrapper;
 use apollo_rust_mesh_utils::stl::load_stl_file;
-use apollo_rust_mesh_utils::trimesh::ToTriMesh;
+use apollo_rust_mesh_utils::trimesh::{ToTriMesh, TriMesh};
 use apollo_rust_modules::ResourcesSubDirectory;
 use crate::robot_modules_preprocessor::CombinedRobot;
 use crate::robot_modules_preprocessor::AdjustedRobot;
 use apollo_rust_modules::ResourcesRootDirectory;
 use apollo_rust_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
 use apollo_rust_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
+use apollo_rust_modules::robot_modules::urdf_module::ApolloURDFModule;
+use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, I3};
+use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 
 pub trait PlainMeshesModuleBuilders: Sized {
     fn build_from_original_meshes_module(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
@@ -21,6 +24,7 @@ pub trait PlainMeshesModuleBuilders: Sized {
 impl PlainMeshesModuleBuilders for ApolloPlainMeshesModule {
     fn build_from_original_meshes_module(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
         let original_meshes_module = ApolloOriginalMeshesModule::load_or_build(s, false);
+        let urdf_module = ApolloURDFModule::load_or_build(s, false).expect("error");
 
         if let Ok(original_meshes_module) = original_meshes_module {
             let mut stl_link_mesh_relative_paths = vec![];
@@ -29,6 +33,102 @@ impl PlainMeshesModuleBuilders for ApolloPlainMeshesModule {
 
             let paths = &original_meshes_module.link_mesh_relative_paths;
             let num_paths = paths.len();
+
+            for (link_idx, link_paths) in paths.iter().enumerate() {
+                let progress = link_idx as f64 / num_paths as f64;
+                progress_bar.update_with_percentage_preset(progress * 100.0);
+
+                if link_paths.len() == 0 {
+                    stl_link_mesh_relative_paths.push(None);
+                    obj_link_mesh_relative_paths.push(None);
+                    glb_link_mesh_relative_paths.push(None);
+                } else {
+                    let mut combined_trimesh: Option<TriMesh> = None;
+
+                    for (i, path) in link_paths.iter().enumerate() {
+                        let visual = urdf_module.links[link_idx].visual[i].clone();
+                        let xyz = visual.origin.xyz;
+                        let rpy = visual.origin.rpy;
+
+                        // let file_stem = path.file_stem().expect("error").to_str().unwrap().to_string();
+                        // let stl_filename = file_stem.clone() + ".stl";
+                        // let obj_filename = file_stem.clone() + ".obj";
+                        // let glb_filename = file_stem + ".glb";
+
+                        // let stl_relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes/stl").append(&stl_filename);
+                        // let obj_relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes/obj").append(&obj_filename);
+                        // let glb_relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes/glb").append(&glb_filename);
+
+                        // let stl_target = Self::full_path_to_module_dir(s).append("meshes/stl").append(&stl_filename);
+                        // let obj_target = Self::full_path_to_module_dir(s).append("meshes/obj").append(&obj_filename);
+                        // let glb_target = Self::full_path_to_module_dir(s).append("meshes/glb").append(&glb_filename);
+
+                        let full_path = s.root_directory().clone().append_path(path);
+                        let ext = path.extension().expect("must have extension").to_str().unwrap().to_string();
+                        let trimesh_option = if ext == "stl" || ext == "STL" {
+                            Some(load_stl_file(&full_path).expect("error").to_trimesh())
+                        } else if ext == "dae" || ext == "DAE" {
+                            Some(load_dae_file(&full_path).expect("error").to_trimesh())
+                        } else if ext == "obj" || ext == "OBJ" {
+                            Some(load_obj_file(&full_path).expect("error").to_trimesh())
+                        } else if ext == "glb" || ext == "GLB" || ext == "gltf" || ext == "GLTF" {
+                            Some(load_gltf_file(&full_path).expect("error").to_trimesh())
+                        } else {
+                            None
+                        };
+
+                        match trimesh_option {
+                            None => {
+                                println!("WARNING: mesh file with extension {:?} is not handled yet.  Not generating an stl.", ext);
+                                stl_link_mesh_relative_paths.push(None);
+                                obj_link_mesh_relative_paths.push(None);
+                                glb_link_mesh_relative_paths.push(None);
+                            }
+                            Some(trimesh) => {
+                                let trimesh = trimesh.to_transformed(&ISE3q::new(I3::from_slices_euler_angles(&xyz, &rpy)));
+                                if combined_trimesh.is_none() {
+                                    combined_trimesh = Some(trimesh);
+                                } else {
+                                    combined_trimesh.as_mut().unwrap().extend(&trimesh);
+                                }
+                                // trimesh.save_to_stl(&stl_target);
+                                // stl_link_mesh_relative_paths.push(Some(stl_relative_path));
+
+                                // trimesh.save_to_obj(&obj_target);
+                                // obj_link_mesh_relative_paths.push(Some(obj_relative_path));
+
+                                // trimesh.save_to_glb(&glb_target);
+                                // glb_link_mesh_relative_paths.push(Some(glb_relative_path));
+                            }
+                        }
+                    }
+
+                    // let file_stem = format!("link_{}_mesh", link_idx);
+                    let file_stem = link_paths[0].file_stem().expect("error").to_str().unwrap().to_string();
+                    let stl_filename = file_stem.clone() + ".stl";
+                    let obj_filename = file_stem.clone() + ".obj";
+                    let glb_filename = file_stem.clone() + ".glb";
+
+                    let stl_relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes/stl").append(&stl_filename);
+                    let obj_relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes/obj").append(&obj_filename);
+                    let glb_relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes/glb").append(&glb_filename);
+
+                    let stl_target = Self::full_path_to_module_dir(s).append("meshes/stl").append(&stl_filename);
+                    let obj_target = Self::full_path_to_module_dir(s).append("meshes/obj").append(&obj_filename);
+                    let glb_target = Self::full_path_to_module_dir(s).append("meshes/glb").append(&glb_filename);
+
+                    combined_trimesh.as_ref().unwrap().save_to_stl(&stl_target);
+                    stl_link_mesh_relative_paths.push(Some(stl_relative_path));
+
+                    combined_trimesh.as_ref().unwrap().save_to_obj(&obj_target);
+                    obj_link_mesh_relative_paths.push(Some(obj_relative_path));
+
+                    combined_trimesh.as_ref().unwrap().save_to_glb(&glb_target);
+                    glb_link_mesh_relative_paths.push(Some(glb_relative_path));
+                }
+            }
+
+            /*
             for (i, path_option) in paths.iter().enumerate() {
                 let progress = i as f64 / num_paths as f64;
                 progress_bar.update_with_percentage_preset(progress * 100.0);
@@ -39,6 +139,10 @@ impl PlainMeshesModuleBuilders for ApolloPlainMeshesModule {
                         glb_link_mesh_relative_paths.push(None);
                     }
                     Some(path) => {
+                        let visual = urdf_module.links[i].visual[0].clone();
+                        let xyz = visual.origin.xyz;
+                        let rpy = visual.origin.rpy;
+
                         let file_stem = path.file_stem().expect("error").to_str().unwrap().to_string();
                         let stl_filename = file_stem.clone() + ".stl";
                         let obj_filename = file_stem.clone() + ".obj";
@@ -81,6 +185,8 @@ impl PlainMeshesModuleBuilders for ApolloPlainMeshesModule {
                                 glb_link_mesh_relative_paths.push(None);
                             }
                             Some(trimesh) => {
+                                let trimesh = trimesh.to_transformed(&ISE3q::new(I3::from_slices_euler_angles(&xyz, &rpy)));
+
                                 trimesh.save_to_stl(&stl_target);
                                 stl_link_mesh_relative_paths.push(Some(stl_relative_path));
 
@@ -94,6 +200,7 @@ impl PlainMeshesModuleBuilders for ApolloPlainMeshesModule {
                     }
                 }
             }
+            */
 
             progress_bar.done_preset();
 
@@ -120,7 +227,7 @@ impl PreprocessorModule for ApolloPlainMeshesModule {
     }
 
     fn current_version() -> String {
-        "0.0.1".to_string()
+        "0.0.2".to_string()
     }
 
     create_generic_build_raw!(Self, build_from_original_meshes_module);

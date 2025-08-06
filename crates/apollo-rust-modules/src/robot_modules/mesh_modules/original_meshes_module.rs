@@ -11,5 +11,5 @@ use serde::{Deserialize, Serialize};
 /// - `link_mesh_relative_paths`: A vector of optional `PathBuf` representing relative paths to original mesh files.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ApolloOriginalMeshesModule {
-    pub link_mesh_relative_paths: Vec<Option<PathBuf>>
+    pub link_mesh_relative_paths: Vec<Vec<PathBuf>>
 }

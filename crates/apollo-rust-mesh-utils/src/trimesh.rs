@@ -14,6 +14,8 @@ use gltf_json::validation::{Checked, USize64};
 use parry3d_f64::math::Point;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
+use apollo_rust_spatial::vectors::V3;
 
 pub trait ToTriMesh {
     fn to_trimesh(&self) -> TriMesh;
@@ -232,6 +234,20 @@ impl TriMesh {
 
         let mut file = path.get_file_for_writing();
         write!(file, "{}", json_string).expect("Failed to write GLB file");
+    }
+    pub fn to_transformed(&self, transform: &ISE3q) -> TriMesh {
+        let mut points = vec![];
+
+        self.points.iter().for_each(|x| {
+            let v = V3::new(x[0], x[1], x[2]);
+            let v = transform.map_point(&v);
+            points.push([v[0], v[1], v[2]]);
+        });
+
+        TriMesh {
+            points,
+            indices: self.indices.clone()
+        }
     }
     pub fn to_triangles(&self) -> Vec<[[f64; 3]; 3]> {
         let mut triangles = vec![];

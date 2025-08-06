@@ -62,6 +62,9 @@ impl PreprocessorModule for ApolloLinkShapesSkipsModule {
                 decomposition_obbs_skips,
                 decomposition_bounding_spheres_skips,
             });
+        } else {
+            println!("--- STDOUT ---\n{}", String::from_utf8_lossy(&output.stdout));
+            eprintln!("--- STDERR ---\n{}", String::from_utf8_lossy(&output.stderr));
         }
 
         return Err(format!("link shapes skips module for chain {:?} could not be built.", s.name))

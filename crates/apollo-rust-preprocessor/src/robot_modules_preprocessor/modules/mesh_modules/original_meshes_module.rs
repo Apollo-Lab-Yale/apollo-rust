@@ -23,44 +23,74 @@ impl OriginalMeshesModuleBuilders for ApolloOriginalMeshesModule {
         return if let Ok(urdf_module) = urdf_module {
             let mut out = vec![];
 
+            /*
+            urdf_module.links.iter().for_each(|x| {
+                // assert!(x.visual.len() == 0 || x.visual.len() == 1, "{}", format!("link {:?} has more than one visual element in the urdf, this is not supported in this preprocessor.  We recommend manually splitting this visual into separate links in the urdf and trying again.", x.name));
+                /*
+                if x.visual.len() > 1 {
+                    eprintln!(
+                        "Warning: link {:?} has {} visual elements in the URDF, which this preprocessor doesn’t support (we recommend splitting them into separate links).",
+                        x.name,
+                        x.visual.len()
+                    );
+                    print!("Continue anyway? [y/N] ");
+                    // flush so the prompt actually appears before read_line
+                    io::stdout().flush().unwrap();
+
+                    let mut answer = String::new();
+                    io::stdin().read_line(&mut answer).expect("Failed to read stdin");
+                    let answer = answer.trim().to_lowercase();
+                    if answer != "y" && answer != "yes" {
+                        panic!("Aborting at user request due to multiple visuals on link {:?}", x.name);
+                    }
+                }
+                */
+            });
+            */
+
             let num_links = urdf_module.links.len();
             urdf_module.links.iter().enumerate().for_each(|(i, x)| {
                 let progress = i as f64 / num_links as f64;
                 progress_bar.update_with_percentage_preset(progress * 100.0);
                 if x.visual.len() > 0 {
-                    let visual = &x.visual[0];
-                    match &visual.geometry {
-                        ApolloURDFGeometry::Mesh { filename, scale: _ } => {
-                            let fp = PathBuf::new().append_without_separator(filename);
-                            let filename = fp.file_name().unwrap().to_str().unwrap().to_string();
-                            let relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes").append(&filename);
-                            let target = Self::full_path_to_module_dir(s).append("meshes").append(&filename);
-                            // if !target.exists() {
-                            let mut curr = 5;
-                            'l: loop {
-                                let ff = fp.extract_last_n_segments(curr);
-                                println!("searching directory for file that ends with {:?}", ff);
-                                let find = PathBuf::new_from_desktop_dir().walk_directory_and_find_first_result(ff);
-                                match find {
-                                    Ok(find) => {
-                                        println!("found!  Copying file.");
-                                        find.copy_file_to_destination_file_path(&target);
-                                        break 'l;
-                                    }
-                                    Err(_) => {
-                                        if curr == 2 { panic!("{}", format!("mesh file {:?} could not be found", fp)) }
-                                        curr -= 1;
-                                        continue 'l;
+                    // let visual = &x.visual[0];
+                    let mut curr_out = vec![];
+                    for visual in &x.visual {
+                        match &visual.geometry {
+                            ApolloURDFGeometry::Mesh { filename, scale: _ } => {
+                                println!("\n {:?}", filename);
+                                let fp = PathBuf::new().append_without_separator(filename);
+                                let filename = fp.file_name().unwrap().to_str().unwrap().to_string();
+                                let relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes").append(&filename);
+                                let target = Self::full_path_to_module_dir(s).append("meshes").append(&filename);
+                                // if !target.exists() {
+                                let mut curr = 7;
+                                'l: loop {
+                                    let ff = fp.extract_last_n_segments(curr);
+                                    println!("searching directory for file that ends with {:?}", ff);
+                                    let find = PathBuf::new_from_desktop_dir().walk_directory_and_find_first_result(ff);
+                                    match find {
+                                        Ok(find) => {
+                                            println!("found!  Copying file.");
+                                            find.copy_file_to_destination_file_path(&target);
+                                            break 'l;
+                                        }
+                                        Err(_) => {
+                                            if curr == 2 { panic!("{}", format!("mesh file {:?} could not be found", fp)) }
+                                            curr -= 1;
+                                            continue 'l;
+                                        }
                                     }
                                 }
+                                // }
+                                curr_out.push(relative_path);
                             }
-                            // }
-                            out.push(Some(relative_path));
+                            _ => { }
                         }
-                        _ => { out.push(None); }
                     }
+                    out.push(curr_out);
                 } else {
-                    out.push(None);
+                    out.push(vec![]);
                 }
             });
 
@@ -73,7 +103,7 @@ impl OriginalMeshesModuleBuilders for ApolloOriginalMeshesModule {
         }
     }
 
-    create_generic_build_from_combined_robot!(ApolloOriginalMeshesModule, None);
+    create_generic_build_from_combined_robot!(ApolloOriginalMeshesModule, vec![]);
 
     create_generic_build_from_adjusted_robot!(ApolloOriginalMeshesModule);
 
@@ -83,7 +113,7 @@ impl OriginalMeshesModuleBuilders for ApolloOriginalMeshesModule {
 
         return if let Ok(chain_creator) = creator_module {
             let mut out = ApolloOriginalMeshesModule { link_mesh_relative_paths: vec![] };
-            out.link_mesh_relative_paths.push(None);
+            out.link_mesh_relative_paths.push(vec![]);
 
             chain_creator.actions.iter().for_each(|action| {
                 match action {
@@ -106,7 +136,7 @@ impl OriginalMeshesModuleBuilders for ApolloOriginalMeshesModule {
                             assert!(fp.exists());
                             fp.copy_file_to_destination_file_path(&target);
                             let relative_file_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes").append(&filename);
-                            out.link_mesh_relative_paths.push(Some(relative_file_path));
+                            out.link_mesh_relative_paths.push(vec![relative_file_path]);
                         }
                     }
                     ChainCreatorAction::AddSingleLinkFromObjFile { fp, .. } => {
@@ -116,7 +146,7 @@ impl OriginalMeshesModuleBuilders for ApolloOriginalMeshesModule {
                             assert!(fp.exists());
                             fp.copy_file_to_destination_file_path(&target);
                             let relative_file_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes").append(&filename);
-                            out.link_mesh_relative_paths.push(Some(relative_file_path));
+                            out.link_mesh_relative_paths.push(vec![relative_file_path]);
                         }
                     }
                     ChainCreatorAction::AddSingleLinkFromGlbFile { fp, .. } => {
@@ -126,7 +156,7 @@ impl OriginalMeshesModuleBuilders for ApolloOriginalMeshesModule {
                             assert!(fp.exists());
                             fp.copy_file_to_destination_file_path(&target);
                             let relative_file_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes").append(&filename);
-                            out.link_mesh_relative_paths.push(Some(relative_file_path));
+                            out.link_mesh_relative_paths.push(vec![relative_file_path]);
                         }
                     }
                     ChainCreatorAction::AddSceneFromGlbFile { scene_name, fp, .. } => {
@@ -143,7 +173,7 @@ impl OriginalMeshesModuleBuilders for ApolloOriginalMeshesModule {
                             let path = Self::full_path_to_module_dir(s).append("meshes").append(&node.name).append_without_separator(".glb");
                             node.local_space_mesh_object.save_to_glb(&path);
                             let relative_file_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes").append(&node.name).append_without_separator(".glb");
-                            out.link_mesh_relative_paths.push(Some(relative_file_path));
+                            out.link_mesh_relative_paths.push(vec![relative_file_path]);
                         });
                     }
                     _ => { }
@@ -167,7 +197,7 @@ impl PreprocessorModule for ApolloOriginalMeshesModule {
     }
 
     fn current_version() -> String {
-        "0.0.1".to_string()
+        "0.0.2".to_string()
     }
 
     fn build_raw(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {

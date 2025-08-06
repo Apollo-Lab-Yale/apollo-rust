@@ -114,6 +114,8 @@ fn main() {
     match &link_shapes_skips_module_result {
         Ok(link_shapes_skips_module) => {
             full_convex_hulls_skips = dmatrix_from_2dvec(&link_shapes_skips_module.full_convex_hulls_skips.clone());
+            // println!(" >> {:?}", link_shapes_skips_module.full_convex_hulls_skips.len());
+            // println!(" >> {:?}", full_convex_hulls_skips.shape());
             full_obbs_skips = dmatrix_from_2dvec(&link_shapes_skips_module.full_obbs_skips.clone());
             full_bounding_spheres_skips = dmatrix_from_2dvec(&link_shapes_skips_module.full_bounding_spheres_skips.clone());
             decomposition_convex_hulls_skips = dmatrix_from_2dvec(&link_shapes_skips_module.decomposition_convex_hulls_skips.clone());
