@@ -1000,7 +1000,6 @@ impl BevyChainProximityVisualizerRaw {
                                                     selected_idxs: &mut Option<((usize, usize), (usize, usize))>,
                                                     color_change_engine: &mut ResMut<ColorChangeEngine>,
                                                     gizmos: &mut Gizmos) {
-        
         let fk_res_a = RobotKinematicsFunctions::fk(state_a, urdf_module_a, chain_module_a, dof_module_a);
         let fk_res_b = RobotKinematicsFunctions::fk(state_b, urdf_module_b, chain_module_b, dof_module_b);
         let res = RobotProximityFunctions::double_chain_contact(link_shapes_module_a, &fk_res_a, link_shape_mode_a.clone(), link_shape_rep_a.clone(), link_shapes_module_b, &fk_res_b, link_shape_mode_b.clone(), link_shape_rep_b.clone(), skips, false, f64::INFINITY, &double_group_proximity_query_mode);
@@ -1022,14 +1021,25 @@ impl BevyChainProximityVisualizerRaw {
                     Self::action_chain_proximity_visualizer_panel(ui, &fk_res_a, &fk_res_b, &average_res, chain_instance_idx_a, chain_instance_idx_b, link_shapes_module_a, link_shapes_module_b, link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, selected_idxs, color_change_engine, gizmos);
                 });
             }
-            _ => { }
+            _ => {}
+        }
+
+        match &skips {
+            None => {}
+            Some(skips) => {
+                ui.separator();
+                ui.heading("Skipped Pairs");
+                ScrollArea::vertical().id_source("skips_visualizer").max_height(100.0).show(ui, |ui| {
+                    Self::action_chain_skipped_pairs_visualizer(ui, chain_instance_idx_a, chain_instance_idx_b, link_shapes_module_a, link_shapes_module_b, link_shape_mode_a, link_shape_mode_b, link_shape_rep_a, link_shape_rep_b, skips, selected_idxs, color_change_engine, gizmos);
+                });
+            }
         }
 
         let intersection_found = res.to_intersection_result();
         let proximity_value = res.to_proximity_value(&ProximityLossFunction::Hinge { threshold: 0.7 }, 10.0);
         ui.separator();
         ui.horizontal(|ui| {
-           ui.label("intersection found: ");
+            ui.label("intersection found: ");
             if intersection_found {
                 ui.label(RichText::new("true").color(Color32::RED));
             } else {
@@ -1049,7 +1059,7 @@ impl BevyChainProximityVisualizerRaw {
             ui.label(RichText::new(format!("{:.3?}", proximity_value)).color(color));
         });
         match &average_res {
-            None => {  }
+            None => {}
             Some(average_res) => {
                 ui.separator();
                 let proximity_value = average_res.to_proximity_value(&ProximityLossFunction::Hinge { threshold: 0.7 }, 10.0);
@@ -1066,7 +1076,6 @@ impl BevyChainProximityVisualizerRaw {
                 });
             }
         }
-
     }
 
     pub fn action_chain_proximity_visualizer(&self,
@@ -1100,7 +1109,6 @@ impl BevyChainProximityVisualizerRaw {
                                                    selected_idxs: &mut Option<((usize, usize), (usize, usize))>,
                                                    color_change_engine: &mut ResMut<ColorChangeEngine>,
                                                    gizmos: &mut Gizmos) {
-        
         res.outputs.iter().zip(res.shape_idxs.iter()).enumerate().for_each(|(_idx, (c, (i, j)))| {
             let c = c.as_ref().unwrap();
             let link_idxs_a = link_shapes_module_a.get_link_idx_and_subcomponent_idx_from_shape_idx(*i, link_shape_mode_a);
@@ -1113,9 +1121,7 @@ impl BevyChainProximityVisualizerRaw {
                 Color32::GREEN
             };
             if ui.radio(selected_idxs.is_some() && selected_idxs.unwrap() == (link_idxs_a, link_idxs_b), "Select").clicked() {
-                if selected_idxs.is_none() { *selected_idxs = Some((link_idxs_a, link_idxs_b)); }
-                else if selected_idxs.unwrap() == ((link_idxs_a, link_idxs_b)) { *selected_idxs = None; }
-                else { *selected_idxs.as_mut().unwrap() = (link_idxs_a, link_idxs_b); }
+                if selected_idxs.is_none() { *selected_idxs = Some((link_idxs_a, link_idxs_b)); } else if selected_idxs.unwrap() == ((link_idxs_a, link_idxs_b)) { *selected_idxs = None; } else { *selected_idxs.as_mut().unwrap() = (link_idxs_a, link_idxs_b); }
             };
             ui.horizontal(|ui| {
                 ui.label("distance: ");
@@ -1138,14 +1144,69 @@ impl BevyChainProximityVisualizerRaw {
                 let v1 = TransformUtils::util_convert_z_up_v3_to_y_up_vec3(p1);
                 let v2 = TransformUtils::util_convert_z_up_v3_to_y_up_vec3(p2);
                 if c.dist <= 0.0 {
-                    gizmos.line(v1, v2, Color::srgba(1.0, 0.2,0.,1.0));
+                    gizmos.line(v1, v2, Color::srgba(1.0, 0.2, 0., 1.0));
                 } else {
-                    gizmos.line(v1, v2, Color::srgba(0.2, 1.0,0.,1.0));
+                    gizmos.line(v1, v2, Color::srgba(0.2, 1.0, 0., 1.0));
                 }
                 gizmos.sphere(v1, Quat::default(), 0.005, Color::srgba(0.5, 0.7, 0.8, 0.95));
                 gizmos.sphere(v2, Quat::default(), 0.005, Color::srgba(0.8, 0.7, 0.4, 0.95));
             }
         });
+    }
+
+    pub fn action_chain_skipped_pairs_visualizer(ui: &mut Ui,
+                                                 chain_instance_idx_a: usize,
+                                                 chain_instance_idx_b: usize,
+                                                 link_shapes_module_a: &ApolloLinkShapesModule,
+                                                 link_shapes_module_b: &ApolloLinkShapesModule,
+                                                 link_shape_mode_a: &LinkShapeMode,
+                                                 link_shape_mode_b: &LinkShapeMode,
+                                                 link_shape_rep_a: &LinkShapeRep,
+                                                 link_shape_rep_b: &LinkShapeRep,
+                                                 skips: &DMatrix<bool>,
+                                                 selected_idxs: &mut Option<((usize, usize), (usize, usize))>,
+                                                 color_change_engine: &mut ResMut<ColorChangeEngine>,
+                                                 _gizmos: &mut Gizmos) {
+        let nrows = skips.nrows();
+        let ncols = skips.ncols();
+        assert_eq!(nrows, ncols);
+
+        for i in 0..nrows {
+            for j in 0..nrows {
+                if i < j {
+                    if skips[(i,j)] {
+                        let link_idxs_a = link_shapes_module_a.get_link_idx_and_subcomponent_idx_from_shape_idx(i, link_shape_mode_a);
+                        let link_idxs_b = link_shapes_module_b.get_link_idx_and_subcomponent_idx_from_shape_idx(j, link_shape_mode_b);
+
+                        ui.label(format!("link {:?} <--> link {:?}", link_idxs_a, link_idxs_b));
+                        if ui.radio(selected_idxs.is_some() && selected_idxs.unwrap() == (link_idxs_a, link_idxs_b), "Select").clicked() {
+                            if selected_idxs.is_none() { *selected_idxs = Some((link_idxs_a, link_idxs_b)); } else if selected_idxs.unwrap() == ((link_idxs_a, link_idxs_b)) { *selected_idxs = None; } else { *selected_idxs.as_mut().unwrap() = (link_idxs_a, link_idxs_b); }
+                        };
+                        ui.separator();
+
+                        if selected_idxs.is_some() && selected_idxs.unwrap() == (link_idxs_a, link_idxs_b) {
+                            color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::low_priority_alpha(0.2), Signature::new_chain_link_mesh(vec![])));
+                            color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::high_priority_color(0.5, 0.7, 0.8, 0.85), Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::from_link_shape_mode_and_link_shape_rep(link_shape_mode_a, link_shape_rep_a)), ChainMeshComponent::ChainInstanceIdx(chain_instance_idx_a), ChainMeshComponent::LinkIdx(link_idxs_a.0), ChainMeshComponent::SubcomponentIdx(link_idxs_a.1)])));
+                            color_change_engine.add_momentary_request(ColorChangeRequest::new(ColorChangeRequestType::high_priority_color(0.8, 0.7, 0.4, 0.85), Signature::new_chain_link_mesh(vec![ChainMeshComponent::ChainMeshesRepresentation(ChainMeshesRepresentation::from_link_shape_mode_and_link_shape_rep(link_shape_mode_b, link_shape_rep_b)), ChainMeshComponent::ChainInstanceIdx(chain_instance_idx_b), ChainMeshComponent::LinkIdx(link_idxs_b.0), ChainMeshComponent::SubcomponentIdx(link_idxs_b.1)])));
+
+                            /*
+                            let p1 = V3::from_column_slice(&c.point1.coords.as_slice());
+                            let p2 = V3::from_column_slice(&c.point2.coords.as_slice());
+                            let v1 = TransformUtils::util_convert_z_up_v3_to_y_up_vec3(p1);
+                            let v2 = TransformUtils::util_convert_z_up_v3_to_y_up_vec3(p2);
+                            if c.dist <= 0.0 {
+                                gizmos.line(v1, v2, Color::srgba(1.0, 0.2, 0., 1.0));
+                            } else {
+                                gizmos.line(v1, v2, Color::srgba(0.2, 1.0, 0., 1.0));
+                            }
+                            gizmos.sphere(v1, Quat::default(), 0.005, Color::srgba(0.5, 0.7, 0.8, 0.95));
+                            gizmos.sphere(v2, Quat::default(), 0.005, Color::srgba(0.8, 0.7, 0.4, 0.95));
+                            */
+                        }
+                    }
+                }
+            }
+        }
     }
 
     pub fn get_system_side_panel_left(self) -> impl FnMut(EguiContexts, ResMut<ColorChangeEngine>, ResMut<VisibilityChangeEngine>, Query<&ChainState>, ResMut<CursorIsOverEgui>, Query<&Window1, With<PrimaryWindow>>, Gizmos) + 'static {

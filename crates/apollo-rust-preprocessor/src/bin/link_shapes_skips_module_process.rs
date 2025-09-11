@@ -316,6 +316,18 @@ fn main() {
                     }
                 }
             }
+            ui.separator();
+
+            if ui.button(RichText::new("Set selected as not skip (double click)").color(Color32::from_rgb(255, 100, 0))).double_clicked() {
+                match selected_idxs {
+                    None => {}
+                    Some((x, y)) => {
+                        let i = link_shapes_module_clone.get_shape_idx_from_link_idx_and_subcomponent_idx(x.0, x.1, &link_shape_mode_a).expect("error");
+                        let j = link_shapes_module_clone.get_shape_idx_from_link_idx_and_subcomponent_idx(y.0, y.1, &link_shape_mode_a).expect("error");
+                        skips[(i,j)] = false;
+                    }
+                }
+            }
 
             ui.separator();
             if ui.button(RichText::new("Use selected as raw distance cutoff (double click)").color(Color32::from_rgb(255, 100, 0))).double_clicked() && selected_idxs.is_some() {
