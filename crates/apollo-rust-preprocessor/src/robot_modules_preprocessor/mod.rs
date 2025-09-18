@@ -320,7 +320,7 @@ impl CombinedRobot {
         let yaml_fp =  fp.clone().append("combined_robot_module/module.yaml");
         yaml_fp.save_object_to_yaml_file(self);
 
-        s.preprocess_robot(false);
+        s.preprocess_robot(false, true);
     }
 }
 
@@ -506,7 +506,7 @@ impl AdjustedRobot {
             directory: fp.clone(),
             resources_type: r.resources_type,
         };
-        s.preprocess_robot(false);
+        s.preprocess_robot(false, true);
     }
 }
 

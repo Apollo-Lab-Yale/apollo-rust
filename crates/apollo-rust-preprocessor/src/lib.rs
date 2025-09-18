@@ -180,7 +180,7 @@ pub trait ResourcesRootDirectoryTrait {
 impl ResourcesRootDirectoryTrait for ResourcesRootDirectory {
     fn preprocess_all_robots(&self, force_build_on_all: bool) {
         self.get_all_subdirectories().iter().for_each(|x| {
-            x.preprocess_robot(force_build_on_all);
+            x.preprocess_robot(force_build_on_all, true);
         });
     }
 
@@ -192,16 +192,18 @@ impl ResourcesRootDirectoryTrait for ResourcesRootDirectory {
 }
 
 pub trait ResourcesSubDirectoryTrait {
-    fn preprocess_robot(&self, force_build_on_all: bool);
+    fn preprocess_robot(&self, force_build_on_all: bool, include_original_meshes_module: bool);
     fn preprocess_environment(&self, force_build_on_all: bool);
 }
 impl ResourcesSubDirectoryTrait for ResourcesSubDirectory {
-    fn preprocess_robot(&self, force_build_on_all: bool) {
+    fn preprocess_robot(&self, force_build_on_all: bool, include_original_meshes_module: bool) {
         ApolloURDFModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloDOFModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloChainModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloConnectionsModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloOriginalMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        if include_original_meshes_module {
+            ApolloOriginalMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        }
         ApolloPlainMeshesModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloConvexHullMeshesModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloConvexDecompositionMeshesModule::load_or_build(self, force_build_on_all).expect("error");
