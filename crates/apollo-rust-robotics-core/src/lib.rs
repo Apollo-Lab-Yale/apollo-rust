@@ -252,6 +252,11 @@ impl ChainNalgebra {
         V::from_column_slice(&vec![0.0; self.num_dofs()])
     }
 
+    #[inline(always)]
+    pub fn sample_random_state(&self) -> V {
+        self.bounds_module.sample_random_state()
+    }
+
     #[inline]
     pub fn fk(&self, state: &V) -> Vec<ISE3q> {
         RobotKinematicsFunctions::fk(state, self.urdf_module(), self.chain_module(), self.dof_module())
