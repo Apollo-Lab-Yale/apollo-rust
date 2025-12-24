@@ -1,4 +1,4 @@
-#![allow(elided_named_lifetimes)]
+
 
 use std::borrow::Cow;
 use nalgebra::Point3;

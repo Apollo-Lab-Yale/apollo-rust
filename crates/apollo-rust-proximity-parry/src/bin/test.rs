@@ -1,7 +1,7 @@
 use apollo_rust_lie::{LieAlgebraElement, LieGroupElement};
-use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, ApolloIsometryMatrix3Trait, I3, I3M};
+use apollo_rust_spatial::isometry3::{ApolloIsometryMatrix3Trait, I3M};
 use apollo_rust_spatial::lie::se3_implicit::ISE3;
-use apollo_rust_spatial::lie::se3_implicit_quaternion::{ApolloLieAlgPackIse3qTrait, ISE3q};
+use apollo_rust_spatial::lie::se3_implicit_quaternion::ApolloLieAlgPackIse3qTrait;
 
 fn main() {
     let a = ISE3::new(I3M::new_random_with_range(-0.001, 0.001));

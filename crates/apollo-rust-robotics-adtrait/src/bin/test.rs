@@ -1,7 +1,7 @@
 use std::time::Instant;
-use ad_trait::forward_ad::adf::{adf_f32x1, adf_f32x16, adf_f32x2, adf_f32x32, adf_f32x4, adf_f32x64, adf_f32x8};
+// use ad_trait::forward_ad::adf::{adf_f32x1, adf_f32x16, adf_f32x2, adf_f32x32, adf_f32x4, adf_f32x64, adf_f32x8};
 use ad_trait::forward_ad::adfn::adfn;
-use ad_trait::reverse_ad::adr::{adr, GlobalComputationGraph};
+use ad_trait::reverse_ad::adr::{GlobalComputationGraph, adr};
 use apollo_rust_linalg_adtrait::{ApolloDVectorTrait, V};
 use apollo_rust_modules::ResourcesRootDirectory;
 use apollo_rust_robotics_adtrait::ToChainNalgebraADTrait;
@@ -38,14 +38,16 @@ fn main() {
 
     //////////
 
-    let c = s.to_chain_nalgebra_adtrait::<adf_f32x64>();
+    /*
+        let c = s.to_chain_nalgebra_adtrait::<adf_f32x64>();
 
-    let state = V::new(&[0.3; 24]).to_other_ad_type::<adf_f32x64>();
-    let start = Instant::now();
-    for _ in 0..100000 {
-        let _res = c.fk(&state);
-    }
-    println!("{:?}", start.elapsed());
+        let state = V::new(&[0.3; 24]).to_other_ad_type::<adf_f32x64>();
+        let start = Instant::now();
+        for _ in 0..100000 {
+            let _res = c.fk(&state);
+        }
+        println!("{:?}", start.elapsed());
+    */
 
     //////////
 
@@ -57,5 +59,4 @@ fn main() {
         let _res = c.fk(&state);
     }
     println!("{:?}", start.elapsed());
-
 }

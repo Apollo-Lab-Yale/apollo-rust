@@ -6,10 +6,10 @@ edition = "2021"
 [dependencies]
 apollo-rust-file = { path = "../apollo-rust-file" }
 apollo-rust-spatial = { path = "../apollo-rust-spatial" }
-nalgebra = { version="0.33.0", features=["serde-serialize", "rand"] }
+nalgebra = { version="0.34.1", features=["serde-serialize", "rand"] }
 dae-parser = { version="0.10.0" }
 stl_io = { version="0.7.0" }
-parry3d-f64 = { version= "0.16.1" }
+parry3d-f64 = { version= "0.25.3", features = ["simd-stable"] }
 gltf = "1.4.1"
 gltf-json = { version = "1.4.1", features = [
     "KHR_lights_punctual",

@@ -1,8 +1,8 @@
-use nalgebra::{Isometry3, IsometryMatrix3};
 use crate::quaternions::{ApolloUnitQuaternionTrait, UQ};
 use crate::rotation_matrices::{ApolloRotation3Trait, R3};
 use crate::translations::{ApolloTranslation3, T3};
-use crate::vectors::{V3};
+use crate::vectors::V3;
+use nalgebra::{Isometry3, IsometryMatrix3};
 
 /// Alias for `Isometry3<f64>`, representing a 3D isometry with 64-bit floating point precision.
 pub type I3 = Isometry3<f64>;
@@ -73,11 +73,17 @@ impl ApolloIsometry3Trait for I3 {
     }
 
     fn from_slices_scaled_axis(translation: &[f64], scaled_axis: &[f64]) -> Self {
-        Self::new(V3::from_column_slice(translation), V3::from_column_slice(scaled_axis))
+        Self::new(
+            V3::from_column_slice(translation),
+            V3::from_column_slice(scaled_axis),
+        )
     }
 
     fn from_slices_euler_angles(translation: &[f64], euler_angles: &[f64]) -> Self {
-        Self::from_parts(T3::from_slice(translation), UQ::from_slice_euler_angles(euler_angles))
+        Self::from_parts(
+            T3::from_slice(translation),
+            UQ::from_slice_euler_angles(euler_angles),
+        )
     }
 
     /// quaternion should be [w, x, y, z]
@@ -120,7 +126,7 @@ impl ApolloIsometry3Trait for I3 {
 
     #[inline(always)]
     fn is_identity(&self) -> bool {
-        return self.translation.vector.is_identity(0.0000001) && self.rotation == UQ::identity()
+        return self.translation.vector.norm() < 0.0000001 && self.rotation == UQ::identity();
     }
 
     #[inline(always)]
@@ -188,11 +194,17 @@ impl ApolloIsometryMatrix3Trait for I3M {
     }
 
     fn from_slices_scaled_axis(translation: &[f64], scaled_axis: &[f64]) -> Self {
-        Self::new(V3::from_column_slice(translation), V3::from_column_slice(scaled_axis))
+        Self::new(
+            V3::from_column_slice(translation),
+            V3::from_column_slice(scaled_axis),
+        )
     }
 
     fn from_slices_euler_angles(translation: &[f64], euler_angles: &[f64]) -> Self {
-        Self::from_parts(T3::from_slice(translation), R3::from_slice_euler_angles(euler_angles))
+        Self::from_parts(
+            T3::from_slice(translation),
+            R3::from_slice_euler_angles(euler_angles),
+        )
     }
 
     fn from_slices_quaternion(translation: &[f64], quaternion: &[f64]) -> Self {
@@ -234,6 +246,6 @@ impl ApolloIsometryMatrix3Trait for I3M {
 
     #[inline(always)]
     fn is_identity(&self) -> bool {
-        return self.translation.vector.is_identity(0.0000001) && self.rotation == R3::identity()
+        return self.translation.vector.is_identity(0.0000001) && self.rotation == R3::identity();
     }
 }

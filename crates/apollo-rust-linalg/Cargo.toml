@@ -4,9 +4,9 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-nalgebra = { version = "0.33.0", features = ["rand"] }
-nalgebra-sparse = "0.10.0"
-nalgebra-lapack = { version = "0.25.0", features = ["openblas"], default-features = false }
+nalgebra = { version = "0.34.1", features = ["rand"] }
+nalgebra-sparse = "0.11.0"
+nalgebra-lapack = { version = "0.27.0", features = ["lapack-openblas"], default-features = false }
 rand = { version="0.9.0-alpha.1" }
 # ad_trait = { git = "https://github.com/djrakita/ad_trait", optional = true }
 ndarray = "0.16.1"

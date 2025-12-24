@@ -12,4 +12,4 @@ apollo-rust-spatial-adtrait = { path = "../apollo-rust-spatial-adtrait" }
 apollo-rust-lie-adtrait = { path = "../apollo-rust-lie-adtrait" }
 apollo-rust-linalg-adtrait = { path = "../apollo-rust-linalg-adtrait" }
 # ad_trait = { git = "https://github.com/djrakita/ad_trait" }
-ad_trait = { version = "0.1.5" }
+ad_trait = { version = "0.2.0" }

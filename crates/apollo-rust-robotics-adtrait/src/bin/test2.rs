@@ -1,23 +1,26 @@
-use std::cmp::Reverse;
-use std::time::Instant;
 use ad_trait::AD;
-use ad_trait::differentiable_block::DifferentiableBlock;
-use ad_trait::differentiable_function::{DerivativeMethodTrait, DifferentiableFunctionClass, DifferentiableFunctionTrait, FiniteDifferencing, ForwardAD, ForwardADMulti, ReverseAD};
+// use ad_trait::differentiable_block::DifferentiableBlock;
+use ad_trait::differentiable_function::{
+    DerivativeMethodTrait, DifferentiableFunctionTrait, FiniteDifferencing, ForwardAD,
+    ForwardADMulti, ReverseAD,
+};
 use ad_trait::forward_ad::adfn::adfn;
-use ad_trait::reverse_ad::adr::{adr, GlobalComputationGraph};
+use ad_trait::reverse_ad::adr::{GlobalComputationGraph, adr};
+use apollo_rust_lie_adtrait::{LieAlgebraElement, LieGroupElement};
 use apollo_rust_linalg_adtrait::{ApolloDMatrixTrait, ApolloDVectorTrait, V};
-use apollo_rust_spatial_adtrait::vectors::{V3, V6};
-use apollo_rust_spatial_adtrait::lie::se3_implicit_quaternion::LieGroupISE3q;
-use apollo_rust_robotics_core_adtrait::ChainNalgebraADTrait;
+use apollo_rust_linalg_adtrait::{M, SVDResult, SVDType};
 use apollo_rust_modules::ResourcesRootDirectory;
-use apollo_rust_linalg_adtrait::{M, SVDType, SVDResult};
-use apollo_rust_lie_adtrait::{LieGroupElement, LieAlgebraElement};
 use apollo_rust_robotics_adtrait::ToChainNalgebraADTrait;
+use apollo_rust_robotics_core_adtrait::ChainNalgebraADTrait;
 use apollo_rust_spatial_adtrait::isometry3::{ApolloIsometry3Trait, I3};
 use apollo_rust_spatial_adtrait::lie::h1::ApolloUnitQuaternionH1LieTrait;
+use apollo_rust_spatial_adtrait::lie::se3_implicit_quaternion::LieGroupISE3q;
+use apollo_rust_spatial_adtrait::vectors::{V3, V6};
+use std::cmp::Reverse;
+use std::time::Instant;
 
 #[derive(Clone)]
-pub struct BenchmarkIK<T:AD>{
+pub struct BenchmarkIK<T: AD> {
     chain: ChainNalgebraADTrait<T>,
     target_foot1_pos: V3<T>,
     target_foot2_pos: V3<T>,
@@ -26,27 +29,32 @@ pub struct BenchmarkIK<T:AD>{
     target_ee_pos: LieGroupISE3q<T>,
 }
 
-impl <T:AD> BenchmarkIK<T>{
-    pub fn new()->Self{
+impl<T: AD> BenchmarkIK<T> {
+    pub fn new() -> Self {
         // let dir=ResourcesRootDirectory::new_from_default_apollo_robots_dir();
         // let chain:ChainNalgebraADTrait<T> = dir.get_subdirectory("b1z1").to_chain_nalgebra_adtrait();
         let r = ResourcesRootDirectory::new_from_default_apollo_robots_dir();
         let s = r.get_subdirectory("b1z1");
         let chain = s.to_chain_nalgebra_adtrait::<f64>().to_other_ad_type::<T>();
-        Self{
+        Self {
             chain,
             target_foot1_pos: V3::new(0.45.into(), (-0.2).into(), 0.0.into()),
-            target_foot2_pos: V3::new(0.45.into()  , 0.2.into()  , 0.0.into()  ),
-            target_foot3_pos: V3::new((-0.2).into()   , (-0.2).into()  , 0.0.into()  ),
-            target_foot4_pos: V3::new((-0.2).into()  , 0.2.into()  , 0.0.into()  ),
+            target_foot2_pos: V3::new(0.45.into(), 0.2.into(), 0.0.into()),
+            target_foot3_pos: V3::new((-0.2).into(), (-0.2).into(), 0.0.into()),
+            target_foot4_pos: V3::new((-0.2).into(), 0.2.into(), 0.0.into()),
             // target_ee_pos: LieGroupISE3q::from_exponential_coordinates(&V6::new(0.0.into()  , 0.0.into()  , 0.0.into()  ,
             //                                                                     0.3.into()  , 0.0.into()  , 1.15.into()  ))
-            target_ee_pos: LieGroupISE3q::new(I3::from_slices_euler_angles(&[0.3.into(), 0.0.into(), 1.15.into()], &[0.0.into(), 0.0.into(), 0.0.into()]))
+            target_ee_pos: LieGroupISE3q::new(I3::from_slices_euler_angles(
+                &[0.3.into(), 0.0.into(), 1.15.into()],
+                &[0.0.into(), 0.0.into(), 0.0.into()],
+            )),
         }
     }
 }
 
-impl <T:AD> DifferentiableFunctionTrait<T> for BenchmarkIK<T>{
+impl<T: AD> DifferentiableFunctionTrait<T> for BenchmarkIK<T> {
+    const NAME: &'static str = "BenchmarkIK";
+
     fn call(&self, inputs: &[T], _freeze: bool) -> Vec<T> {
         // let r = ResourcesRootDirectory::new_from_default_apollo_robots_dir();
         // let s = r.get_subdirectory("b1z1");
@@ -58,9 +66,16 @@ impl <T:AD> DifferentiableFunctionTrait<T> for BenchmarkIK<T>{
         let t4 = (res[31].0.translation.vector - self.target_foot4_pos).norm();
         // let t5 = LieGroupISE3q::new(res[39].0.inverse()*self.target_ee_pos.0).ln().vee().norm();
         let t5 = (res[39].0.translation.vector - self.target_ee_pos.0.translation.vector).norm();
-        let t6 = res[39].0.rotation.to_lie_group_h1().displacement(&self.target_ee_pos.0.rotation.to_lie_group_h1()).ln().vee().norm();
+        let t6 = res[39]
+            .0
+            .rotation
+            .to_lie_group_h1()
+            .displacement(&self.target_ee_pos.0.rotation.to_lie_group_h1())
+            .ln()
+            .vee()
+            .norm();
 
-        vec![t1*t1, t2*t2, t3*t3, t4*t4, t5*t5, t6*t6]
+        vec![t1 * t1, t2 * t2, t3 * t3, t4 * t4, t5 * t5, t6 * t6]
     }
 
     fn num_inputs(&self) -> usize {
@@ -72,10 +87,12 @@ impl <T:AD> DifferentiableFunctionTrait<T> for BenchmarkIK<T>{
     }
 }
 
+/*
 pub struct DCBenchmarkIK;
 impl DifferentiableFunctionClass for DCBenchmarkIK {
     type FunctionType<T: AD> = BenchmarkIK<T>;
 }
+*/
 
 fn pseudo_inverse<T: AD>(mat: &M<T>, eps: T) -> M<T> {
     let svd = mat.singular_value_decomposition(SVDType::Full);
@@ -95,6 +112,7 @@ fn pseudo_inverse<T: AD>(mat: &M<T>, eps: T) -> M<T> {
     vt.transpose() * s_pinv * u.transpose()
 }
 
+/*
 pub fn simple_pseudoinverse_newtons_method_ik<E:DerivativeMethodTrait>(ad_method: E, init_cond: V<f64>, max_iter: usize, step_length: f64, threshold: f64) -> f64{
     let ik = BenchmarkIK::<f64>::new();
     let ik_d = BenchmarkIK::<E::T>::new();
@@ -155,3 +173,5 @@ fn main() {
     println!();
     println!("{:?}", res3.1);
 }
+*/
+fn main() {}

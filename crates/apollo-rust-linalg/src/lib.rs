@@ -3,10 +3,10 @@
 
 extern crate core;
 
-use std::fmt::Debug;
 use nalgebra::{DMatrix, DVector};
 use nalgebra_lapack::{LU, SVD};
 use rand::Rng;
+use std::fmt::Debug;
 
 /// Type alias for a dynamic vector of `f64`.
 pub type V = DVector<f64>;
@@ -132,14 +132,19 @@ impl ApolloDMatrixTrait for M {
 
     fn from_column_vectors(columns: &[V]) -> Self {
         let mut out = M::zeros(columns[0].len(), columns.len());
-        columns.iter().enumerate().for_each(|(i, x)| out.set_column(i, x));
+        columns
+            .iter()
+            .enumerate()
+            .for_each(|(i, x)| out.set_column(i, x));
 
         out
     }
 
     fn from_row_vectors(rows: &[V]) -> Self {
         let mut out = M::zeros(rows.len(), rows[0].len());
-        rows.iter().enumerate().for_each(|(i, x)| out.set_row(i, &x.transpose()));
+        rows.iter()
+            .enumerate()
+            .for_each(|(i, x)| out.set_row(i, &x.transpose()));
 
         out
     }
@@ -211,9 +216,13 @@ impl ApolloDMatrixTrait for M {
 
                 let mut sigma = Self::zeros(self.nrows(), self.ncols());
                 let mut singular_values = svd.singular_values.data.as_vec().clone();
-                for (i, s) in singular_values.iter().enumerate() { sigma[(i,i)] = *s; }
+                for (i, s) in singular_values.iter().enumerate() {
+                    sigma[(i, i)] = *s;
+                }
 
-                for _ in 0..(m.max(n) - singular_values.len()) { singular_values.push(0.0); }
+                for _ in 0..(m.max(n) - singular_values.len()) {
+                    singular_values.push(0.0);
+                }
 
                 SVDResult {
                     u: full_u,
@@ -228,8 +237,10 @@ impl ApolloDMatrixTrait for M {
                 let mut sigma = Self::zeros(rank, rank);
                 let singular_values = svd.singular_values.data.as_vec().clone();
                 for (i, s) in singular_values.iter().enumerate() {
-                    if singular_values[i] == 0.0 { continue; }
-                    sigma[(i,i)] = *s;
+                    if singular_values[i] == 0.0 {
+                        continue;
+                    }
+                    sigma[(i, i)] = *s;
                 }
 
                 SVDResult {
@@ -338,9 +349,13 @@ impl ApolloDMatrixTrait for M {
 
                 let mut sigma = Self::zeros(self.nrows(), self.ncols());
                 let mut singular_values = svd.singular_values.data.as_vec().clone();
-                for (i, s) in singular_values.iter().enumerate() { sigma[(i,i)] = *s; }
+                for (i, s) in singular_values.iter().enumerate() {
+                    sigma[(i, i)] = *s;
+                }
 
-                for _ in 0..(m.max(n) - singular_values.len()) { singular_values.push(0.0); }
+                for _ in 0..(m.max(n) - singular_values.len()) {
+                    singular_values.push(0.0);
+                }
 
                 SVDResult {
                     u: full_u,
@@ -355,8 +370,10 @@ impl ApolloDMatrixTrait for M {
                 let mut sigma = Self::zeros(rank, rank);
                 let singular_values = svd.singular_values.data.as_vec().clone();
                 for (i, s) in singular_values.iter().enumerate() {
-                    if singular_values[i] == 0.0 { continue; }
-                    sigma[(i,i)] = *s;
+                    if singular_values[i] == 0.0 {
+                        continue;
+                    }
+                    sigma[(i, i)] = *s;
                 }
 
                 SVDResult {
@@ -377,8 +394,12 @@ impl ApolloDMatrixTrait for M {
         }
 
         let mut result = DMatrix::zeros(self.nrows(), self.ncols() + other.ncols());
-        result.view_mut((0, 0), (self.nrows(), self.ncols())).copy_from(self);
-        result.view_mut((0, self.ncols()), (other.nrows(), other.ncols())).copy_from(other);
+        result
+            .view_mut((0, 0), (self.nrows(), self.ncols()))
+            .copy_from(self);
+        result
+            .view_mut((0, self.ncols()), (other.nrows(), other.ncols()))
+            .copy_from(other);
 
         Some(result)
     }
@@ -389,8 +410,12 @@ impl ApolloDMatrixTrait for M {
         }
 
         let mut result = DMatrix::zeros(self.nrows() + other.nrows(), self.ncols());
-        result.view_mut((0, 0), (self.nrows(), self.ncols())).copy_from(self);
-        result.view_mut((self.nrows(), 0), (other.nrows(), other.ncols())).copy_from(other);
+        result
+            .view_mut((0, 0), (self.nrows(), self.ncols()))
+            .copy_from(self);
+        result
+            .view_mut((self.nrows(), 0), (other.nrows(), other.ncols()))
+            .copy_from(other);
 
         Some(result)
     }
@@ -465,7 +490,11 @@ impl SVDResult {
         self.rank
     }
     pub fn to_fundamental_subspaces(&self) -> FundamentalSubspaces {
-        assert_eq!(self.svd_type, SVDType::Full, "svd type must be Full in order to get fundamental subspaces");
+        assert_eq!(
+            self.svd_type,
+            SVDType::Full,
+            "svd type must be Full in order to get fundamental subspaces"
+        );
 
         let u_cols = self.u.get_all_columns();
         let v_cols = self.vt.get_all_rows();
@@ -477,20 +506,42 @@ impl SVDResult {
         let mut v2_cols = vec![];
 
         for (i, col) in u_cols.iter().enumerate() {
-            if i < rank { u1_cols.push(col.clone()) }
-            else { u2_cols.push(col.clone()) }
+            if i < rank {
+                u1_cols.push(col.clone())
+            } else {
+                u2_cols.push(col.clone())
+            }
         }
 
         for (i, col) in v_cols.iter().enumerate() {
-            if i < rank { v1_cols.push(col.clone()) }
-            else { v2_cols.push(col.clone()) }
+            if i < rank {
+                v1_cols.push(col.clone())
+            } else {
+                v2_cols.push(col.clone())
+            }
         }
 
         FundamentalSubspaces {
-            column_space_basis: if u1_cols.len() > 0 { Some(M::from_column_vectors(&u1_cols)) } else { None },
-            left_null_space_basis: if u2_cols.len() > 0 { Some(M::from_column_vectors(&u2_cols)) } else { None },
-            row_space_basis: if v1_cols.len() > 0 { Some(M::from_column_vectors(&v1_cols)) } else { None },
-            null_space_basis: if v2_cols.len() > 0 { Some(M::from_column_vectors(&v2_cols)) } else { None },
+            column_space_basis: if u1_cols.len() > 0 {
+                Some(M::from_column_vectors(&u1_cols))
+            } else {
+                None
+            },
+            left_null_space_basis: if u2_cols.len() > 0 {
+                Some(M::from_column_vectors(&u2_cols))
+            } else {
+                None
+            },
+            row_space_basis: if v1_cols.len() > 0 {
+                Some(M::from_column_vectors(&v1_cols))
+            } else {
+                None
+            },
+            null_space_basis: if v2_cols.len() > 0 {
+                Some(M::from_column_vectors(&v2_cols))
+            } else {
+                None
+            },
         }
     }
 }
@@ -500,7 +551,7 @@ pub struct QRResult {
     /// Q matrix with orthonormal columns
     pub q: M,
     /// Upper triangular R matrix
-    pub r: M
+    pub r: M,
 }
 
 /// Enum to specify the type of Singular Value Decomposition.
@@ -543,8 +594,7 @@ pub fn dmatrix_from_2dvec<T: Clone + PartialEq + Debug + 'static>(v: &Vec<Vec<T>
     let rows = v.len();
     let cols = v[0].len();
     let data: Vec<T> = v.into_iter().flatten().collect();
-
-    DMatrix::from_vec(rows, cols, data)
+    DMatrix::from_row_slice(rows, cols, &data)
 }
 
 /// Function to convert a `DMatrix` to a 2D vector.
@@ -561,4 +611,165 @@ pub fn dmatrix_to_2dvec<T: Clone>(matrix: &DMatrix<T>) -> Vec<Vec<T>> {
     }
 
     vec_2d
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use nalgebra::vector;
+
+    #[test]
+    fn test_vector_new() {
+        let v = V::new(&[1.0, 2.0, 3.0]);
+        assert_eq!(v, vector![1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn test_vector_random() {
+        let n = 10;
+        let v = V::new_random_with_range(n, -1.0, 1.0);
+        assert_eq!(v.len(), n);
+        for i in 0..n {
+            assert!(v[i] >= -1.0 && v[i] <= 1.0);
+        }
+    }
+
+    #[test]
+    fn test_matrix_new() {
+        let m = M::new(&[1.0, 2.0, 3.0, 4.0], 2, 2);
+        let expected = M::new(&[1.0, 2.0, 3.0, 4.0], 2, 2);
+        assert_eq!(m, expected);
+    }
+
+    #[test]
+    fn test_matrix_random() {
+        let (rows, cols) = (4, 3);
+        let m = M::new_random_with_range(rows, cols, 0.0, 5.0);
+        assert_eq!(m.nrows(), rows);
+        assert_eq!(m.ncols(), cols);
+        for i in 0..rows {
+            for j in 0..cols {
+                assert!(m[(i, j)] >= 0.0 && m[(i, j)] <= 5.0);
+            }
+        }
+    }
+
+    #[test]
+    fn test_matrix_from_vectors() {
+        let v1 = V::new(&[1.0, 2.0]);
+        let v2 = V::new(&[3.0, 4.0]);
+
+        let m_col = M::from_column_vectors(&[v1.clone(), v2.clone()]);
+        assert_eq!(m_col, M::new(&[1.0, 3.0, 2.0, 4.0], 2, 2));
+
+        let m_row = M::from_row_vectors(&[v1, v2]);
+        assert_eq!(m_row, M::new(&[1.0, 2.0, 3.0, 4.0], 2, 2));
+    }
+
+    #[test]
+    fn test_gram_schmidt() {
+        let v1 = V::new(&[1.0, 1.0, 0.0]);
+        let v2 = V::new(&[1.0, 0.0, 1.0]);
+        let v3 = V::new(&[0.0, 1.0, 1.0]);
+
+        let input = vec![v1, v2, v3];
+        let orthogonal = input.gram_schmidt_process();
+
+        assert_eq!(orthogonal.len(), 3);
+
+        // Assert orthonormality
+        for i in 0..3 {
+            assert!((orthogonal[i].norm() - 1.0).abs() < 1e-10);
+            for j in 0..i {
+                assert!(orthogonal[i].dot(&orthogonal[j]).abs() < 1e-10);
+            }
+        }
+    }
+
+    #[test]
+    fn test_qr_factorization() {
+        let a = M::new(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], 3, 2);
+        let qr = a.full_qr_factorization();
+
+        // Check A = QR
+        let reconstructed = &qr.q * &qr.r;
+        for i in 0..a.nrows() {
+            for j in 0..a.ncols() {
+                assert!((a[(i, j)] - reconstructed[(i, j)]).abs() < 1e-10);
+            }
+        }
+
+        // Check Q is orthogonal
+        let qtq = qr.q.transpose() * &qr.q;
+        let identity = M::identity(qr.q.ncols(), qr.q.ncols());
+        for i in 0..identity.nrows() {
+            for j in 0..identity.ncols() {
+                assert!((qtq[(i, j)] - identity[(i, j)]).abs() < 1e-10);
+            }
+        }
+
+        // Check R is upper triangular
+        for i in 0..qr.r.nrows() {
+            for j in 0..qr.r.ncols() {
+                if i > j {
+                    assert!(qr.r[(i, j)].abs() < 1e-10);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_svd_full() {
+        let a = M::new(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], 3, 2);
+        let svd = a.singular_value_decomposition(SVDType::Full);
+
+        // Check A = U * Sigma * Vt
+        let reconstructed = &svd.u * &svd.sigma * &svd.vt;
+        for i in 0..a.nrows() {
+            for j in 0..a.ncols() {
+                assert!((a[(i, j)] - reconstructed[(i, j)]).abs() < 1e-10);
+            }
+        }
+
+        assert_eq!(svd.rank(), 2);
+    }
+
+    #[test]
+    fn test_fundamental_subspaces() {
+        let a = M::new(&[1.0, 0.0, 0.0, 1.0, 0.0, 0.0], 3, 2);
+        let svd = a.singular_value_decomposition(SVDType::Full);
+        let subspaces = svd.to_fundamental_subspaces();
+
+        assert!(subspaces.column_space_basis().is_some());
+        assert!(subspaces.left_null_space_basis().is_some());
+        assert!(subspaces.row_space_basis().is_some());
+        assert!(subspaces.null_space_basis().is_none()); // 2x2 domain, rank 2 => null space empty
+    }
+
+    #[test]
+    fn test_hstack_vstack() {
+        let m1 = M::new(&[1.0, 2.0, 3.0, 4.0], 2, 2);
+        let m2 = M::new(&[5.0, 6.0, 7.0, 8.0], 2, 2);
+
+        let h = m1.hstack(&m2).unwrap();
+        assert_eq!(h.nrows(), 2);
+        assert_eq!(h.ncols(), 4);
+        assert_eq!(h, M::new(&[1.0, 2.0, 5.0, 6.0, 3.0, 4.0, 7.0, 8.0], 2, 4));
+
+        let v = m1.vstack(&m2).unwrap();
+        assert_eq!(v.nrows(), 4);
+        assert_eq!(v.ncols(), 2);
+        assert_eq!(v, M::new(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], 4, 2));
+    }
+
+    #[test]
+    fn test_2dvec_conversion() {
+        let data = vec![vec![1.0, 2.0], vec![3.0, 4.0]];
+        let m = dmatrix_from_2dvec(&data);
+        assert_eq!(m[(0, 0)], 1.0);
+        assert_eq!(m[(1, 1)], 4.0);
+
+        let back = dmatrix_to_2dvec(&m);
+        assert_eq!(data, back);
+    }
 }

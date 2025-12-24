@@ -1,28 +1,15 @@
-use apollo_rust_modules::ResourcesRootDirectory;
-use apollo_rust_robotics::ToChainNalgebra;
+use apollo_rust_file::ApolloPathBufTrait;
+use apollo_rust_modules::ResourcesType;
+use apollo_rust_robotics::ToChainFromPath;
+use std::path::PathBuf;
 
 fn main() {
-    let r = ResourcesRootDirectory::new_from_default_apollo_robots_dir();
-    let s = r.get_subdirectory("ur5");
-    let c = s.to_chain_nalgebra();
-
-    let state = c.sample_random_state();
-    let fk_res = c.fk(&state);
-    let link_pose = &fk_res[9];
-
-
-    let translation = link_pose.0.translation.vector.as_slice();
-
-    println!("{:?}", translation);
-
-    let rotation = link_pose.0.rotation.coords.as_slice();
-    // i j k w order
-    println!("{:?}", rotation);
-
-    println!("{:?}", link_pose.0.rotation.w);
-
-    let rotation_matrix = link_pose.0.rotation.to_rotation_matrix();
-    println!("{}", rotation_matrix);
-
-    println!("{}", rotation_matrix[(0,0)]);
+    let p = PathBuf::new_from_desktop_dir().append("ur5_urdd");
+    let c = p.to_chain(ResourcesType::Robot);
+    println!(
+        "Successfully initialized chain from path {:?} using automatic name inference!",
+        p
+    );
+    println!("Inferred name: {}", c.resources_sub_directory.name);
+    println!("Root idx: {}", c.chain_module.root_idx);
 }

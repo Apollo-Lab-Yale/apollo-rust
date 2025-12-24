@@ -8,8 +8,6 @@ fn main() {
     let c = s.to_chain_nalgebra();
 
 
-    // c.bevy_display();
-
-
+    c.bevy_display();
 
 }

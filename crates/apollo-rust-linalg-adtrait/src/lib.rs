@@ -32,16 +32,24 @@ impl<A: AD> ApolloDVectorTrait<A> for DVector<A> {
 
     fn new_random_with_range(n: usize, min: f64, max: f64) -> Self {
         let v = <Matrix<f64, Dyn, Const<1>, VecStorage<f64, Dyn, Const<1>>> as apollo_rust_linalg::ApolloDVectorTrait>::new_random_with_range(n, min, max);
-        return Self::new_from_f64s(v.as_slice())
+        return Self::new_from_f64s(v.as_slice());
     }
 
     fn to_other_ad_type<A2: AD>(&self) -> V<A2> {
-        let s = self.as_slice().iter().map(|x| x.to_other_ad_type::<A2>()).collect::<Vec<A2>>();
+        let s = self
+            .as_slice()
+            .iter()
+            .map(|x| x.to_other_ad_type::<A2>())
+            .collect::<Vec<A2>>();
         return V::new(&s);
     }
 
     fn to_constant_ad(&self) -> V<A> {
-        let s = self.as_slice().iter().map(|x| x.to_constant_ad()).collect::<Vec<A>>();
+        let s = self
+            .as_slice()
+            .iter()
+            .map(|x| x.to_constant_ad())
+            .collect::<Vec<A>>();
         return V::new(&s);
     }
 }
@@ -85,13 +93,18 @@ impl<A: AD> ApolloDMatrixTrait<A> for M<A> {
 
     fn from_column_vectors(columns: &[V<A>]) -> Self {
         let mut out = M::zeros(columns[0].len(), columns.len());
-        columns.iter().enumerate().for_each(|(i, x)| out.set_column(i, x));
+        columns
+            .iter()
+            .enumerate()
+            .for_each(|(i, x)| out.set_column(i, x));
         out
     }
 
     fn from_row_vectors(rows: &[V<A>]) -> Self {
         let mut out = M::zeros(rows.len(), rows[0].len());
-        rows.iter().enumerate().for_each(|(i, x)| out.set_row(i, &x.transpose()));
+        rows.iter()
+            .enumerate()
+            .for_each(|(i, x)| out.set_row(i, &x.transpose()));
         out
     }
 
@@ -155,7 +168,7 @@ impl<A: AD> ApolloDMatrixTrait<A> for M<A> {
                 let mut sigma = M::zeros(self.nrows(), self.ncols());
                 let mut singular_values = svd.singular_values.data.as_vec().clone();
                 for (i, s) in singular_values.iter().enumerate() {
-                    sigma[(i,i)] = s.clone();
+                    sigma[(i, i)] = s.clone();
                 }
 
                 for _ in 0..(m.max(n) - singular_values.len()) {
@@ -175,8 +188,10 @@ impl<A: AD> ApolloDMatrixTrait<A> for M<A> {
                 let mut sigma = M::zeros(rank, rank);
                 let singular_values = svd.singular_values.data.as_vec().clone();
                 for (i, s) in singular_values.iter().enumerate() {
-                    if *s == A::constant(0.0) { continue; }
-                    sigma[(i,i)] = s.clone();
+                    if *s == A::constant(0.0) {
+                        continue;
+                    }
+                    sigma[(i, i)] = s.clone();
                 }
 
                 SVDResult {
@@ -252,13 +267,21 @@ impl<A: AD> ApolloDMatrixTrait<A> for M<A> {
 
     fn to_other_ad_type<A2: AD>(&self) -> M<A2> {
         let (nrows, ncols) = self.shape();
-        let s = self.as_slice().iter().map(|x| x.to_other_ad_type::<A2>()).collect::<Vec<A2>>();
+        let s = self
+            .as_slice()
+            .iter()
+            .map(|x| x.to_other_ad_type::<A2>())
+            .collect::<Vec<A2>>();
         return M::new(&s, nrows, ncols);
     }
 
     fn to_constant_ad(&self) -> M<A> {
         let (nrows, ncols) = self.shape();
-        let s = self.as_slice().iter().map(|x| x.to_constant_ad()).collect::<Vec<A>>();
+        let s = self
+            .as_slice()
+            .iter()
+            .map(|x| x.to_constant_ad())
+            .collect::<Vec<A>>();
         return M::new(&s, nrows, ncols);
     }
 }
@@ -331,7 +354,11 @@ impl<A: AD> SVDResult<A> {
         self.rank
     }
     pub fn to_fundamental_subspaces(&self) -> FundamentalSubspaces<A> {
-        assert_eq!(self.svd_type, SVDType::Full, "SVD type must be Full to get fundamental subspaces");
+        assert_eq!(
+            self.svd_type,
+            SVDType::Full,
+            "SVD type must be Full to get fundamental subspaces"
+        );
 
         let u_cols = self.u.get_all_columns();
         let v_cols = self.vt.get_all_rows();
@@ -343,20 +370,42 @@ impl<A: AD> SVDResult<A> {
         let mut v2_cols = vec![];
 
         for (i, col) in u_cols.iter().enumerate() {
-            if i < rank { u1_cols.push(col.clone()) }
-            else { u2_cols.push(col.clone()) }
+            if i < rank {
+                u1_cols.push(col.clone())
+            } else {
+                u2_cols.push(col.clone())
+            }
         }
 
         for (i, col) in v_cols.iter().enumerate() {
-            if i < rank { v1_cols.push(col.clone()) }
-            else { v2_cols.push(col.clone()) }
+            if i < rank {
+                v1_cols.push(col.clone())
+            } else {
+                v2_cols.push(col.clone())
+            }
         }
 
         FundamentalSubspaces {
-            column_space_basis: if u1_cols.len() > 0 { Some(<DMatrix<A>>::from_column_vectors(&u1_cols)) } else { None },
-            left_null_space_basis: if u2_cols.len() > 0 { Some(<DMatrix<A>>::from_column_vectors(&u2_cols)) } else { None },
-            row_space_basis: if v1_cols.len() > 0 { Some(<DMatrix<A>>::from_column_vectors(&v1_cols)) } else { None },
-            null_space_basis: if v2_cols.len() > 0 { Some(<DMatrix<A>>::from_column_vectors(&v2_cols)) } else { None },
+            column_space_basis: if u1_cols.len() > 0 {
+                Some(<DMatrix<A>>::from_column_vectors(&u1_cols))
+            } else {
+                None
+            },
+            left_null_space_basis: if u2_cols.len() > 0 {
+                Some(<DMatrix<A>>::from_column_vectors(&u2_cols))
+            } else {
+                None
+            },
+            row_space_basis: if v1_cols.len() > 0 {
+                Some(<DMatrix<A>>::from_column_vectors(&v1_cols))
+            } else {
+                None
+            },
+            null_space_basis: if v2_cols.len() > 0 {
+                Some(<DMatrix<A>>::from_column_vectors(&v2_cols))
+            } else {
+                None
+            },
         }
     }
 }
@@ -392,5 +441,119 @@ impl<A: AD> FundamentalSubspaces<A> {
     }
     pub fn null_space_basis(&self) -> &Option<M<A>> {
         &self.null_space_basis
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_vector_new() {
+        let values = [1.0, 2.0, 3.0];
+        let v = <V<f64>>::new_from_f64s(&values);
+        assert_eq!(v.len(), 3);
+        assert_eq!(v[0], 1.0);
+        assert_eq!(v[2], 3.0);
+    }
+
+    #[test]
+    fn test_vector_random() {
+        let n = 10;
+        let v = <V<f64>>::new_random_with_range(n, -1.0, 1.0);
+        assert_eq!(v.len(), n);
+        for i in 0..n {
+            assert!(v[i] >= -1.0 && v[i] <= 1.0);
+        }
+    }
+
+    #[test]
+    fn test_matrix_new() {
+        let m = <M<f64>>::new_from_f64s(&[1.0, 2.0, 3.0, 4.0], 2, 2);
+        assert_eq!(m.nrows(), 2);
+        assert_eq!(m.ncols(), 2);
+        assert_eq!(m[(0, 0)], 1.0);
+        assert_eq!(m[(0, 1)], 2.0);
+    }
+
+    #[test]
+    fn test_matrix_from_vectors() {
+        let v1 = <V<f64>>::new_from_f64s(&[1.0, 2.0]);
+        let v2 = <V<f64>>::new_from_f64s(&[3.0, 4.0]);
+
+        let m_col = <M<f64>>::from_column_vectors(&[v1.clone(), v2.clone()]);
+        assert_eq!(m_col[(0, 0)], 1.0);
+        assert_eq!(m_col[(0, 1)], 3.0);
+
+        let m_row = <M<f64>>::from_row_vectors(&[v1, v2]);
+        assert_eq!(m_row[(0, 0)], 1.0);
+        assert_eq!(m_row[(0, 1)], 2.0);
+    }
+
+    #[test]
+    fn test_gram_schmidt() {
+        let v1 = <V<f64>>::new_from_f64s(&[1.0, 1.0, 0.0]);
+        let v2 = <V<f64>>::new_from_f64s(&[1.0, 0.0, 1.0]);
+        let v3 = <V<f64>>::new_from_f64s(&[0.0, 1.0, 1.0]);
+
+        let input = vec![v1, v2, v3];
+        let orthogonal = input.gram_schmidt_process();
+
+        assert_eq!(orthogonal.len(), 3);
+
+        for i in 0..3 {
+            assert!((orthogonal[i].norm() - 1.0).abs() < 1e-10);
+            for j in 0..i {
+                assert!(orthogonal[i].dot(&orthogonal[j]).abs() < 1e-10);
+            }
+        }
+    }
+
+    #[test]
+    fn test_qr_factorization() {
+        let a = <M<f64>>::new_from_f64s(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], 3, 2);
+        let qr = a.full_qr_factorization();
+
+        let reconstructed = &qr.q * &qr.r;
+        for i in 0..a.nrows() {
+            for j in 0..a.ncols() {
+                assert!((a[(i, j)] - reconstructed[(i, j)]).abs() < 1e-10);
+            }
+        }
+
+        let qtq = qr.q.transpose() * &qr.q;
+        let identity = <M<f64>>::identity(qr.q.ncols(), qr.q.ncols());
+        for i in 0..identity.nrows() {
+            for j in 0..identity.ncols() {
+                assert!((qtq[(i, j)] - identity[(i, j)]).abs() < 1e-10);
+            }
+        }
+    }
+
+    #[test]
+    fn test_svd_full() {
+        let a = <M<f64>>::new_from_f64s(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], 3, 2);
+        let svd = a.singular_value_decomposition(SVDType::Full);
+
+        let reconstructed = &svd.u * &svd.sigma * &svd.vt;
+        for i in 0..a.nrows() {
+            for j in 0..a.ncols() {
+                assert!((a[(i, j)] - reconstructed[(i, j)]).abs() < 1e-10);
+            }
+        }
+
+        assert_eq!(svd.rank(), 2);
+    }
+
+    #[test]
+    fn test_fundamental_subspaces() {
+        let a = <M<f64>>::new_from_f64s(&[1.0, 0.0, 0.0, 1.0, 0.0, 0.0], 3, 2);
+        let svd = a.singular_value_decomposition(SVDType::Full);
+        let subspaces = svd.to_fundamental_subspaces();
+
+        assert!(subspaces.column_space_basis().is_some());
+        assert!(subspaces.left_null_space_basis().is_some());
+        assert!(subspaces.row_space_basis().is_some());
+        assert!(subspaces.null_space_basis().is_none());
     }
 }

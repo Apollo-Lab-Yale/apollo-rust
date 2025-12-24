@@ -4,4 +4,4 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-nalgebra = { version = "0.33.0", features = ["rand"] }
+nalgebra = { version = "0.34.1", features = ["rand"] }
