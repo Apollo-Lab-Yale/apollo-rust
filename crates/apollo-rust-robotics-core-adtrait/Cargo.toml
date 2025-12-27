@@ -15,5 +15,5 @@ apollo-rust-robotics-core = { path = "../apollo-rust-robotics-core" }
 serde = { version="1.0.204", features = ["derive"] }
 nalgebra = { version = "=0.33.0", features = ["rand", "serde-serialize"] }
 # ad_trait = { git = "https://github.com/djrakita/ad_trait" }
-ad_trait = { version = "=0.1.1" }
+ad_trait = { version = "=0.2.2" }
 rand = "0.8.5"

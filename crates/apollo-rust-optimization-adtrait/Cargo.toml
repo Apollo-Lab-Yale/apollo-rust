@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-ad_trait = { version = "=0.1.1" }
+ad_trait = { version = "=0.2.2" }
 apollo-rust-linalg-adtrait = { path = "../apollo-rust-linalg-adtrait" }
 apollo-rust-linalg = { path = "../apollo-rust-linalg" }
 optimization_engine = { version = "0.9.1" }

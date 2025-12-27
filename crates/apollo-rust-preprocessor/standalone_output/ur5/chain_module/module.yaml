@@ -1,0 +1,161 @@
+links_in_chain:
+- name: base_link
+  link_idx: 0
+  parent_joint_idx: 9
+  parent_link_idx: 10
+  children_joint_idxs:
+  - 0
+  - 7
+  children_link_idxs:
+  - 1
+  - 8
+- name: shoulder_link
+  link_idx: 1
+  parent_joint_idx: 0
+  parent_link_idx: 0
+  children_joint_idxs:
+  - 1
+  children_link_idxs:
+  - 2
+- name: upper_arm_link
+  link_idx: 2
+  parent_joint_idx: 1
+  parent_link_idx: 1
+  children_joint_idxs:
+  - 2
+  children_link_idxs:
+  - 3
+- name: forearm_link
+  link_idx: 3
+  parent_joint_idx: 2
+  parent_link_idx: 2
+  children_joint_idxs:
+  - 3
+  children_link_idxs:
+  - 4
+- name: wrist_1_link
+  link_idx: 4
+  parent_joint_idx: 3
+  parent_link_idx: 3
+  children_joint_idxs:
+  - 4
+  children_link_idxs:
+  - 5
+- name: wrist_2_link
+  link_idx: 5
+  parent_joint_idx: 4
+  parent_link_idx: 4
+  children_joint_idxs:
+  - 5
+  children_link_idxs:
+  - 6
+- name: wrist_3_link
+  link_idx: 6
+  parent_joint_idx: 5
+  parent_link_idx: 5
+  children_joint_idxs:
+  - 6
+  - 8
+  children_link_idxs:
+  - 7
+  - 9
+- name: ee_link
+  link_idx: 7
+  parent_joint_idx: 6
+  parent_link_idx: 6
+  children_joint_idxs: []
+  children_link_idxs: []
+- name: base
+  link_idx: 8
+  parent_joint_idx: 7
+  parent_link_idx: 0
+  children_joint_idxs: []
+  children_link_idxs: []
+- name: tool0
+  link_idx: 9
+  parent_joint_idx: 8
+  parent_link_idx: 6
+  children_joint_idxs: []
+  children_link_idxs: []
+- name: world
+  link_idx: 10
+  parent_joint_idx: null
+  parent_link_idx: null
+  children_joint_idxs:
+  - 9
+  children_link_idxs:
+  - 0
+joints_in_chain:
+- joint_name: shoulder_pan_joint
+  joint_idx: 0
+  parent_link_name: base_link
+  parent_link_idx: 0
+  child_link_name: shoulder_link
+  child_link_idx: 1
+- joint_name: shoulder_lift_joint
+  joint_idx: 1
+  parent_link_name: shoulder_link
+  parent_link_idx: 1
+  child_link_name: upper_arm_link
+  child_link_idx: 2
+- joint_name: elbow_joint
+  joint_idx: 2
+  parent_link_name: upper_arm_link
+  parent_link_idx: 2
+  child_link_name: forearm_link
+  child_link_idx: 3
+- joint_name: wrist_1_joint
+  joint_idx: 3
+  parent_link_name: forearm_link
+  parent_link_idx: 3
+  child_link_name: wrist_1_link
+  child_link_idx: 4
+- joint_name: wrist_2_joint
+  joint_idx: 4
+  parent_link_name: wrist_1_link
+  parent_link_idx: 4
+  child_link_name: wrist_2_link
+  child_link_idx: 5
+- joint_name: wrist_3_joint
+  joint_idx: 5
+  parent_link_name: wrist_2_link
+  parent_link_idx: 5
+  child_link_name: wrist_3_link
+  child_link_idx: 6
+- joint_name: ee_fixed_joint
+  joint_idx: 6
+  parent_link_name: wrist_3_link
+  parent_link_idx: 6
+  child_link_name: ee_link
+  child_link_idx: 7
+- joint_name: base_link-base_fixed_joint
+  joint_idx: 7
+  parent_link_name: base_link
+  parent_link_idx: 0
+  child_link_name: base
+  child_link_idx: 8
+- joint_name: wrist_3_link-tool0_fixed_joint
+  joint_idx: 8
+  parent_link_name: wrist_3_link
+  parent_link_idx: 6
+  child_link_name: tool0
+  child_link_idx: 9
+- joint_name: world_joint
+  joint_idx: 9
+  parent_link_name: world
+  parent_link_idx: 10
+  child_link_name: base_link
+  child_link_idx: 0
+kinematic_hierarchy:
+- - 10
+- - 0
+- - 1
+  - 8
+- - 2
+- - 3
+- - 4
+- - 5
+- - 6
+- - 7
+  - 9
+root_idx: 10
