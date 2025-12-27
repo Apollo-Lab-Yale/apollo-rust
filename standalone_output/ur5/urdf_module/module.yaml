@@ -1,0 +1,763 @@
+name: ur5
+links:
+- name: base_link
+  inertial:
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    mass:
+      value: 4.0
+    inertia:
+      ixx: 0.00443333156
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 0.00443333156
+      iyz: 0.0
+      izz: 0.0072
+  visual:
+  - name: LightGrey
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/original_meshes_module/meshes/base.dae
+      scale: null
+    material:
+      name: ''
+      color: null
+      texture: null
+  collision:
+  - name: null
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/plain_meshes_module/meshes/stl/base.stl
+      scale: null
+- name: shoulder_link
+  inertial:
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    mass:
+      value: 3.7
+    inertia:
+      ixx: 0.010267495893
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 0.010267495893
+      iyz: 0.0
+      izz: 0.00666
+  visual:
+  - name: LightGrey
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/original_meshes_module/meshes/shoulder.dae
+      scale: null
+    material:
+      name: ''
+      color: null
+      texture: null
+  collision:
+  - name: null
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/plain_meshes_module/meshes/stl/shoulder.stl
+      scale: null
+- name: upper_arm_link
+  inertial:
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.28
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    mass:
+      value: 8.393
+    inertia:
+      ixx: 0.22689067591
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 0.22689067591
+      iyz: 0.0
+      izz: 0.0151074
+  visual:
+  - name: LightGrey
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/original_meshes_module/meshes/upperarm.dae
+      scale: null
+    material:
+      name: ''
+      color: null
+      texture: null
+  collision:
+  - name: null
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/plain_meshes_module/meshes/stl/upperarm.stl
+      scale: null
+- name: forearm_link
+  inertial:
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.25
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    mass:
+      value: 2.275
+    inertia:
+      ixx: 0.049443313556
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 0.049443313556
+      iyz: 0.0
+      izz: 0.004095
+  visual:
+  - name: LightGrey
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/original_meshes_module/meshes/forearm.dae
+      scale: null
+    material:
+      name: ''
+      color: null
+      texture: null
+  collision:
+  - name: null
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/plain_meshes_module/meshes/stl/forearm.stl
+      scale: null
+- name: wrist_1_link
+  inertial:
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    mass:
+      value: 1.219
+    inertia:
+      ixx: 0.111172755531
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 0.111172755531
+      iyz: 0.0
+      izz: 0.21942
+  visual:
+  - name: LightGrey
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/original_meshes_module/meshes/wrist1.dae
+      scale: null
+    material:
+      name: ''
+      color: null
+      texture: null
+  collision:
+  - name: null
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/plain_meshes_module/meshes/stl/wrist1.stl
+      scale: null
+- name: wrist_2_link
+  inertial:
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    mass:
+      value: 1.219
+    inertia:
+      ixx: 0.111172755531
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 0.111172755531
+      iyz: 0.0
+      izz: 0.21942
+  visual:
+  - name: LightGrey
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/original_meshes_module/meshes/wrist2.dae
+      scale: null
+    material:
+      name: ''
+      color: null
+      texture: null
+  collision:
+  - name: null
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/plain_meshes_module/meshes/stl/wrist2.stl
+      scale: null
+- name: wrist_3_link
+  inertial:
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    mass:
+      value: 0.1879
+    inertia:
+      ixx: 0.0171364731454
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 0.0171364731454
+      iyz: 0.0
+      izz: 0.033822
+  visual:
+  - name: LightGrey
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/original_meshes_module/meshes/wrist3.dae
+      scale: null
+    material:
+      name: ''
+      color: null
+      texture: null
+  collision:
+  - name: null
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Mesh
+      filename: crates/apollo-rust-app/public/ur5/mesh_modules/plain_meshes_module/meshes/stl/wrist3.stl
+      scale: null
+- name: ee_link
+  inertial:
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    mass:
+      value: 0.0
+    inertia:
+      ixx: 0.0
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 0.0
+      iyz: 0.0
+      izz: 0.0
+  visual: []
+  collision:
+  - name: null
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    geometry: !Box
+      size:
+      - 0.01
+      - 0.01
+      - 0.01
+- name: base
+  inertial:
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    mass:
+      value: 0.0
+    inertia:
+      ixx: 0.0
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 0.0
+      iyz: 0.0
+      izz: 0.0
+  visual: []
+  collision: []
+- name: tool0
+  inertial:
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    mass:
+      value: 0.0
+    inertia:
+      ixx: 0.0
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 0.0
+      iyz: 0.0
+      izz: 0.0
+  visual: []
+  collision: []
+- name: world
+  inertial:
+    origin:
+      xyz:
+      - 0.0
+      - 0.0
+      - 0.0
+      rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+    mass:
+      value: 0.0
+    inertia:
+      ixx: 0.0
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 0.0
+      iyz: 0.0
+      izz: 0.0
+  visual: []
+  collision: []
+joints:
+- name: shoulder_pan_joint
+  joint_type: Revolute
+  origin:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.089159
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+  parent:
+    link: base_link
+  child:
+    link: shoulder_link
+  axis:
+    xyz:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    lower: -6.2831853
+    upper: 6.2831853
+    effort: 150.0
+    velocity: 3.15
+  dynamics:
+    damping: 0.0
+    friction: 0.0
+  mimic: null
+  safety_controller: null
+- name: shoulder_lift_joint
+  joint_type: Revolute
+  origin:
+    xyz:
+    - 0.0
+    - 0.13585
+    - 0.0
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+  parent:
+    link: shoulder_link
+  child:
+    link: upper_arm_link
+  axis:
+    xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    lower: -6.2831853
+    upper: 6.2831853
+    effort: 150.0
+    velocity: 3.15
+  dynamics:
+    damping: 0.0
+    friction: 0.0
+  mimic: null
+  safety_controller: null
+- name: elbow_joint
+  joint_type: Revolute
+  origin:
+    xyz:
+    - 0.0
+    - -0.1197
+    - 0.425
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+  parent:
+    link: upper_arm_link
+  child:
+    link: forearm_link
+  axis:
+    xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    lower: -6.2831853
+    upper: 6.2831853
+    effort: 150.0
+    velocity: 3.15
+  dynamics:
+    damping: 0.0
+    friction: 0.0
+  mimic: null
+  safety_controller: null
+- name: wrist_1_joint
+  joint_type: Revolute
+  origin:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.39225
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+  parent:
+    link: forearm_link
+  child:
+    link: wrist_1_link
+  axis:
+    xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    lower: -6.2831853
+    upper: 6.2831853
+    effort: 28.0
+    velocity: 3.2
+  dynamics:
+    damping: 0.0
+    friction: 0.0
+  mimic: null
+  safety_controller: null
+- name: wrist_2_joint
+  joint_type: Revolute
+  origin:
+    xyz:
+    - 0.0
+    - 0.093
+    - 0.0
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+  parent:
+    link: wrist_1_link
+  child:
+    link: wrist_2_link
+  axis:
+    xyz:
+    - 0.0
+    - 0.0
+    - 1.0
+  limit:
+    lower: -6.2831853
+    upper: 6.2831853
+    effort: 28.0
+    velocity: 3.2
+  dynamics:
+    damping: 0.0
+    friction: 0.0
+  mimic: null
+  safety_controller: null
+- name: wrist_3_joint
+  joint_type: Revolute
+  origin:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.09465
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+  parent:
+    link: wrist_2_link
+  child:
+    link: wrist_3_link
+  axis:
+    xyz:
+    - 0.0
+    - 1.0
+    - 0.0
+  limit:
+    lower: -6.2831853
+    upper: 6.2831853
+    effort: 28.0
+    velocity: 3.2
+  dynamics:
+    damping: 0.0
+    friction: 0.0
+  mimic: null
+  safety_controller: null
+- name: ee_fixed_joint
+  joint_type: Fixed
+  origin:
+    xyz:
+    - 0.0
+    - 0.0823
+    - 0.0
+    rpy:
+    - 0.0
+    - 0.0
+    - 1.570796325
+  parent:
+    link: wrist_3_link
+  child:
+    link: ee_link
+  axis:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.0
+  limit:
+    lower: 0.0
+    upper: 0.0
+    effort: 0.0
+    velocity: 0.0
+  dynamics: null
+  mimic: null
+  safety_controller: null
+- name: base_link-base_fixed_joint
+  joint_type: Fixed
+  origin:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.0
+    rpy:
+    - 0.0
+    - 0.0
+    - -3.14159265
+  parent:
+    link: base_link
+  child:
+    link: base
+  axis:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.0
+  limit:
+    lower: 0.0
+    upper: 0.0
+    effort: 0.0
+    velocity: 0.0
+  dynamics: null
+  mimic: null
+  safety_controller: null
+- name: wrist_3_link-tool0_fixed_joint
+  joint_type: Fixed
+  origin:
+    xyz:
+    - 0.0
+    - 0.0823
+    - 0.0
+    rpy:
+    - -1.570796325
+    - 0.0
+    - 0.0
+  parent:
+    link: wrist_3_link
+  child:
+    link: tool0
+  axis:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.0
+  limit:
+    lower: 0.0
+    upper: 0.0
+    effort: 0.0
+    velocity: 0.0
+  dynamics: null
+  mimic: null
+  safety_controller: null
+- name: world_joint
+  joint_type: Fixed
+  origin:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.0
+    rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+  parent:
+    link: world
+  child:
+    link: base_link
+  axis:
+    xyz:
+    - 0.0
+    - 0.0
+    - 0.0
+  limit:
+    lower: 0.0
+    upper: 0.0
+    effort: 0.0
+    velocity: 0.0
+  dynamics: null
+  mimic: null
+  safety_controller: null
+materials: []

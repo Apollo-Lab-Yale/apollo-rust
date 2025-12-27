@@ -4,6 +4,6 @@ version = "0.0.1"
 edition = "2024"
 
 [dependencies]
-nalgebra = { version = "0.34.1", features = ["rand"] }
+nalgebra = { version = "=0.33.0", features = ["rand"] }
 # ad_trait = { git = "https://github.com/djrakita/ad_trait" }
-ad_trait = { version = "0.2.0" }
+ad_trait = { version = "=0.1.1" }

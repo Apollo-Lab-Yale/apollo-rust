@@ -30,7 +30,9 @@ members = [
     "crates/apollo-rust-proximity",
     "crates/apollo-rust-robotics-adtrait",
     "crates/apollo-rust-optimization-adtrait",
-    "crates/apollo-rust-interpolation-adtrait"]
+    "crates/apollo-rust-interpolation-adtrait",
+    "crates/apollo-rust-wasm",
+    "crates/apollo-rust-xacro"]
 
 [dependencies]
 

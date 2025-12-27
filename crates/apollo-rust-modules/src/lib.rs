@@ -18,36 +18,25 @@ pub struct ResourcesSingleRobotDirectory {
 */
 
 #[derive(Clone, Debug)]
-pub struct ResourcesRootDirectory {
-    pub directory: PathBuf,
+pub struct ResourcesRootDirectory<P = PathBuf> {
+    pub directory: P,
     pub resources_type: ResourcesType,
 }
-impl ResourcesRootDirectory {
-    pub fn new(directory: PathBuf, resources_type: ResourcesType) -> Self {
+
+pub type NativeResourcesRootDirectory = ResourcesRootDirectory<PathBuf>;
+
+impl<P: ApolloPathBufTrait + Clone> ResourcesRootDirectory<P> {
+    pub fn new(directory: P, resources_type: ResourcesType) -> Self {
         Self {
             directory,
             resources_type,
         }
     }
 
-    pub fn new_from_default_apollo_robots_dir() -> Self {
-        return Self {
-            directory: PathBuf::new_from_default_apollo_robots_dir(),
-            resources_type: ResourcesType::Robot,
-        };
-    }
-
-    pub fn new_from_default_apollo_environments_dir() -> Self {
-        return Self {
-            directory: PathBuf::new_from_default_apollo_environments_dir(),
-            resources_type: ResourcesType::Environment,
-        };
-    }
-
-    pub fn get_subdirectory(&self, name: &str) -> ResourcesSubDirectory {
+    pub fn get_subdirectory(&self, name: &str) -> ResourcesSubDirectory<P> {
         let directory = self.directory().clone().append(name);
         assert!(
-            directory.exists(),
+            directory.path_exists(),
             "{}",
             format!("directory {:?} does not exist", directory)
         );
@@ -59,9 +48,9 @@ impl ResourcesRootDirectory {
         )
     }
 
-    pub fn get_subdirectory_option(&self, name: &str) -> Option<ResourcesSubDirectory> {
+    pub fn get_subdirectory_option(&self, name: &str) -> Option<ResourcesSubDirectory<P>> {
         let directory = self.directory().clone().append(name);
-        return if directory.exists() {
+        return if directory.path_exists() {
             Some(ResourcesSubDirectory::new_raw(
                 name.to_string(),
                 self.directory().clone(),
@@ -73,7 +62,7 @@ impl ResourcesRootDirectory {
         };
     }
 
-    pub fn get_all_subdirectories(&self) -> Vec<ResourcesSubDirectory> {
+    pub fn get_all_subdirectories(&self) -> Vec<ResourcesSubDirectory<P>> {
         let mut out = vec![];
 
         let items = self
@@ -88,11 +77,11 @@ impl ResourcesRootDirectory {
         out
     }
 
-    pub fn directory(&self) -> &PathBuf {
+    pub fn directory(&self) -> &P {
         &self.directory
     }
 
-    pub fn new_from_directory(directory: PathBuf, resources_type: ResourcesType) -> Self {
+    pub fn new_from_directory(directory: P, resources_type: ResourcesType) -> Self {
         Self {
             directory,
             resources_type,
@@ -100,18 +89,37 @@ impl ResourcesRootDirectory {
     }
 }
 
+impl ResourcesRootDirectory<PathBuf> {
+    pub fn new_from_default_apollo_robots_dir() -> Self {
+        return Self {
+            directory: PathBuf::new_from_default_apollo_robots_dir(),
+            resources_type: ResourcesType::Robot,
+        };
+    }
+
+    pub fn new_from_default_apollo_environments_dir() -> Self {
+        return Self {
+            directory: PathBuf::new_from_default_apollo_environments_dir(),
+            resources_type: ResourcesType::Environment,
+        };
+    }
+}
+
 #[derive(Clone, Debug)]
-pub struct ResourcesSubDirectory {
+pub struct ResourcesSubDirectory<P = PathBuf> {
     pub name: String,
-    pub root_directory: PathBuf,
-    pub directory: PathBuf,
+    pub root_directory: P,
+    pub directory: P,
     pub resources_type: ResourcesType,
 }
-impl ResourcesSubDirectory {
+
+pub type NativeResourcesSubDirectory = ResourcesSubDirectory<PathBuf>;
+
+impl<P: ApolloPathBufTrait + Clone> ResourcesSubDirectory<P> {
     pub fn new_raw(
         name: String,
-        root_directory: PathBuf,
-        directory: PathBuf,
+        root_directory: P,
+        directory: P,
         resources_type: ResourcesType,
     ) -> Self {
         Self {
@@ -122,6 +130,41 @@ impl ResourcesSubDirectory {
         }
     }
 
+    pub fn name(&self) -> &String {
+        &self.name
+    }
+
+    pub fn root_directory(&self) -> &P {
+        &self.root_directory
+    }
+
+    pub fn directory(&self) -> &P {
+        &self.directory
+    }
+
+    /// Resolves a relative path to a full path, handling potential naming mismatches
+    /// between the internal robot/environment name and the disk directory name.
+    pub fn resolve_path(&self, rel_path: &P) -> P {
+        let root = &self.root_directory;
+        let internal_name = &self.name;
+
+        let path_components = rel_path.split_into_strings();
+        if let Some(first) = path_components.first() {
+            if first == internal_name {
+                let mut out = self.directory.clone();
+                for segment in path_components.iter().skip(1) {
+                    out = out.append(segment);
+                }
+                return out;
+            }
+        }
+
+        // Fallback: append to root directory
+        root.clone().append_another(rel_path)
+    }
+}
+
+impl ResourcesSubDirectory<PathBuf> {
     pub fn new_from_path(path: PathBuf, resources_type: ResourcesType) -> Self {
         let directory = path.clone();
         let name = directory.file_name().unwrap().to_str().unwrap().to_string();
@@ -147,38 +190,6 @@ impl ResourcesSubDirectory {
             directory,
             resources_type,
         }
-    }
-
-    pub fn name(&self) -> &String {
-        &self.name
-    }
-
-    pub fn root_directory(&self) -> &PathBuf {
-        &self.root_directory
-    }
-
-    pub fn directory(&self) -> &PathBuf {
-        &self.directory
-    }
-
-    /// Resolves a relative path to a full path, handling potential naming mismatches
-    /// between the internal robot/environment name and the disk directory name.
-    pub fn resolve_path(&self, rel_path: &PathBuf) -> PathBuf {
-        let root = &self.root_directory;
-        let internal_name = &self.name;
-
-        let path_str = rel_path.to_str().expect("error");
-
-        // If the relative path starts with the internal name, we strip it and append to the actual directory.
-        if path_str.starts_with(internal_name) {
-            let stripped = &path_str[internal_name.len()..];
-            let stripped = stripped.trim_start_matches('/');
-            let stripped = stripped.trim_start_matches('\\');
-            return self.directory.clone().append(stripped);
-        }
-
-        // Fallback: append to root directory (original behavior but more robust than hardcoded folder name)
-        root.clone().append_path(rel_path)
     }
 }
 

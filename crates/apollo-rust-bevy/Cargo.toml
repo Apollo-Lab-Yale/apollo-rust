@@ -15,10 +15,12 @@ apollo-rust-proximity-parry = { path = "../apollo-rust-proximity-parry" }
 apollo-rust-algs = { path = "../apollo-rust-algs" }
 apollo-rust-interpolation = { path = "../apollo-rust-interpolation" }
 bevy = { version = "0.14.0", features = ["dynamic_linking"] }
-bevy_egui = { version = "0.28.0" }
+bevy_egui = { version = "0.30" }
 bevy_obj = { version = "0.14.0" }
 bevy_mod_outline = { version = "0.8.1" }
-nalgebra = { version = "0.34.1", features = ["rand", "serde-serialize"] }
-parry3d-f64 = { version = "0.25.3", features = ["serde-serialize", "simd-stable"] }
-arboard = { version = "3.4.0" }
+nalgebra = { version = "=0.33.0", features = ["rand", "serde-serialize"] }
+parry3d-f64 = { version = "=0.17.0", features = ["serde-serialize"] }
 transform-gizmo-bevy = { version = "0.4.0" }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+arboard = { version = "3.4.0" }

@@ -1,0 +1,36 @@
+stl_link_mesh_relative_paths:
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/stl/base.stl
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/stl/shoulder.stl
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/stl/upperarm.stl
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/stl/forearm.stl
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/stl/wrist1.stl
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/stl/wrist2.stl
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/stl/wrist3.stl
+- null
+- null
+- null
+- null
+obj_link_mesh_relative_paths:
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/obj/base.obj
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/obj/shoulder.obj
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/obj/upperarm.obj
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/obj/forearm.obj
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/obj/wrist1.obj
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/obj/wrist2.obj
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/obj/wrist3.obj
+- null
+- null
+- null
+- null
+glb_link_mesh_relative_paths:
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/glb/base.glb
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/glb/shoulder.glb
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/glb/upperarm.glb
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/glb/forearm.glb
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/glb/wrist1.glb
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/glb/wrist2.glb
+- ur5/mesh_modules/convex_hull_meshes_module/meshes/glb/wrist3.glb
+- null
+- null
+- null
+- null

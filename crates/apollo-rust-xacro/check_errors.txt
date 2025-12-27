@@ -1,0 +1,19 @@
+    Checking apollo-rust-xacro v0.1.0 (/Users/dannyrakita/Documents/apollo-rust/crates/apollo-rust-xacro)
+warning: unused import: `serde_yaml::value::TaggedValue`
+ --> crates/apollo-rust-xacro/src/parser.rs:7:5
+  |
+7 | use serde_yaml::value::TaggedValue;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `child_el`
+   --> crates/apollo-rust-xacro/src/parser.rs:249:36
+    |
+249 |                 } else if let Some(child_el) = node.first_element_child() {
+    |                                    ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_child_el`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `apollo-rust-xacro` (lib) generated 2 warnings (run `cargo fix --lib -p apollo-rust-xacro` to apply 2 suggestions)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1.05s

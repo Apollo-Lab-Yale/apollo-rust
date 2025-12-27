@@ -1,11 +1,11 @@
-use ad_trait::AD;
-use nalgebra::{Rotation2, Rotation3, Unit, Vector1};
-use rand::Rng;
-use apollo_rust_linalg_adtrait::M;
 use crate::complex_numbers::UC;
 use crate::matrices::{ApolloMatrix2ADTrait, ApolloMatrix3ADTrait, M2, M3};
 use crate::quaternions::{ApolloUnitQuaternionADTrait, UQ};
 use crate::vectors::V3;
+use ad_trait::AD;
+use apollo_rust_linalg_adtrait::M;
+use nalgebra::{Rotation2, Rotation3, Unit, Vector1};
+use rand::Rng;
 
 /// Alias for `Rotation2<A>`, representing a 2D rotation with AD-compatible elements.
 pub type R2<A> = Rotation2<A>;
@@ -33,8 +33,8 @@ impl<A: AD> ApolloRotation2Trait<A> for R2<A> {
     }
 
     fn new_random() -> Self {
-        let mut rng = rand::rng();
-        Self::from_scaled_axis(Vector1::new(A::constant(rng.random_range(-6.28..6.28))))
+        let mut rng = rand::thread_rng();
+        Self::from_scaled_axis(Vector1::new(A::constant(rng.gen_range(-6.28..6.28))))
     }
 
     fn to_unit_complex(&self) -> UC<A> {
@@ -74,11 +74,11 @@ impl<A: AD> ApolloRotation3Trait<A> for R3<A> {
     }
 
     fn new_random() -> Self {
-        let mut rng = rand::rng();
+        let mut rng = rand::thread_rng();
         Self::from_euler_angles(
-            A::constant(rng.random_range(-6.28..6.28)),
-            A::constant(rng.random_range(-6.28..6.28)),
-            A::constant(rng.random_range(-6.28..6.28)),
+            A::constant(rng.gen_range(-6.28..6.28)),
+            A::constant(rng.gen_range(-6.28..6.28)),
+            A::constant(rng.gen_range(-6.28..6.28)),
         )
     }
 
@@ -98,11 +98,7 @@ impl<A: AD> ApolloRotation3Trait<A> for R3<A> {
     }
 
     fn from_slice_euler_angles(slice: &[A]) -> Self {
-        Self::from_euler_angles(
-            slice[0],
-            slice[1],
-            slice[2],
-        )
+        Self::from_euler_angles(slice[0], slice[1], slice[2])
     }
 
     fn from_slice_quaternion(slice: &[A]) -> Self {

@@ -1,7 +1,7 @@
-use std::env;
-use std::process::{Command, ExitCode, Termination};
-use serde::{Deserialize, Serialize};
 use apollo_rust_file::traits::ToJsonString;
+use serde::{Deserialize, Serialize};
+use std::env;
+use std::process::{ExitCode, Termination};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BoolWrapper(pub bool);

@@ -1,3 +1,4 @@
+use apollo_rust_file::ApolloPathBufTrait;
 use apollo_rust_mesh_utils::stl::load_stl_file;
 use apollo_rust_mesh_utils::trimesh::ToTriMesh;
 use apollo_rust_modules::robot_modules::mesh_modules::convex_decomposition_meshes_module::ApolloConvexDecompositionMeshesModule;
@@ -35,10 +36,10 @@ impl ApolloLinkShapesModule {
     ///
     /// # Returns
     /// A new `ApolloLinkShapesModule` instance.
-    pub fn from_mesh_modules(
-        s: &ResourcesSubDirectory,
-        convex_hull_meshes_module: &ApolloConvexHullMeshesModule,
-        convex_decomposition_meshes_module: &ApolloConvexDecompositionMeshesModule,
+    pub fn from_mesh_modules<P: ApolloPathBufTrait + Clone>(
+        s: &ResourcesSubDirectory<P>,
+        convex_hull_meshes_module: &ApolloConvexHullMeshesModule<P>,
+        convex_decomposition_meshes_module: &ApolloConvexDecompositionMeshesModule<P>,
     ) -> Self {
         let mut full_convex_hulls = vec![];
         let mut full_obbs = vec![];

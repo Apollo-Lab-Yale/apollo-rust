@@ -4,7 +4,7 @@ version = "0.0.1"
 edition = "2024"
 
 [dependencies]
-ad_trait = { version = "0.2.0" }
-nalgebra = { version = "0.34.1", features = ["rand", "serde-serialize"] }
+ad_trait = { version = "=0.1.1" }
+nalgebra = { version = "=0.33.0", features = ["rand", "serde-serialize"] }
 apollo-rust-linalg-adtrait = { path = "../apollo-rust-linalg-adtrait" }
 apollo-rust-interpolation = { path = "../apollo-rust-interpolation" }

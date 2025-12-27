@@ -9,4 +9,4 @@ apollo-rust-linalg = { path = "../apollo-rust-linalg" }
 serde = { version="1.0.204", features = ["derive"] }
 serde_json = { version="1.0.120" }
 urdf-rs = { version="0.8.0" }
-rand = "0.9.0-alpha.1"
+rand = "0.8.5"

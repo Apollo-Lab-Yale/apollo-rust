@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 /// # ApolloPlainMeshesModule
 ///
@@ -12,8 +12,8 @@ use serde::{Deserialize, Serialize};
 /// - `obj_link_mesh_relative_paths`: A vector of optional `PathBuf` for OBJ mesh files.
 /// - `glb_link_mesh_relative_paths`: A vector of optional `PathBuf` for GLB mesh files.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ApolloPlainMeshesModule {
-    pub stl_link_mesh_relative_paths: Vec<Option<PathBuf>>,
-    pub obj_link_mesh_relative_paths: Vec<Option<PathBuf>>,
-    pub glb_link_mesh_relative_paths: Vec<Option<PathBuf>>
+pub struct ApolloPlainMeshesModule<P = PathBuf> {
+    pub stl_link_mesh_relative_paths: Vec<Option<P>>,
+    pub obj_link_mesh_relative_paths: Vec<Option<P>>,
+    pub glb_link_mesh_relative_paths: Vec<Option<P>>,
 }

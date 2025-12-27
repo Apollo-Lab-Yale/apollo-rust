@@ -6,8 +6,8 @@ edition = "2024"
 [dependencies]
 apollo-rust-linalg-adtrait = { path= "../apollo-rust-linalg-adtrait" }
 apollo-rust-lie-adtrait = { path= "../apollo-rust-lie-adtrait" }
-nalgebra = { version = "0.34.1", features = ["rand", "serde-serialize"] }
-rand = { version="0.9.0-alpha.1" }
+nalgebra = { version = "=0.33.0", features = ["rand", "serde-serialize"] }
+rand = { version="0.8.5" }
 serde = { version="1.0.203", features = ["derive"] }
 # ad_trait = { git = "https://github.com/djrakita/ad_trait" }
-ad_trait = { version = "0.2.0" }
+ad_trait = { version = "=0.1.1" }

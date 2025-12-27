@@ -1,5 +1,7 @@
-pub mod utils;
+pub mod process_functions;
 pub mod robot_modules_preprocessor;
+pub mod standalone_preprocessor;
+pub mod utils;
 
 use std::path::PathBuf;
 use serde::de::DeserializeOwned;
@@ -69,92 +71,115 @@ pub trait ResourcesSubDirectoryPreprocessorTrait {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-pub trait PreprocessorModule : Serialize + DeserializeOwned {
+pub trait PreprocessorModule<P = PathBuf>: Serialize + DeserializeOwned
+where
+    P: ApolloPathBufTrait + Clone,
+{
     // type SubDirectoryType : ResourcesSubDirectoryTrait;
 
     fn relative_file_path_str_from_sub_dir_to_module_dir() -> String;
 
-    fn relative_file_path_from_root_dir_to_module_dir(s: &ResourcesSubDirectory) -> PathBuf {
-        PathBuf::new().append(&s.name()).append(&Self::relative_file_path_str_from_sub_dir_to_module_dir())
+    fn relative_file_path_from_root_dir_to_module_dir(s: &ResourcesSubDirectory<P>) -> P {
+        P::new_from_str(&s.name).append(&Self::relative_file_path_str_from_sub_dir_to_module_dir())
     }
 
-    fn full_path_to_module_dir(s: &ResourcesSubDirectory) -> PathBuf {
-        s.directory().clone().append(&Self::relative_file_path_str_from_sub_dir_to_module_dir())
+    fn full_path_to_module_dir(s: &ResourcesSubDirectory<P>) -> P {
+        s.directory
+            .clone()
+            .append(&Self::relative_file_path_str_from_sub_dir_to_module_dir())
     }
 
-    fn full_path_to_module_version(s: &ResourcesSubDirectory) -> PathBuf {
+    fn full_path_to_module_version(s: &ResourcesSubDirectory<P>) -> P {
         Self::full_path_to_module_dir(s).append("VERSION")
     }
 
-    fn full_path_module_json(s: &ResourcesSubDirectory) -> PathBuf {
+    fn full_path_module_json(s: &ResourcesSubDirectory<P>) -> P {
         Self::full_path_to_module_dir(s).append("module.json")
     }
 
-    fn full_path_module_ron(s: &ResourcesSubDirectory) -> PathBuf {
+    fn full_path_module_ron(s: &ResourcesSubDirectory<P>) -> P {
         Self::full_path_to_module_dir(s).append("module.ron")
     }
 
-    fn full_path_module_yaml(s: &ResourcesSubDirectory) -> PathBuf {
+    fn full_path_module_yaml(s: &ResourcesSubDirectory<P>) -> P {
         Self::full_path_to_module_dir(s).append("module.yaml")
     }
 
     /// should be in the format "0.0.1"
     fn current_version() -> String;
 
-    fn build_raw(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
+    fn build_raw(
+        s: &ResourcesSubDirectory<P>,
+        progress_bar: &mut ProgressBarWrapper,
+    ) -> Result<Self, String>;
 
-    fn build(s: &ResourcesSubDirectory) -> Result<Self, String> {
-        let mut pb = ProgressBarWrapper::new(&s.name(), &Self::relative_file_path_str_from_sub_dir_to_module_dir());
+    fn build(s: &ResourcesSubDirectory<P>) -> Result<Self, String> {
+        let mut pb = ProgressBarWrapper::new(
+            &s.name(),
+            &Self::relative_file_path_str_from_sub_dir_to_module_dir(),
+        );
         let o = Self::build_raw(s, &mut pb);
         return match o {
             Ok(o) => {
                 o.save(&s);
                 Ok(o)
             }
-            Err(e) => {
-                Err(e)
-            }
-        }
+            Err(e) => Err(e),
+        };
     }
 
-    fn load_from_json(s: &ResourcesSubDirectory) -> Result<Self, String> {
-        if !Self::full_path_to_module_version(s).exists() { return Err("Module version does not exist".to_string()) }
+    fn load_from_json(s: &ResourcesSubDirectory<P>) -> Result<Self, String> {
+        if !Self::full_path_to_module_version(s).path_exists() {
+            return Err("Module version does not exist".to_string());
+        }
         let saved_version = Self::full_path_to_module_version(s).read_file_contents_to_string();
-        if saved_version != Self::current_version() { return Err(format!("Version did not match when loading module {:?}.  saved version: {:?} vs. current version: {:?}", Self::relative_file_path_str_from_sub_dir_to_module_dir(), saved_version, Self::current_version())) }
+        if saved_version != Self::current_version() {
+            return Err(format!("Version did not match when loading module {:?}.  saved version: {:?} vs. current version: {:?}", Self::relative_file_path_str_from_sub_dir_to_module_dir(), saved_version, Self::current_version()));
+        }
         Self::full_path_module_json(s).load_object_from_json_file_result()
     }
 
-    fn load_from_ron(s: &ResourcesSubDirectory) -> Result<Self, String> {
-        if !Self::full_path_to_module_version(s).exists() { return Err("Module version does not exist".to_string()) }
+    fn load_from_ron(s: &ResourcesSubDirectory<P>) -> Result<Self, String> {
+        if !Self::full_path_to_module_version(s).path_exists() {
+            return Err("Module version does not exist".to_string());
+        }
         let saved_version = Self::full_path_to_module_version(s).read_file_contents_to_string();
-        if saved_version != Self::current_version() { return Err(format!("Version did not match when loading module {:?}.  saved version: {:?} vs. current version: {:?}", Self::relative_file_path_str_from_sub_dir_to_module_dir(), saved_version, Self::current_version())) }
+        if saved_version != Self::current_version() {
+            return Err(format!("Version did not match when loading module {:?}.  saved version: {:?} vs. current version: {:?}", Self::relative_file_path_str_from_sub_dir_to_module_dir(), saved_version, Self::current_version()));
+        }
         Self::full_path_module_ron(s).load_object_from_ron_file_result()
     }
 
-    fn load_from_yaml(s: &ResourcesSubDirectory) -> Result<Self, String> {
-        if !Self::full_path_to_module_version(s).exists() { return Err("Module version does not exist".to_string()) }
+    fn load_from_yaml(s: &ResourcesSubDirectory<P>) -> Result<Self, String> {
+        if !Self::full_path_to_module_version(s).path_exists() {
+            return Err("Module version does not exist".to_string());
+        }
         let saved_version = Self::full_path_to_module_version(s).read_file_contents_to_string();
-        if saved_version != Self::current_version() { return Err(format!("Version did not match when loading module {:?}.  saved version: {:?} vs. current version: {:?}", Self::relative_file_path_str_from_sub_dir_to_module_dir(), saved_version, Self::current_version())) }
+        if saved_version != Self::current_version() {
+            return Err(format!("Version did not match when loading module {:?}.  saved version: {:?} vs. current version: {:?}", Self::relative_file_path_str_from_sub_dir_to_module_dir(), saved_version, Self::current_version()));
+        }
         Self::full_path_module_yaml(s).load_object_from_yaml_file_result()
     }
 
-    fn save(&self, s: &ResourcesSubDirectory) {
+    fn save(&self, s: &ResourcesSubDirectory<P>) {
         Self::full_path_to_module_version(s).write_string_to_file(&Self::current_version());
         Self::full_path_module_json(s).save_object_to_json_file(self);
         Self::full_path_module_ron(s).save_object_to_ron_file(self);
         Self::full_path_module_yaml(s).save_object_to_yaml_file(self);
     }
 
-    fn load_or_build(s: &ResourcesSubDirectory, force_build: bool) -> Result<Self, String> {
+    fn load_or_build(s: &ResourcesSubDirectory<P>, force_build: bool) -> Result<Self, String> {
         if !force_build {
             let fp = Self::full_path_to_module_version(s);
-            match fp.exists() {
+            match fp.path_exists() {
                 true => {
                     let saved_version = fp.read_file_contents_to_string();
                     if saved_version == Self::current_version() {
                         let loaded = Self::load_from_json(s);
                         match loaded {
-                            Ok(loaded) => { return Ok(loaded); }
+                            Ok(loaded) => {
+                                return Ok(loaded);
+                            }
                             Err(e) => {
                                 println!("Unable to load module in {:?} because of this reason: {:?}.  Will rebuild.", Self::full_path_module_json(s), e);
                             }
@@ -163,7 +188,7 @@ pub trait PreprocessorModule : Serialize + DeserializeOwned {
                         println!("Version did not match when loading module {:?}.  saved version: {:?} vs. current version: {:?}.  I will rebuild this module.", Self::relative_file_path_str_from_sub_dir_to_module_dir(), saved_version, Self::current_version());
                     }
                 }
-                false => { }
+                false => {}
             }
         }
 
@@ -173,11 +198,14 @@ pub trait PreprocessorModule : Serialize + DeserializeOwned {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-pub trait ResourcesRootDirectoryTrait {
+pub trait ResourcesRootDirectoryTrait<P = PathBuf>
+where
+    P: ApolloPathBufTrait + Clone,
+{
     fn preprocess_all_robots(&self, force_build_on_all: bool);
     fn preprocess_all_environments(&self, force_build_on_all: bool);
 }
-impl ResourcesRootDirectoryTrait for ResourcesRootDirectory {
+impl<P: ApolloPathBufTrait + Clone> ResourcesRootDirectoryTrait<P> for ResourcesRootDirectory<P> {
     fn preprocess_all_robots(&self, force_build_on_all: bool) {
         self.get_all_subdirectories().iter().for_each(|x| {
             x.preprocess_robot(force_build_on_all, true);
@@ -191,28 +219,36 @@ impl ResourcesRootDirectoryTrait for ResourcesRootDirectory {
     }
 }
 
-pub trait ResourcesSubDirectoryTrait {
+pub trait ResourcesSubDirectoryTrait<P = PathBuf>
+where
+    P: ApolloPathBufTrait + Clone,
+{
     fn preprocess_robot(&self, force_build_on_all: bool, include_original_meshes_module: bool);
     fn preprocess_environment(&self, force_build_on_all: bool);
 }
-impl ResourcesSubDirectoryTrait for ResourcesSubDirectory {
+impl<P: ApolloPathBufTrait + Clone> ResourcesSubDirectoryTrait<P> for ResourcesSubDirectory<P> {
     fn preprocess_robot(&self, force_build_on_all: bool, include_original_meshes_module: bool) {
         ApolloURDFModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloDOFModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloChainModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloConnectionsModule::load_or_build(self, force_build_on_all).expect("error");
         if include_original_meshes_module {
-            ApolloOriginalMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+            ApolloOriginalMeshesModule::<P>::load_or_build(self, force_build_on_all)
+                .expect("error");
         }
-        ApolloPlainMeshesModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloConvexHullMeshesModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloConvexDecompositionMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloPlainMeshesModule::<P>::load_or_build(self, force_build_on_all).expect("error");
+        ApolloConvexHullMeshesModule::<P>::load_or_build(self, force_build_on_all).expect("error");
+        ApolloConvexDecompositionMeshesModule::<P>::load_or_build(self, force_build_on_all)
+            .expect("error");
         ApolloFirstLookVisModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(self, force_build_on_all)
+            .expect("error");
         ApolloBoundsModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloLinkShapesDistanceStatisticsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesDistanceStatisticsModule::load_or_build(self, force_build_on_all)
+            .expect("error");
         ApolloLinkShapesSimpleSkipsModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloLinkShapesApproximationsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesApproximationsModule::load_or_build(self, force_build_on_all)
+            .expect("error");
         ApolloLinkShapesSkipsModule::load_or_build(self, force_build_on_all).expect("error");
     }
 
@@ -221,16 +257,20 @@ impl ResourcesSubDirectoryTrait for ResourcesSubDirectory {
         ApolloDOFModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloChainModule::load_or_build(self, force_build_on_all).expect("error");
         ApolloConnectionsModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloOriginalMeshesModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloPlainMeshesModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloConvexHullMeshesModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloConvexDecompositionMeshesModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloOriginalMeshesModule::<P>::load_or_build(self, force_build_on_all).expect("error");
+        ApolloPlainMeshesModule::<P>::load_or_build(self, force_build_on_all).expect("error");
+        ApolloConvexHullMeshesModule::<P>::load_or_build(self, force_build_on_all).expect("error");
+        ApolloConvexDecompositionMeshesModule::<P>::load_or_build(self, force_build_on_all)
+            .expect("error");
         ApolloFirstLookVisModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesMaxDistanceFromOriginModule::load_or_build(self, force_build_on_all)
+            .expect("error");
         ApolloBoundsModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloLinkShapesDistanceStatisticsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesDistanceStatisticsModule::load_or_build(self, force_build_on_all)
+            .expect("error");
         ApolloLinkShapesSimpleSkipsModule::load_or_build(self, force_build_on_all).expect("error");
-        ApolloLinkShapesApproximationsModule::load_or_build(self, force_build_on_all).expect("error");
+        ApolloLinkShapesApproximationsModule::load_or_build(self, force_build_on_all)
+            .expect("error");
         ApolloLinkShapesSkipsModule::load_or_build(self, force_build_on_all).expect("error");
     }
 }

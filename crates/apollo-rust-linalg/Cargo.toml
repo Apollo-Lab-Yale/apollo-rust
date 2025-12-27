@@ -4,18 +4,15 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-nalgebra = { version = "0.34.1", features = ["rand"] }
-nalgebra-sparse = "0.11.0"
-nalgebra-lapack = { version = "0.27.0", features = ["lapack-openblas"], default-features = false }
-rand = { version="0.9.0-alpha.1" }
-# ad_trait = { git = "https://github.com/djrakita/ad_trait", optional = true }
+nalgebra = { version = "=0.33.0", features = ["rand"] }
+nalgebra-sparse = "0.10.0"
+rand = { version="0.8.5" }
 ndarray = "0.16.1"
 ndarray-rand = "0.15"
-ndarray-linalg = { version = "0.17", features = ["openblas"] }
 rayon = "1.10.0"
 typed-arena = "2.0.2"
 slab = "0.4.9"
 
-# [features]
-# default = [ "ad" ]
-# ad = [ "ad_trait" ]
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+nalgebra-lapack = { version = "0.25.0", features = ["openblas"], default-features = false }
+ndarray-linalg = { version = "0.17", features = ["openblas"] }

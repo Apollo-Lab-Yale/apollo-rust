@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 /// # ApolloOriginalMeshesModule
 ///
@@ -10,6 +10,6 @@ use serde::{Deserialize, Serialize};
 ///
 /// - `link_mesh_relative_paths`: A vector of optional `PathBuf` representing relative paths to original mesh files.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ApolloOriginalMeshesModule {
-    pub link_mesh_relative_paths: Vec<Vec<PathBuf>>
+pub struct ApolloOriginalMeshesModule<P = PathBuf> {
+    pub link_mesh_relative_paths: Vec<Vec<P>>,
 }

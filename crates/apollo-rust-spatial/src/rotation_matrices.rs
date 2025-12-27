@@ -1,10 +1,10 @@
-use nalgebra::{Rotation2, Rotation3, Unit, Vector1};
-use rand::Rng;
-use apollo_rust_linalg::{M};
-use crate::complex_numbers::{UC};
+use crate::complex_numbers::UC;
 use crate::matrices::{ApolloMatrix2Trait, ApolloMatrix3Trait, M2, M3};
 use crate::quaternions::{ApolloUnitQuaternionTrait, UQ};
-use crate::vectors::{V3};
+use crate::vectors::V3;
+use apollo_rust_linalg::M;
+use nalgebra::{Rotation2, Rotation3, Unit, Vector1};
+use rand::Rng;
 
 /// Alias for `Rotation2<f64>`, representing a 2D rotation with 64-bit floating point precision.
 pub type R2 = Rotation2<f64>;
@@ -40,8 +40,8 @@ impl ApolloRotation2Trait for R2 {
     }
 
     fn new_random() -> Self {
-        let mut rng = rand::rng();
-        Self::from_scaled_axis(Vector1::new(rng.random_range(-6.28..6.28)))
+        let mut rng = rand::thread_rng();
+        Self::from_scaled_axis(Vector1::new(rng.gen_range(-6.28..6.28)))
     }
 
     #[inline(always)]
@@ -82,7 +82,7 @@ pub trait ApolloRotation3Trait {
     /// - `slice`: A slice representing the quaternion `[w, x, y, z]`.
     fn from_slice_quaternion(slice: &[f64]) -> Self;
 
-    fn frame_vectors(&self) -> [ V3; 3 ];
+    fn frame_vectors(&self) -> [V3; 3];
 }
 
 impl ApolloRotation3Trait for R3 {
@@ -96,11 +96,11 @@ impl ApolloRotation3Trait for R3 {
     }
 
     fn new_random() -> Self {
-        let mut rng = rand::rng();
+        let mut rng = rand::thread_rng();
         Self::from_euler_angles(
-            rng.random_range(-6.28..6.28),
-            rng.random_range(-6.28..6.28),
-            rng.random_range(-6.28..6.28)
+            rng.gen_range(-6.28..6.28),
+            rng.gen_range(-6.28..6.28),
+            rng.gen_range(-6.28..6.28),
         )
     }
 

@@ -1,0 +1,28 @@
+# Task: Web-Compatible Preprocessor Implementation
+
+- [x] Initial research on preprocessor and Wasm compatibility
+- [x] Create implementation plan for web-compatible preprocessor
+- [ ] Implement Phase 1: Abstraction Layer
+    - [x] Genericize `ResourcesRootDirectory` and `ResourcesSubDirectory` in `apollo-rust-modules`
+    - [x] Genericize `PreprocessorModule` trait in `apollo-rust-preprocessor`
+    - [x] Genericize `ApolloURDFModule` implementation
+    - [x] Genericize other preprocessor modules (`DOFModule`, `ChainModule`, etc.)
+    - [x] Verify native compilation with `test2.rs`
+- [x] Phase 2: Execution Model Refactor (Web Compatibility)
+    - [x] Refactor `apollo-rust-preprocessor` binaries into library functions
+        - `link_shapes_skips_module_process.rs` -> function
+        - `first_look_vis_module_process.rs` -> function
+    - [x] Implement conditional compilation (`#[cfg(target_arch = "wasm32")]`) for process execution
+        - Abstract `std::process::Command` calls
+    - [ ] Create Web Worker wrappers for heavy processing tasks
+- [ ] Phase 3: Headless Rust + Three.js Architecture
+    - [x] Create `apollo-rust-wasm` crate (the "Headless Interface")
+        - [x] Expose `ApolloURDFModule`, `ApolloChainModule`, etc. to WASM
+        - [x] Expose `RobotKinematicsFunctions` and `RobotProximityFunctions`
+    - [x] Implement `ApolloPathBufTrait` for Web (Virtual Filesystem)
+        - Needed to "load" robot directories into the WASM memory
+    - [x] Create TypeScript/Three.js Frontend
+        - [x] Implement Virtual Filesystem in JS (via `inject_file`)
+        - [x] Implement Visualization Loop (WASM -> JS State Sync)
+        - [ ] Re-implement "Vis Module" and "Link Skips" visualizations in Three.js
+- [x] Verification: Verify end-to-end flow in a browser (load URDF -> WASM compute -> Three.js render)

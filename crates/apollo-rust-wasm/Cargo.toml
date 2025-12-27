@@ -1,0 +1,29 @@
+[package]
+name = "apollo-rust-wasm"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+console_error_panic_hook = "0.1"
+nalgebra = { version = "=0.33.0", features = ["serde-serialize"] }
+web-sys = { version = "0.3", features = ["console"] }
+getrandom = { version = "0.2", features = ["js"] }
+uuid = { version = "1.0", features = ["v4", "js"] }
+
+# Workspace dependencies
+apollo-rust-modules = { path = "../apollo-rust-modules" }
+apollo-rust-robotics = { path = "../apollo-rust-robotics" }
+apollo-rust-robotics-core = { path = "../apollo-rust-robotics-core" }
+apollo-rust-preprocessor = { path = "../apollo-rust-preprocessor" }
+apollo-rust-spatial = { path = "../apollo-rust-spatial" }
+apollo-rust-linalg = { path = "../apollo-rust-linalg" }
+apollo-rust-lie = { path = "../apollo-rust-lie" }
+apollo-rust-proximity-parry = { path = "../apollo-rust-proximity-parry" }
+apollo-rust-file = { path = "../apollo-rust-file" }
+lazy_static = "1.4"

@@ -4,6 +4,7 @@
 extern crate core;
 
 use nalgebra::{DMatrix, DVector};
+#[cfg(not(target_arch = "wasm32"))]
 use nalgebra_lapack::{LU, SVD};
 use rand::Rng;
 use std::fmt::Debug;
@@ -30,11 +31,11 @@ impl ApolloDVectorTrait for V {
     }
 
     fn new_random_with_range(n: usize, min: f64, max: f64) -> Self {
-        let mut rng = rand::rng();
+        let mut rng = rand::thread_rng();
         let mut v = DVector::zeros(n);
 
         for i in 0..n {
-            v[i] = rng.random_range(min..=max);
+            v[i] = rng.gen_range(min..=max);
         }
 
         v
@@ -100,8 +101,10 @@ pub trait ApolloDMatrixTrait {
     /// Computes the full QR factorization of the matrix using the Gram-Schmidt process.
     fn full_qr_factorization(&self) -> QRResult;
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn inverse_blas(&self) -> Option<M>;
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn singular_value_decomposition_blas(&self, svd_type: SVDType) -> SVDResult;
 
     fn hstack(&self, other: &DMatrix<f64>) -> Option<DMatrix<f64>>;
@@ -118,12 +121,12 @@ impl ApolloDMatrixTrait for M {
     }
 
     fn new_random_with_range(nrows: usize, ncols: usize, min: f64, max: f64) -> Self {
-        let mut rng = rand::rng();
+        let mut rng = rand::thread_rng();
         let mut m = DMatrix::zeros(nrows, ncols);
 
         for i in 0..nrows {
             for j in 0..ncols {
-                m[(i, j)] = rng.random_range(min..=max);
+                m[(i, j)] = rng.gen_range(min..=max);
             }
         }
 
@@ -314,10 +317,12 @@ impl ApolloDMatrixTrait for M {
         QRResult { q, r }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn inverse_blas(&self) -> Option<M> {
         return LU::new(self.clone()).inverse();
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn singular_value_decomposition_blas(&self, svd_type: SVDType) -> SVDResult {
         let svd = SVD::new(self.clone()).expect("error");
         let u = svd.u;

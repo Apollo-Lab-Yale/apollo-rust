@@ -13,5 +13,4 @@ apollo-rust-lie = { path = "../apollo-rust-lie" }
 apollo-rust-linalg = { path = "../apollo-rust-linalg" }
 apollo-rust-proximity-parry = { path = "../apollo-rust-proximity-parry" }
 apollo-rust-interpolation = { path = "../apollo-rust-interpolation" }
-parry3d-f64 = { version = "0.25.3", features = ["serde-serialize", "simd-stable"] }
-
+parry3d-f64 = { version = "=0.17.0", features = ["serde-serialize"] }

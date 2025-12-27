@@ -1,7 +1,7 @@
 use ad_trait::AD;
+use apollo_rust_linalg_adtrait::{ApolloDMatrixTrait, ApolloDVectorTrait, M, V};
 use nalgebra::{Translation3, Vector1, Vector2, Vector3, Vector4, Vector6};
 use rand::Rng;
-use apollo_rust_linalg_adtrait::{V, M, ApolloDMatrixTrait, ApolloDVectorTrait};
 
 /// Alias for `Vector1<A>`, representing a 1D vector with a generic AD type.
 pub type V1<A> = Vector1<A>;
@@ -54,23 +54,31 @@ macro_rules! impl_apollo_ad_vector_trait {
             }
 
             fn new_random_with_range(min: f64, max: f64) -> Self {
-                let mut rng = rand::rng();
+                let mut rng = rand::thread_rng();
                 let mut v = $type_name::<A>::zeros();
 
                 for i in 0..$dim {
-                    v[i] = A::constant(rng.random_range(min..=max));
+                    v[i] = A::constant(rng.gen_range(min..=max));
                 }
 
                 v
             }
 
             fn to_other_ad_type<A2: AD>(&self) -> $type_name<A2> {
-                let s = self.as_slice().iter().map(|x| x.to_other_ad_type::<A2>()).collect::<Vec<A2>>();
+                let s = self
+                    .as_slice()
+                    .iter()
+                    .map(|x| x.to_other_ad_type::<A2>())
+                    .collect::<Vec<A2>>();
                 return $type_name::<A2>::from_column_slice(&s);
             }
 
             fn to_constant_ad(&self) -> Self {
-                let s = self.as_slice().iter().map(|x| x.to_constant_ad()).collect::<Vec<A>>();
+                let s = self
+                    .as_slice()
+                    .iter()
+                    .map(|x| x.to_constant_ad())
+                    .collect::<Vec<A>>();
                 return Self::from_column_slice(&s);
             }
         }

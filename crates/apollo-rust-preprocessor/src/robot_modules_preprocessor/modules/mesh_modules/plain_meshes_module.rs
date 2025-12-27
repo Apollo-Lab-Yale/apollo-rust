@@ -1,28 +1,43 @@
+use crate::robot_modules_preprocessor::AdjustedRobot;
+use crate::robot_modules_preprocessor::CombinedRobot;
+use crate::utils::progress_bar::ProgressBarWrapper;
+use crate::{
+    create_generic_build_from_adjusted_robot2, create_generic_build_from_combined_robot2,
+    create_generic_build_raw, PreprocessorModule,
+};
 use apollo_rust_file::ApolloPathBufTrait;
-use crate::{create_generic_build_from_adjusted_robot2, create_generic_build_from_combined_robot2, create_generic_build_raw, PreprocessorModule};
 use apollo_rust_mesh_utils::collada::load_dae_file;
 use apollo_rust_mesh_utils::gltf::load_gltf_file;
 use apollo_rust_mesh_utils::obj::load_obj_file;
-use crate::utils::progress_bar::ProgressBarWrapper;
 use apollo_rust_mesh_utils::stl::load_stl_file;
 use apollo_rust_mesh_utils::trimesh::{ToTriMesh, TriMesh};
-use apollo_rust_modules::ResourcesSubDirectory;
-use crate::robot_modules_preprocessor::CombinedRobot;
-use crate::robot_modules_preprocessor::AdjustedRobot;
-use apollo_rust_modules::ResourcesRootDirectory;
 use apollo_rust_modules::robot_modules::mesh_modules::original_meshes_module::ApolloOriginalMeshesModule;
 use apollo_rust_modules::robot_modules::mesh_modules::plain_meshes_module::ApolloPlainMeshesModule;
 use apollo_rust_modules::robot_modules::urdf_module::ApolloURDFModule;
+use apollo_rust_modules::ResourcesRootDirectory;
+use apollo_rust_modules::ResourcesSubDirectory;
 use apollo_rust_spatial::isometry3::{ApolloIsometry3Trait, I3};
 use apollo_rust_spatial::lie::se3_implicit_quaternion::ISE3q;
 
-pub trait PlainMeshesModuleBuilders: Sized {
-    fn build_from_original_meshes_module(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
-    fn build_from_combined_robot(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
-    fn build_from_adjusted_robot(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String>;
+pub trait PlainMeshesModuleBuilders<P: ApolloPathBufTrait + Clone>: Sized {
+    fn build_from_original_meshes_module(
+        s: &ResourcesSubDirectory<P>,
+        progress_bar: &mut ProgressBarWrapper,
+    ) -> Result<Self, String>;
+    fn build_from_combined_robot(
+        s: &ResourcesSubDirectory<P>,
+        progress_bar: &mut ProgressBarWrapper,
+    ) -> Result<Self, String>;
+    fn build_from_adjusted_robot(
+        s: &ResourcesSubDirectory<P>,
+        progress_bar: &mut ProgressBarWrapper,
+    ) -> Result<Self, String>;
 }
-impl PlainMeshesModuleBuilders for ApolloPlainMeshesModule {
-    fn build_from_original_meshes_module(s: &ResourcesSubDirectory, progress_bar: &mut ProgressBarWrapper) -> Result<Self, String> {
+impl<P: ApolloPathBufTrait + Clone> PlainMeshesModuleBuilders<P> for ApolloPlainMeshesModule<P> {
+    fn build_from_original_meshes_module(
+        s: &ResourcesSubDirectory<P>,
+        progress_bar: &mut ProgressBarWrapper,
+    ) -> Result<Self, String> {
         let original_meshes_module = ApolloOriginalMeshesModule::load_or_build(s, false);
         let urdf_module = ApolloURDFModule::load_or_build(s, false).expect("error");
 
@@ -63,16 +78,32 @@ impl PlainMeshesModuleBuilders for ApolloPlainMeshesModule {
                         // let obj_target = Self::full_path_to_module_dir(s).append("meshes/obj").append(&obj_filename);
                         // let glb_target = Self::full_path_to_module_dir(s).append("meshes/glb").append(&glb_filename);
 
-                        let full_path = s.root_directory().clone().append_path(path);
-                        let ext = path.extension().expect("must have extension").to_str().unwrap().to_string();
+                        let full_path = s.root_directory.clone().append_another(path);
+                        let ext = path.path_extension().expect("must have extension");
                         let trimesh_option = if ext == "stl" || ext == "STL" {
-                            Some(load_stl_file(&full_path).expect("error").to_trimesh())
+                            Some(
+                                load_stl_file(&full_path.to_path_buf())
+                                    .expect("error")
+                                    .to_trimesh(),
+                            )
                         } else if ext == "dae" || ext == "DAE" {
-                            Some(load_dae_file(&full_path).expect("error").to_trimesh())
+                            Some(
+                                load_dae_file(&full_path.to_path_buf())
+                                    .expect("error")
+                                    .to_trimesh(),
+                            )
                         } else if ext == "obj" || ext == "OBJ" {
-                            Some(load_obj_file(&full_path).expect("error").to_trimesh())
+                            Some(
+                                load_obj_file(&full_path.to_path_buf())
+                                    .expect("error")
+                                    .to_trimesh(),
+                            )
                         } else if ext == "glb" || ext == "GLB" || ext == "gltf" || ext == "GLTF" {
-                            Some(load_gltf_file(&full_path).expect("error").to_trimesh())
+                            Some(
+                                load_gltf_file(&full_path.to_path_buf())
+                                    .expect("error")
+                                    .to_trimesh(),
+                            )
                         } else {
                             None
                         };
@@ -85,7 +116,9 @@ impl PlainMeshesModuleBuilders for ApolloPlainMeshesModule {
                                 glb_link_mesh_relative_paths.push(None);
                             }
                             Some(trimesh) => {
-                                let trimesh = trimesh.to_transformed(&ISE3q::new(I3::from_slices_euler_angles(&xyz, &rpy)));
+                                let trimesh = trimesh.to_transformed(&ISE3q::new(
+                                    I3::from_slices_euler_angles(&xyz, &rpy),
+                                ));
                                 if combined_trimesh.is_none() {
                                     combined_trimesh = Some(trimesh);
                                 } else {
@@ -104,26 +137,52 @@ impl PlainMeshesModuleBuilders for ApolloPlainMeshesModule {
                     }
 
                     // let file_stem = format!("link_{}_mesh", link_idx);
-                    let file_stem = link_paths[0].file_stem().expect("error").to_str().unwrap().to_string();
+                    let file_stem = link_paths[0]
+                        .extract_last_n_segments(1)
+                        .split_into_strings()
+                        .pop()
+                        .unwrap();
+                    let file_stem = file_stem.split('.').next().unwrap().to_string();
                     let stl_filename = file_stem.clone() + ".stl";
                     let obj_filename = file_stem.clone() + ".obj";
                     let glb_filename = file_stem.clone() + ".glb";
 
-                    let stl_relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes/stl").append(&stl_filename);
-                    let obj_relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes/obj").append(&obj_filename);
-                    let glb_relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s).append("meshes/glb").append(&glb_filename);
+                    let stl_relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s)
+                        .append("meshes/stl")
+                        .append(&stl_filename);
+                    let obj_relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s)
+                        .append("meshes/obj")
+                        .append(&obj_filename);
+                    let glb_relative_path = Self::relative_file_path_from_root_dir_to_module_dir(s)
+                        .append("meshes/glb")
+                        .append(&glb_filename);
 
-                    let stl_target = Self::full_path_to_module_dir(s).append("meshes/stl").append(&stl_filename);
-                    let obj_target = Self::full_path_to_module_dir(s).append("meshes/obj").append(&obj_filename);
-                    let glb_target = Self::full_path_to_module_dir(s).append("meshes/glb").append(&glb_filename);
+                    let stl_target = Self::full_path_to_module_dir(s)
+                        .append("meshes/stl")
+                        .append(&stl_filename);
+                    let obj_target = Self::full_path_to_module_dir(s)
+                        .append("meshes/obj")
+                        .append(&obj_filename);
+                    let glb_target = Self::full_path_to_module_dir(s)
+                        .append("meshes/glb")
+                        .append(&glb_filename);
 
-                    combined_trimesh.as_ref().unwrap().save_to_stl(&stl_target);
+                    combined_trimesh
+                        .as_ref()
+                        .unwrap()
+                        .save_to_stl(&stl_target.to_path_buf());
                     stl_link_mesh_relative_paths.push(Some(stl_relative_path));
 
-                    combined_trimesh.as_ref().unwrap().save_to_obj(&obj_target);
+                    combined_trimesh
+                        .as_ref()
+                        .unwrap()
+                        .save_to_obj(&obj_target.to_path_buf());
                     obj_link_mesh_relative_paths.push(Some(obj_relative_path));
 
-                    combined_trimesh.as_ref().unwrap().save_to_glb(&glb_target);
+                    combined_trimesh
+                        .as_ref()
+                        .unwrap()
+                        .save_to_glb(&glb_target.to_path_buf());
                     glb_link_mesh_relative_paths.push(Some(glb_relative_path));
                 }
             }
@@ -207,19 +266,19 @@ impl PlainMeshesModuleBuilders for ApolloPlainMeshesModule {
             Ok(Self {
                 stl_link_mesh_relative_paths,
                 obj_link_mesh_relative_paths,
-                glb_link_mesh_relative_paths
+                glb_link_mesh_relative_paths,
             })
         } else {
             Err(format!("could not build StlMeshesModule in {:?} because OriginalMeshesModule could not be loaded or built.", s.directory()))
         }
     }
 
-    create_generic_build_from_combined_robot2!(ApolloPlainMeshesModule, None);
+    create_generic_build_from_combined_robot2!(ApolloPlainMeshesModule, P, None);
 
-    create_generic_build_from_adjusted_robot2!(ApolloPlainMeshesModule);
+    create_generic_build_from_adjusted_robot2!(ApolloPlainMeshesModule, P);
 }
 
-impl PreprocessorModule for ApolloPlainMeshesModule {
+impl<P: ApolloPathBufTrait + Clone> PreprocessorModule<P> for ApolloPlainMeshesModule<P> {
     // type SubDirectoryType = ResourcesSingleRobotDirectory;
 
     fn relative_file_path_str_from_sub_dir_to_module_dir() -> String {
@@ -230,6 +289,9 @@ impl PreprocessorModule for ApolloPlainMeshesModule {
         "0.0.2".to_string()
     }
 
-    create_generic_build_raw!(Self, build_from_original_meshes_module);
+    create_generic_build_raw!(
+        ApolloPlainMeshesModule,
+        P,
+        build_from_original_meshes_module
+    );
 }
-
